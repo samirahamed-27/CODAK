@@ -13,3 +13,11 @@ export const TIMEZONE = 'Asia/Kolkata';
  * Gated by NEXT_PUBLIC_DEMO_MODE (default: false).
  */
 export const IS_DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
+/**
+ * Level Threshold Configuration
+ * Level 1 begins at 0 XP.
+ * Thresholds: 0, 100, 250, 450, 700, 1000, then +350 per level after Level 6.
+ */
+export const BASE_LEVEL_THRESHOLDS = [0, 100, 250, 450, 700, 1000] as const;
+export const XP_PER_LEVEL_AFTER_BASE = 350;
