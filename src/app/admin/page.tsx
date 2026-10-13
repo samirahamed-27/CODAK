@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { PlaceholderCard } from '@/components/PlaceholderCard';
 import { ShieldCheck, Sliders, Database, AlertTriangle } from 'lucide-react';
@@ -15,12 +16,31 @@ export default function AdminDashboardPage() {
             <ShieldCheck className="w-3.5 h-3.5" />
             System Administration
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Campus Platform Admin
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Manage XP economy rules, audit ledger integrity, and monitor campus engagement.
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Campus Platform Admin
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                Manage XP economy rules, audit ledger integrity, and monitor campus engagement.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/faculty/award-xp"
+                className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white text-xs font-semibold transition-all shrink-0"
+              >
+                Award XP
+              </Link>
+              <Link
+                href="/admin/rules"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-rose-600/20 transition-all shrink-0"
+              >
+                <Sliders className="w-4 h-4" />
+                <span>Manage XP Rules</span>
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* Placeholders for Admin Workflows */}

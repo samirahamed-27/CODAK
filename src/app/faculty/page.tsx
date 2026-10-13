@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { PlaceholderCard } from '@/components/PlaceholderCard';
 import { CheckSquare, Flag, Users, BookOpen } from 'lucide-react';
@@ -15,12 +16,23 @@ export default function FacultyDashboardPage() {
             <Users className="w-3.5 h-3.5" />
             Faculty Operations Hub
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Academic Instructor Dashboard
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Review student submissions, curate question banks, and audit flagged activity.
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Academic Instructor Dashboard
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                Review student submissions, curate question banks, and audit flagged activity.
+              </p>
+            </div>
+            <Link
+              href="/faculty/award-xp"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-purple-600/20 transition-all shrink-0"
+            >
+              <CheckSquare className="w-4 h-4" />
+              <span>Award Student XP</span>
+            </Link>
+          </div>
         </div>
 
         {/* Placeholders for Faculty Workflows */}
