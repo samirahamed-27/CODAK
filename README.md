@@ -14,17 +14,15 @@ Turn real, verifiable learning activities (class attendance, daily quizzes, cour
 
 ---
 
-## 🛠 Planned Stack
+## 🛠 Tech Stack
 - **Frontend & Routing:** Next.js (App Router, TypeScript)
 - **Styling:** Tailwind CSS (Mobile-first design)
 - **Backend & Database:** Supabase (PostgreSQL, Row Level Security, Auth, Realtime)
-- **Testing:** Vitest
+- **Testing:** Vitest (Unit & Live integration tests)
 
 ---
 
-## 💻 How to Run Locally (Preview)
-
-*(Full setup will be finalized in Phase 0)*
+## 💻 How to Run Locally
 
 ```bash
 # 1. Clone the repository
@@ -38,11 +36,34 @@ npm install
 cp .env.example .env.local
 # (Edit .env.local and add your Supabase credentials)
 
-# 4. Run the local development server
+# 4. Run the database migration
+# Copy supabase/migrations/001_initial_schema.sql into Supabase SQL Editor and execute.
+
+# 5. Seed test accounts (Student, Faculty, Admin)
+npm run seed
+
+# 6. Run automated tests
+npm test
+
+# 7. Start the local development server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 🧪 Demo Test Accounts
+
+The following seeded accounts are available for local testing (Password for all: `Password123!`):
+
+| Role | Email | Password | Landing Page | Key Features |
+|---|---|---|---|---|
+| **Student** | `student@demo.edu` | `Password123!` | `/student` | Daily Quiz hero, Streak flame, Learn/Play/Compete tabs, Anonymous toggle |
+| **Faculty** | `faculty@demo.edu` | `Password123!` | `/faculty` | Quiz questions review queue, Flagged XP queue |
+| **Admin** | `admin@demo.edu` | `Password123!` | `/admin` | System admin hub, `xp_rules` live viewer, ledger audit |
+
+*(When `NEXT_PUBLIC_DEMO_MODE="true"` is set in `.env.local`, a floating Demo Switcher widget is also rendered on the screen for instant 1-click role swapping).*
 
 ---
 
@@ -70,17 +91,7 @@ Write commit messages that tell a quick story:
 5. Search by your teammate's GitHub username or email, and click **"Add to this repository"**.
 6. Teammates must accept the invite from their email or notification bell on GitHub.
 
-### 4. What Each Teammate Runs to Get Started
-When a teammate joins:
-```bash
-git clone https://github.com/sidd-289/gamify.git
-cd gamify
-npm install
-cp .env.example .env.local
-```
-
-### 5. Daily Habits for Peace of Mind
+### 4. Daily Habits for Peace of Mind
 - **Start your day:** Run `git pull origin main` to get the latest work from teammates before writing any new code.
 - **Commit often:** Commit small steps with meaningful messages instead of one giant commit at midnight.
 - **Check status:** Run `git status` frequently to see what files changed.
-
