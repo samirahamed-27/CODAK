@@ -1,4 +1,10 @@
-import { BASE_LEVEL_THRESHOLDS, XP_PER_LEVEL_AFTER_BASE } from './config';
+/**
+ * Level Threshold Configuration
+ * Level 1 begins at 0 XP.
+ * Thresholds: 0, 100, 250, 450, 700, 1000, then +350 per level after Level 6.
+ */
+export const BASE_LEVEL_THRESHOLDS = [0, 100, 250, 450, 700, 1000] as const;
+export const XP_PER_LEVEL_AFTER_BASE = 350;
 
 export interface LevelProgress {
   level: number;
