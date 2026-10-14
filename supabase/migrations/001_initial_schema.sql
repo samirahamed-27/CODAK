@@ -172,9 +172,11 @@ ALTER TABLE public.xp_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.xp_events ENABLE ROW LEVEL SECURITY;
 
 -- ------------------------------------------------------------------------------
+-- ------------------------------------------------------------------------------
 -- PROFILES POLICIES
 -- ------------------------------------------------------------------------------
 -- Anyone authenticated can read their own profile; faculty & admins can read all
+DROP POLICY IF EXISTS "profiles_select_policy" ON public.profiles;
 CREATE POLICY "profiles_select_policy"
 ON public.profiles
 FOR SELECT
@@ -184,6 +186,7 @@ USING (
 );
 
 -- Users can update only their own full_name, avatar_url, and is_anonymous
+DROP POLICY IF EXISTS "profiles_update_policy" ON public.profiles;
 CREATE POLICY "profiles_update_policy"
 ON public.profiles
 FOR UPDATE
@@ -195,6 +198,7 @@ WITH CHECK (id = auth.uid());
 -- STUDENTS POLICIES
 -- ------------------------------------------------------------------------------
 -- Student can view own record; Faculty and Admin can view all students
+DROP POLICY IF EXISTS "students_select_policy" ON public.students;
 CREATE POLICY "students_select_policy"
 ON public.students
 FOR SELECT
@@ -204,6 +208,7 @@ USING (
 );
 
 -- Student can update own academic record; Admin can update any
+DROP POLICY IF EXISTS "students_update_policy" ON public.students;
 CREATE POLICY "students_update_policy"
 ON public.students
 FOR UPDATE
@@ -219,6 +224,7 @@ WITH CHECK (
 -- FACULTY POLICIES
 -- ------------------------------------------------------------------------------
 -- Authenticated users can view faculty directory
+DROP POLICY IF EXISTS "faculty_select_policy" ON public.faculty;
 CREATE POLICY "faculty_select_policy"
 ON public.faculty
 FOR SELECT
@@ -226,6 +232,7 @@ TO authenticated
 USING (TRUE);
 
 -- Faculty can update own record; Admin can update any
+DROP POLICY IF EXISTS "faculty_update_policy" ON public.faculty;
 CREATE POLICY "faculty_update_policy"
 ON public.faculty
 FOR UPDATE
@@ -241,6 +248,7 @@ WITH CHECK (
 -- XP RULES POLICIES
 -- ------------------------------------------------------------------------------
 -- Everyone can read active rules
+DROP POLICY IF EXISTS "xp_rules_select_policy" ON public.xp_rules;
 CREATE POLICY "xp_rules_select_policy"
 ON public.xp_rules
 FOR SELECT
@@ -254,6 +262,7 @@ USING (TRUE);
 -- XP EVENTS POLICIES (LEDGER)
 -- ------------------------------------------------------------------------------
 -- Students can ONLY view their own XP history. Faculty & Admin can view all.
+DROP POLICY IF EXISTS "xp_events_select_policy" ON public.xp_events;
 CREATE POLICY "xp_events_select_policy"
 ON public.xp_events
 FOR SELECT
