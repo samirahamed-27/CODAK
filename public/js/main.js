@@ -638,6 +638,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   function startPlayerTurn() {
     if (!battleActive) return;
 
+    if (window.BattleEngine && typeof window.BattleEngine.setCodePanelEnemyTurnUI === 'function') {
+      window.BattleEngine.setCodePanelEnemyTurnUI(false);
+    }
+
     activeChallenge = null;
     hintUsedThisTurn = false;
     stopTurnTimer();
@@ -809,11 +813,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (!hintUsedThisTurn) {
         hintUsedThisTurn = true;
-        currentPoints = Math.max(0, currentPoints - 5);
-        if (window.updateHud) {
-          window.updateHud(currentPoints, turnsLeft);
+        const pts = (window.BattleEngine && window.BattleEngine.visualState) ? window.BattleEngine.visualState.points : currentPoints;
+        const newPts = Math.max(0, pts - 5);
+        currentPoints = newPts;
+        if (window.BattleEngine && window.BattleEngine.visualState) {
+          window.BattleEngine.visualState.points = newPts;
         }
-        appendConsoleLine(`> HINT UNLOCKED (-5 PTS). Current score: ${currentPoints} / ${targetPoints}.`, 'console-warn');
+        if (window.gameState) {
+          window.gameState.score = newPts;
+        }
+        const curTurns = (window.BattleEngine && window.BattleEngine.visualState) ? window.BattleEngine.visualState.turnsLeft : turnsLeft;
+        if (window.updateHud) {
+          window.updateHud(newPts, curTurns);
+        }
+        appendConsoleLine(`> HINT UNLOCKED (-5 PTS). Current score: ${newPts} / ${targetPoints}.`, 'console-warn');
       }
 
       if (challengeHintBox && challengeHintText) {
@@ -890,9 +903,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (codeTextarea) codeTextarea.disabled = true;
 
           if (window.BattleEngine && typeof window.BattleEngine.handlePlayerCodeSuccess === 'function') {
-            window.BattleEngine.handlePlayerCodeSuccess(activeChallenge, outcome);
+            await window.BattleEngine.handlePlayerCodeSuccess(activeChallenge, outcome);
           } else if (window.handlePlayerCodeSuccess) {
-            window.handlePlayerCodeSuccess(activeChallenge, outcome);
+            await window.handlePlayerCodeSuccess(activeChallenge, outcome);
           } else {
             executePlayerAttack();
           }
@@ -1077,7 +1090,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function handleBattleOutcome(outcome) {
     battleActive = false;
+    if (window.gameState) {
+      window.gameState.battleActive = false;
+    }
     stopTurnTimer();
+
+    if (window.BattleEngine && window.BattleEngine.visualState) {
+      currentPoints = window.BattleEngine.visualState.points;
+      turnsLeft = window.BattleEngine.visualState.turnsLeft;
+    } else if (window.gameState) {
+      if (typeof window.gameState.score === 'number') currentPoints = window.gameState.score;
+      if (typeof window.gameState.turnsLeft === 'number') turnsLeft = window.gameState.turnsLeft;
+    }
 
     const player = window.gameState.player || { name: 'Codemon' };
     const enemy = window.gameState.enemy || { name: 'Bugmon' };
@@ -1154,6 +1178,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentPoints = 0;
     turnsLeft = 8;
     battleActive = true;
+    window.gameState.battleActive = true;
     battleUsedChallenges.clear();
 
     if (window.updateHud) {
@@ -1239,6 +1264,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (btnForfeitBattle) {
     btnForfeitBattle.addEventListener('click', () => {
       battleActive = false;
+      if (window.gameState) {
+        window.gameState.battleActive = false;
+      }
       stopTurnTimer();
       showScreen('title');
     });

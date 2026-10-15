@@ -245,6 +245,7 @@ function setHp(target, current, max, immediate = false) {
     hp.target = Math.max(0, Math.min(current, hp.max));
 
     if (immediate) {
+      hp.current = hp.target;
       hp.display = hp.target;
       resolve();
       return;
@@ -271,6 +272,7 @@ function setHp(target, current, max, immediate = false) {
       }
       if (Math.abs(hp.display - hp.target) < 0.5 || safetyCounter > 25) {
         hp.display = hp.target;
+        hp.current = hp.target;
         clearInterval(checkInterval);
         resolve();
       }
@@ -299,6 +301,9 @@ function updateHud(points, turnsLeft) {
     if (ptsEl) {
       ptsEl.textContent = `${points} / ${battleVisualState.maxPoints}`;
     }
+    if (window.gameState) {
+      window.gameState.score = points;
+    }
   }
   if (typeof turnsLeft === 'number') {
     battleVisualState.turnsLeft = turnsLeft;
@@ -312,6 +317,9 @@ function updateHud(points, turnsLeft) {
       } else {
         turnsEl.className = 'text-green';
       }
+    }
+    if (window.gameState) {
+      window.gameState.turnsLeft = turnsLeft;
     }
   }
 }
@@ -688,6 +696,21 @@ function setCodePanelEnemyTurnUI(isEnemyTurn) {
         c.style.pointerEvents = 'none';
       });
     }
+  } else {
+    if (pickerBadge) {
+      pickerBadge.textContent = 'SELECT DIFFICULTY TO ATTACK';
+      pickerBadge.className = 'section-badge font-code text-yellow';
+    }
+    if (consoleBadge) {
+      consoleBadge.textContent = 'SYS: READY';
+      consoleBadge.className = 'section-badge font-code text-green';
+    }
+    if (pickerContainer) {
+      const cards = pickerContainer.querySelectorAll('.picker-card');
+      cards.forEach((c) => {
+        c.style.pointerEvents = 'auto';
+      });
+    }
   }
 }
 
@@ -860,6 +883,10 @@ async function startEnemyTurn(isBonusDamage = false) {
   const enemyDmg = isBonusDamage ? Math.round(baseDmg * 1.5) : baseDmg;
 
   await new Promise(r => setTimeout(r, 600));
+
+  if (window.gameState && window.gameState.battleActive === false) {
+    return { outcome: 'aborted' };
+  }
 
   if (isBonusDamage) {
     await triggerMsg(`${enemy.name.toUpperCase()} strikes with 50% BONUS DAMAGE (${enemyDmg} DMG)!`);
