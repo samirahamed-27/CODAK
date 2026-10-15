@@ -361,36 +361,7 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
 
   const adminClient = getAdminClient();
 
-  // 1. Try atomic database transaction procedure if present
-  try {
-    const { data: rpcData, error: rpcErr } = await adminClient.rpc('finalize_daily_quiz', {
-      p_attempt_id: input.attemptId,
-      p_student_id: user.id,
-    });
-
-    if (!rpcErr && rpcData && typeof rpcData === 'object' && 'success' in rpcData) {
-      const typed = rpcData as any;
-      if (!typed.success) {
-        return { success: false, error: typed.error || 'Finalization failed.' };
-      }
-      return {
-        success: true,
-        alreadyFinalized: Boolean(typed.already_finalized),
-        score: typed.score,
-        totalQuestions: typed.total_questions,
-        xpAwarded: typed.xp_awarded,
-        bonusAwarded: typed.bonus_awarded,
-        currentStreak: typed.current_streak,
-        longestStreak: typed.longest_streak,
-        streakEventType: typed.streak_event_type,
-        notes: typed.notes,
-      };
-    }
-  } catch {
-    // Proceed to robust application-level flow below
-  }
-
-  // 2. Fetch attempt
+  // 1. Fetch attempt
   const { data: attempt, error: attemptError } = await adminClient
     .from('quiz_attempts')
     .select('*')
