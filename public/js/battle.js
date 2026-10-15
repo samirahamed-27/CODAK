@@ -795,6 +795,7 @@ function setCodePanelEnemyTurnUI(isEnemyTurn) {
   const consoleBadge = document.getElementById('console-status-badge');
   const textarea = document.getElementById('code-textarea');
   const btnRun = document.getElementById('btn-run-tests');
+  const btnDevPower = document.getElementById('btn-dev-power');
   const btnHint = document.getElementById('btn-hint');
   const btnReset = document.getElementById('btn-reset-code');
   const pickerContainer = document.getElementById('picker-cards-container');
@@ -814,6 +815,7 @@ function setCodePanelEnemyTurnUI(isEnemyTurn) {
     }
     if (textarea) textarea.disabled = true;
     if (btnRun) btnRun.disabled = true;
+    if (btnDevPower) btnDevPower.disabled = true;
     if (btnHint) btnHint.disabled = true;
     if (btnReset) btnReset.disabled = true;
 

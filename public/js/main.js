@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const codeTextarea = document.getElementById('code-textarea');
 
   const btnRunTests = document.getElementById('btn-run-tests');
+  const btnDevPower = document.getElementById('btn-dev-power');
   const btnHint = document.getElementById('btn-hint');
   const btnResetCode = document.getElementById('btn-reset-code');
 
@@ -599,6 +600,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     stopTurnTimer();
     if (codeTextarea) codeTextarea.disabled = true;
     if (btnRunTests) btnRunTests.disabled = true;
+    if (btnDevPower) btnDevPower.disabled = true;
     if (btnHint) btnHint.disabled = true;
     if (btnResetCode) btnResetCode.disabled = true;
 
@@ -680,6 +682,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (btnRunTests) btnRunTests.disabled = true;
+    if (btnDevPower) btnDevPower.disabled = true;
     if (btnHint) {
       btnHint.disabled = true;
       btnHint.textContent = '? HINT (-5 PTS)';
@@ -784,6 +787,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateGutter();
 
     if (btnRunTests) btnRunTests.disabled = false;
+    if (btnDevPower) btnDevPower.disabled = false;
     if (btnHint) {
       btnHint.disabled = false;
       btnHint.textContent = '? HINT (-5 PTS)';
@@ -860,6 +864,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       isTestingCode = true;
       btnRunTests.disabled = true;
+      if (btnDevPower) btnDevPower.disabled = true;
       playSound('click');
 
       if (consoleStatusBadge) {
@@ -898,6 +903,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
           appendConsoleLine(`> PASS: All ${outcome.results.length} tests passed cleanly! Unleashing attack...`, 'console-pass');
 
+          if (btnDevPower) btnDevPower.disabled = true;
           if (btnHint) btnHint.disabled = true;
           if (btnResetCode) btnResetCode.disabled = true;
           if (codeTextarea) codeTextarea.disabled = true;
@@ -930,11 +936,80 @@ document.addEventListener('DOMContentLoaded', async () => {
             appendConsoleLine(`${passedCount}/${totalCount} tests passed`, 'console-warn');
           }
           btnRunTests.disabled = false;
+          if (btnDevPower) btnDevPower.disabled = false;
         }
 
       } catch (err) {
         appendConsoleLine(`UNEXPECTED RUNNER ERROR: ${err.message || String(err)}`, 'console-error');
         btnRunTests.disabled = false;
+        if (btnDevPower) btnDevPower.disabled = false;
+      } finally {
+        isTestingCode = false;
+      }
+    });
+  }
+
+  if (btnDevPower) {
+    btnDevPower.addEventListener('click', async () => {
+      if (!battleActive || isTestingCode) return;
+
+      if (!activeChallenge) {
+        appendConsoleLine('> [DEV POWER]: Please select an attack challenge card first!', 'console-warn');
+        return;
+      }
+
+      isTestingCode = true;
+      if (btnRunTests) btnRunTests.disabled = true;
+      btnDevPower.disabled = true;
+      if (btnHint) btnHint.disabled = true;
+      if (btnResetCode) btnResetCode.disabled = true;
+      if (codeTextarea) codeTextarea.disabled = true;
+      playSound('click');
+
+      stopTurnTimer();
+
+      if (consoleStatusBadge) {
+        consoleStatusBadge.textContent = 'SYS: DEV OVERRIDE';
+        consoleStatusBadge.className = 'section-badge font-code text-yellow';
+      }
+
+      appendConsoleLine(`⚡ [DEV POWER ACTIVATED]: Auto-passing all test cases for ${activeChallenge.functionName || 'function'}()!`, 'console-pass');
+
+      const testCases = (activeChallenge.tests && activeChallenge.tests.length)
+        ? activeChallenge.tests
+        : [{ expected: true, got: true }];
+
+      testCases.forEach((t, idx) => {
+        appendConsoleLine(`TEST ${idx + 1}: PASS [DEV POWER OVERRIDE]`, 'console-pass');
+      });
+
+      if (consoleStatusBadge) {
+        consoleStatusBadge.textContent = 'SYS: PASSED';
+        consoleStatusBadge.className = 'section-badge font-code text-green';
+      }
+
+      appendConsoleLine(`> PASS: All ${testCases.length}/${testCases.length} tests passed cleanly via Dev Power! Unleashing attack...`, 'console-pass');
+
+      const outcome = {
+        passed: true,
+        results: testCases.map(t => ({
+          pass: true,
+          expected: t.expected,
+          got: t.expected
+        })),
+        logs: ['⚡ Dev power override engaged: 100% test pass guaranteed regardless of editor contents.']
+      };
+
+      try {
+        if (window.BattleEngine && typeof window.BattleEngine.handlePlayerCodeSuccess === 'function') {
+          await window.BattleEngine.handlePlayerCodeSuccess(activeChallenge, outcome);
+        } else if (window.handlePlayerCodeSuccess) {
+          await window.handlePlayerCodeSuccess(activeChallenge, outcome);
+        } else {
+          executePlayerAttack();
+        }
+      } catch (err) {
+        appendConsoleLine(`DEV POWER RUNNER ERROR: ${err.message || String(err)}`, 'console-error');
       } finally {
         isTestingCode = false;
       }
@@ -1033,6 +1108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (codeTextarea) codeTextarea.disabled = true;
     if (btnRunTests) btnRunTests.disabled = true;
+    if (btnDevPower) btnDevPower.disabled = true;
     if (btnHint) btnHint.disabled = true;
     if (btnResetCode) btnResetCode.disabled = true;
 
@@ -1226,6 +1302,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (codeTextarea) codeTextarea.disabled = true;
     if (btnRunTests) btnRunTests.disabled = true;
+    if (btnDevPower) btnDevPower.disabled = true;
     if (btnHint) btnHint.disabled = true;
     if (btnResetCode) btnResetCode.disabled = true;
   }
