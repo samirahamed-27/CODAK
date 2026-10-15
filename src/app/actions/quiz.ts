@@ -654,6 +654,14 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
     }
   }
 
+  // 8. Evaluate eligible badges after quiz finalization
+  try {
+    const { evaluateStudentBadges } = await import('@/lib/badges');
+    await evaluateStudentBadges(user.id, adminClient);
+  } catch (badgeErr) {
+    console.error('Badge evaluation error after quiz finalization:', badgeErr);
+  }
+
   return {
     success: true,
     alreadyFinalized: false,

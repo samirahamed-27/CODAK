@@ -8,6 +8,8 @@ import { levelFromXp, LevelProgress } from '@/lib/levels';
 import { XpEvent } from '@/types/database';
 import { ShieldCheck, EyeOff, Award, Sparkles, TrendingUp, History, Clock } from 'lucide-react';
 import Aurora from '@/components/Aurora';
+import { BadgeTile } from '@/components/ui/game-elements';
+import { getStudentBadgesAction, StudentBadgeDisplay } from '@/app/actions/badges';
 
 export default function StudentProfilePage() {
   const supabase = createClient();
@@ -21,6 +23,7 @@ export default function StudentProfilePage() {
   const [totalXp, setTotalXp] = useState(0);
   const [levelInfo, setLevelInfo] = useState<LevelProgress>(levelFromXp(0));
   const [events, setEvents] = useState<XpEvent[]>([]);
+  const [badges, setBadges] = useState<StudentBadgeDisplay[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -96,6 +99,16 @@ export default function StudentProfilePage() {
 
           setTotalXp(sum);
           setLevelInfo(levelFromXp(sum));
+        }
+
+        // Fetch student badges (earned and locked)
+        try {
+          const badgeRes = await getStudentBadgesAction(studentId);
+          if (badgeRes.success) {
+            setBadges(badgeRes.badges);
+          }
+        } catch (e) {
+          console.error('Error fetching badges in profile:', e);
         }
       }
 
@@ -202,6 +215,41 @@ export default function StudentProfilePage() {
               {levelInfo.xpForNextLevel - levelInfo.xpIntoLevel} XP to Level {levelInfo.level + 1}
             </p>
           </div>
+        </section>
+
+        {/* Badges Showcase (Earned and Locked Badges) */}
+        <section
+          aria-label="Student Badges"
+          className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Award className="w-4 h-4 text-amber-400" />
+              <h2 className="text-sm font-bold text-white">Badges & Achievements</h2>
+            </div>
+            <span className="text-[11px] text-amber-400/90 font-semibold">
+              {badges.filter((b) => b.isEarned).length} / {badges.length} Unlocked
+            </span>
+          </div>
+
+          {badges.length === 0 ? (
+            <p className="text-xs text-slate-500 py-3">Loading badge milestones...</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {badges.map((badge) => (
+                <BadgeTile
+                  key={badge.code}
+                  code={badge.code}
+                  name={badge.name}
+                  description={badge.description}
+                  category={badge.category}
+                  isEarned={badge.isEarned}
+                  earnedAt={badge.earnedAt}
+                  howToEarn={badge.howToEarn}
+                />
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Personal XP History Ledger Feed */}
