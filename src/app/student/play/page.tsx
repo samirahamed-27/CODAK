@@ -25,6 +25,7 @@ import {
   ShieldAlert,
   Snowflake,
 } from 'lucide-react';
+import Shuffle from '@/components/Shuffle';
 
 export default function StudentPlayPage() {
   const [activeTab, setActiveTab] = useState<'daily' | 'practice'>('daily');
@@ -157,10 +158,27 @@ export default function StudentPlayPage() {
     dailyState?.questions && dailyState.questions.every((q) => q.isAnswered);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 pb-24 text-slate-100">
+    <div className="min-h-screen flex flex-col bg-[#07080B] pb-24 text-slate-100">
       <Navbar role="student" userName="Aarav Sharma" />
 
       <main className="flex-1 max-w-xl w-full mx-auto px-4 py-6 flex flex-col gap-5">
+        <div>
+          <Shuffle
+            text="PLAY AREA"
+            tag="h1"
+            effect="slide"
+            duration={0.35}
+            stagger={0.03}
+            triggerOnHover={true}
+            color="#FFFFFF"
+            accentColor="#7DD3FC"
+            style={{ fontSize: '1.25rem', letterSpacing: '0.05em' }}
+          />
+          <p className="text-xs text-slate-400 mt-1">
+            Test your mastery with daily scored quizzes and unlimited practice.
+          </p>
+        </div>
+
         {/* Mode Toggle Switch */}
         <div className="grid grid-cols-2 p-1.5 rounded-2xl bg-slate-900 border border-slate-800">
           <button

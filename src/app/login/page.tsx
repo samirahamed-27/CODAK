@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { GraduationCap, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import Shuffle from '@/components/Shuffle';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -103,15 +104,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 bg-slate-950">
-      <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md">
+    <div className="min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 bg-[#07080B] game-bg-grid">
+      <div className="w-full max-w-md bg-[#10131E]/95 border border-[#1D2233] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md">
         {/* Brand */}
         <div className="text-center mb-6">
-          <Link href="/" className="inline-flex items-center gap-2 mb-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center text-xl shadow-lg shadow-indigo-500/25">
+          <Link href="/" className="inline-flex items-center gap-2.5 mb-3 group">
+            <div className="w-10 h-10 rounded-2xl bg-[#07080B] border border-sky-400/40 flex items-center justify-center text-xl shadow-lg shadow-sky-500/10 group-hover:scale-105 transition-transform">
               🎮
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">Gamify</span>
+            <Shuffle
+              text="GAMIFY"
+              tag="span"
+              effect="slide"
+              duration={0.3}
+              stagger={0.02}
+              triggerOnHover={true}
+              color="#FFFFFF"
+              accentColor="#7DD3FC"
+              style={{ fontSize: '1.25rem', letterSpacing: '0.06em' }}
+            />
           </Link>
           <p className="text-xs text-slate-400">
             {mode === 'signin'
@@ -121,7 +132,7 @@ export default function LoginPage() {
         </div>
 
         {/* Tab Toggle */}
-        <div className="flex bg-slate-950 p-1 rounded-xl mb-6 border border-slate-800">
+        <div className="flex bg-[#07080B] p-1 rounded-xl mb-6 border border-[#1D2233]">
           <button
             type="button"
             onClick={() => {
@@ -131,7 +142,7 @@ export default function LoginPage() {
             }}
             className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
               mode === 'signin'
-                ? 'bg-indigo-600 text-white shadow-md'
+                ? 'bg-sky-400 text-[#07080B] font-bold shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -146,7 +157,7 @@ export default function LoginPage() {
             }}
             className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
               mode === 'signup'
-                ? 'bg-indigo-600 text-white shadow-md'
+                ? 'bg-sky-400 text-[#07080B] font-bold shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -207,7 +218,7 @@ export default function LoginPage() {
                   <select
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#07080B] border border-[#1D2233] text-white text-xs focus:outline-none focus:border-sky-400"
                   >
                     <option value="Computer Science">Computer Science</option>
                     <option value="Information Tech">Information Tech</option>
@@ -218,8 +229,8 @@ export default function LoginPage() {
               </div>
 
               {/* Informational banner: Student-only registration rule */}
-              <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80 text-[11px] text-slate-400 flex items-center gap-2">
-                <GraduationCap className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="p-2.5 rounded-xl bg-[#07080B] border border-[#1D2233] text-[11px] text-slate-400 flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-sky-400 shrink-0" />
                 <span>
                   All new signups register as <strong>Students</strong>. Faculty and Admin accounts are provisioned separately.
                 </span>
@@ -237,7 +248,7 @@ export default function LoginPage() {
               placeholder="student@demo.edu"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-indigo-500"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#07080B] border border-[#1D2233] text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-sky-400"
             />
           </div>
 
@@ -251,14 +262,14 @@ export default function LoginPage() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-indigo-500"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#07080B] border border-[#1D2233] text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-sky-400"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white text-xs font-bold shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full mt-2 py-3 px-4 rounded-xl bg-sky-400 hover:bg-sky-300 active:scale-[0.99] text-[#07080B] text-xs font-bold shadow-lg shadow-sky-500/20 border border-sky-300 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {loading ? (
               <span>Authenticating...</span>

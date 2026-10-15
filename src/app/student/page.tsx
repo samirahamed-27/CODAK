@@ -37,7 +37,7 @@ export default function StudentDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#06080F] game-bg-grid text-white flex flex-col lg:flex-row font-body selection:bg-[#7CC4FF] selection:text-[#06080F]">
+    <div className="min-h-screen bg-[#07080B] game-bg-grid text-white flex flex-col lg:flex-row font-body selection:bg-sky-400 selection:text-[#07080B]">
       {/* 1. Left Fixed Sidebar (~18% width on desktop, drawer on mobile) */}
       <AcademySidebar totalXp={profile.totalXp} />
 
