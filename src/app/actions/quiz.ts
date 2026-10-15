@@ -714,6 +714,7 @@ export async function getStudentStreakAction() {
       lastQuizDate: null,
       isTodayCompleted: false,
       todayDate,
+      maxDailyQuizXp: 40,
     };
   }
 
