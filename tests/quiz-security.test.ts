@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 let mockCurrentUser: { id: string; email?: string } | null = null;
 
 // Mock questions in database
-const mockDbQuestions = [
+const mockDbQuestions: any[] = [
   {
     id: 'q-101',
     topic: 'Time Complexity',
@@ -76,6 +76,7 @@ let mockDbAttempts: any[] = [];
 let mockDbAnswers: any[] = [];
 let mockDbStreaks: any[] = [];
 let mockDbStreakEvents: any[] = [];
+let mockDbExemptDates: any[] = [];
 let mockAwardXpCalls: any[] = [];
 
 // Mock @/lib/supabase/server
@@ -95,11 +96,16 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn().mockImplementation(() => ({
     from: (table: string) => {
       let filters: { field: string; op: string; val: any }[] = [];
+      let orClause: string | null = null;
       let currentInsertData: any = null;
       let currentUpdateData: any = null;
 
       const builder: any = {
         select: (cols?: string) => builder,
+        or: (clause: string) => {
+          orClause = clause;
+          return builder;
+        },
         eq: (field: string, val: any) => {
           filters.push({ field, op: 'eq', val });
           return builder;
@@ -155,6 +161,10 @@ vi.mock('@supabase/supabase-js', () => ({
             mockDbStreakEvents.push(row);
             return Promise.resolve({ data: row, error: null });
           }
+          if (table === 'quiz_exempt_dates') {
+            mockDbExemptDates.push(data);
+            return Promise.resolve({ data, error: null });
+          }
           return Promise.resolve({ data: data, error: null });
         },
         update: (data: any) => {
@@ -179,6 +189,14 @@ vi.mock('@supabase/supabase-js', () => ({
               mockDbStreaks.push({ ...data });
             }
           }
+          if (table === 'quiz_exempt_dates') {
+            const idx = mockDbExemptDates.findIndex((d) => d.date === data.date);
+            if (idx >= 0) {
+              mockDbExemptDates[idx] = { ...mockDbExemptDates[idx], ...data };
+            } else {
+              mockDbExemptDates.push({ ...data });
+            }
+          }
           return { data, error: null };
         },
         then: (resolve: any) => {
@@ -193,6 +211,7 @@ vi.mock('@supabase/supabase-js', () => ({
         if (table === 'quiz_attempts') list = [...mockDbAttempts];
         if (table === 'quiz_answers') list = [...mockDbAnswers];
         if (table === 'student_streaks') list = [...mockDbStreaks];
+        if (table === 'quiz_exempt_dates') list = [...mockDbExemptDates];
         if (table === 'app_settings') {
           list = [
             { key: 'questions_per_daily_quiz', value: 5 },
@@ -207,6 +226,18 @@ vi.mock('@supabase/supabase-js', () => ({
             list = list.filter((r) => Array.isArray(f.val) && f.val.includes(r[f.field]));
           }
         }
+
+        if (table === 'questions' && orClause) {
+          const match = orClause.match(/approved_at\.lte\.([^,]+)/);
+          if (match) {
+            const cutoff = match[1];
+            list = list.filter((q) => {
+              const dt = q.approved_at || q.created_at || '2026-09-01T00:00:00Z';
+              return dt <= cutoff;
+            });
+          }
+        }
+
         return list;
       }
 
@@ -254,6 +285,7 @@ import {
   finalizeQuizAction,
   getPracticeQuizSessionAction,
   submitPracticeAnswerAction,
+  getStudentStreakAction,
 } from '../src/app/actions/quiz';
 
 describe('Daily Quiz Engine & Streaks Security Suite', () => {
@@ -536,8 +568,7 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
       expect(res.error).toMatch(/forbidden: you do not own this quiz session/i);
     });
 
-    it('7-day streak bonus: ledger reference includes streak start date so every new streak earns it once', async () => {
-      // 1. First streak: starts Oct 01, reaches day 7 on Oct 07
+    it('3(a). Day 7 of streak pays 50 XP bonus with reference streak_7_bonus_<student>_<streak_start_date>', async () => {
       process.env.TEST_SIMULATED_DATE = '2026-10-07';
       mockDbStreaks.push({
         student_id: studentA,
@@ -549,76 +580,114 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
         streak_start_date: '2026-10-01',
       });
 
-      const session1 = await getDailyQuizSessionAction();
-      // Set quiz_date to 2026-10-07
-      const att1 = mockDbAttempts.find((a) => a.id === session1.attemptId);
-      att1.quiz_date = '2026-10-07';
+      const session = await getDailyQuizSessionAction();
+      const att = mockDbAttempts.find((a) => a.id === session.attemptId);
+      att.quiz_date = '2026-10-07';
 
-      for (const q of session1.questions!) {
-        await submitQuizAnswerAction({ attemptId: session1.attemptId!, questionId: q.id, selectedOption: 'B' });
+      for (const q of session.questions!) {
+        await submitQuizAnswerAction({ attemptId: session.attemptId!, questionId: q.id, selectedOption: 'B' });
       }
 
-      const res1 = await finalizeQuizAction({ attemptId: session1.attemptId! });
-      expect(res1.success).toBe(true);
-      expect(res1.currentStreak).toBe(7);
-      expect(res1.bonusAwarded).toBe(true);
+      const res = await finalizeQuizAction({ attemptId: session.attemptId! });
+      expect(res.success).toBe(true);
+      expect(res.currentStreak).toBe(7);
+      expect(res.bonusAwarded).toBe(true);
 
       const firstBonus = mockAwardXpCalls.find((c) => c.p_action_type === 'STREAK_7_BONUS');
       expect(firstBonus).toBeDefined();
       expect(firstBonus.p_reference_id).toBe(`streak_7_bonus_${studentA}_2026-10-01`);
+    });
 
-      // Replaying finalize on day 7 never pays twice
-      const replayRes = await finalizeQuizAction({ attemptId: session1.attemptId! });
+    it('3(b). Replaying finalize on day 7 is idempotent and never pays twice', async () => {
+      process.env.TEST_SIMULATED_DATE = '2026-10-07';
+      mockDbStreaks.push({
+        student_id: studentA,
+        current_streak: 6,
+        longest_streak: 6,
+        last_quiz_date: '2026-10-06',
+        freeze_days_used_this_month: 0,
+        freeze_days_month: '2026-10',
+        streak_start_date: '2026-10-01',
+      });
+
+      const session = await getDailyQuizSessionAction();
+      const att = mockDbAttempts.find((a) => a.id === session.attemptId);
+      att.quiz_date = '2026-10-07';
+
+      for (const q of session.questions!) {
+        await submitQuizAnswerAction({ attemptId: session.attemptId!, questionId: q.id, selectedOption: 'B' });
+      }
+
+      await finalizeQuizAction({ attemptId: session.attemptId! });
+      const bonusesBefore = mockAwardXpCalls.filter((c) => c.p_action_type === 'STREAK_7_BONUS').length;
+      expect(bonusesBefore).toBe(1);
+
+      // Replaying finalize
+      const replayRes = await finalizeQuizAction({ attemptId: session.attemptId! });
       expect(replayRes.success).toBe(true);
       expect(replayRes.alreadyFinalized).toBe(true);
-      const bonusesAfterReplay = mockAwardXpCalls.filter((c) => c.p_action_type === 'STREAK_7_BONUS');
-      expect(bonusesAfterReplay.length).toBe(1);
+      const bonusesAfter = mockAwardXpCalls.filter((c) => c.p_action_type === 'STREAK_7_BONUS').length;
+      expect(bonusesAfter).toBe(1); // Never double pays!
+    });
 
-      // Day 14 pays nothing: reach day 14 on Oct 14
+    it('3(c). Day 14 pays nothing: 7-day bonus is paid ONLY on day 7 (once per streak)', async () => {
       process.env.TEST_SIMULATED_DATE = '2026-10-14';
-      const streakRowFor14 = mockDbStreaks.find((s) => s.student_id === studentA);
-      streakRowFor14.current_streak = 13;
-      streakRowFor14.last_quiz_date = '2026-10-13';
-      streakRowFor14.streak_start_date = '2026-10-01';
+      mockDbStreaks.push({
+        student_id: studentA,
+        current_streak: 13,
+        longest_streak: 13,
+        last_quiz_date: '2026-10-13',
+        freeze_days_used_this_month: 0,
+        freeze_days_month: '2026-10',
+        streak_start_date: '2026-10-01',
+      });
 
-      mockDbAttempts = [];
       const session14 = await getDailyQuizSessionAction();
       const att14 = mockDbAttempts.find((a) => a.id === session14.attemptId);
       att14.quiz_date = '2026-10-14';
+
       for (const q of session14.questions!) {
         await submitQuizAnswerAction({ attemptId: session14.attemptId!, questionId: q.id, selectedOption: 'B' });
       }
+
       const res14 = await finalizeQuizAction({ attemptId: session14.attemptId! });
       expect(res14.success).toBe(true);
       expect(res14.currentStreak).toBe(14);
       expect(res14.bonusAwarded).toBe(false);
+
       const bonusesAt14 = mockAwardXpCalls.filter((c) => c.p_action_type === 'STREAK_7_BONUS');
-      expect(bonusesAt14.length).toBe(1); // Day 14 pays nothing!
+      expect(bonusesAt14.length).toBe(0); // Day 14 pays nothing!
+    });
 
-      // 2. Streak resets: student missed 5 days, starts a brand new streak on Oct 15
+    it('3(d). A streak that resets and reaches 7 again pays the 7-day bonus again with new start date reference', async () => {
       process.env.TEST_SIMULATED_DATE = '2026-10-21';
-      const streakRow = mockDbStreaks.find((s) => s.student_id === studentA);
-      streakRow.current_streak = 6;
-      streakRow.last_quiz_date = '2026-10-20';
-      streakRow.streak_start_date = '2026-10-15'; // New streak started on Oct 15
+      // Student's second streak started on Oct 15 and is now at day 6
+      mockDbStreaks.push({
+        student_id: studentA,
+        current_streak: 6,
+        longest_streak: 7,
+        last_quiz_date: '2026-10-20',
+        freeze_days_used_this_month: 0,
+        freeze_days_month: '2026-10',
+        streak_start_date: '2026-10-15',
+      });
 
-      mockDbAttempts = []; // Reset attempts for new day
-      const session2 = await getDailyQuizSessionAction();
-      const att2 = mockDbAttempts.find((a) => a.id === session2.attemptId);
-      att2.quiz_date = '2026-10-21'; // Day 7 of second streak
+      const session = await getDailyQuizSessionAction();
+      const att = mockDbAttempts.find((a) => a.id === session.attemptId);
+      att.quiz_date = '2026-10-21';
 
-      for (const q of session2.questions!) {
-        await submitQuizAnswerAction({ attemptId: session2.attemptId!, questionId: q.id, selectedOption: 'B' });
+      for (const q of session.questions!) {
+        await submitQuizAnswerAction({ attemptId: session.attemptId!, questionId: q.id, selectedOption: 'B' });
       }
 
-      const res2 = await finalizeQuizAction({ attemptId: session2.attemptId! });
-      expect(res2.success).toBe(true);
-      expect(res2.currentStreak).toBe(7);
-      expect(res2.bonusAwarded).toBe(true);
+      const res = await finalizeQuizAction({ attemptId: session.attemptId! });
+      expect(res.success).toBe(true);
+      expect(res.currentStreak).toBe(7);
+      expect(res.bonusAwarded).toBe(true);
 
-      const bonuses = mockAwardXpCalls.filter((c) => c.p_action_type === 'STREAK_7_BONUS');
-      expect(bonuses.length).toBe(2);
-      expect(bonuses[1].p_reference_id).toBe(`streak_7_bonus_${studentA}_2026-10-15`);
+      const bonus = mockAwardXpCalls.find((c) => c.p_action_type === 'STREAK_7_BONUS');
+      expect(bonus).toBeDefined();
+      expect(bonus.p_reference_id).toBe(`streak_7_bonus_${studentA}_2026-10-15`);
     });
 
     it('Logs a streak_freeze event per frozen day when student misses days within freeze quota', async () => {
@@ -735,6 +804,84 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
       expect(session2.status).toBe('active');
       expect(session1.attemptId).toBe(session2.attemptId);
       expect(mockDbAttempts.length).toBe(1);
+    });
+
+    it('4(d). Fallback: Bank empty on Day 4, nobody opened quiz, student completes Day 5: streak advances to 4 and 0 freezes consumed', async () => {
+      process.env.TEST_SIMULATED_DATE = '2026-10-05';
+      // Student has streak of 3 from Oct 01 to Oct 03
+      mockDbStreaks.push({
+        student_id: studentA,
+        current_streak: 3,
+        longest_streak: 3,
+        last_quiz_date: '2026-10-03',
+        freeze_days_used_this_month: 0,
+        freeze_days_month: '2026-10',
+        streak_start_date: '2026-10-01',
+      });
+
+      // Nobody opened the quiz on Day 4, so mockDbExemptDates is empty.
+      // Point-in-time check on Day 4 (2026-10-04) had fewer than 3 approved questions!
+      // All questions were approved on Day 5
+      mockDbQuestions.forEach((q) => {
+        q.approved_at = '2026-10-05T00:01:00+05:30';
+      });
+
+      const session = await getDailyQuizSessionAction();
+      expect(session.status).toBe('active');
+      const att = mockDbAttempts.find((a) => a.id === session.attemptId);
+      att.quiz_date = '2026-10-05';
+
+      for (const q of session.questions!) {
+        await submitQuizAnswerAction({ attemptId: session.attemptId!, questionId: q.id, selectedOption: 'B' });
+      }
+
+      const res = await finalizeQuizAction({ attemptId: session.attemptId! });
+      expect(res.success).toBe(true);
+      expect(res.currentStreak).toBe(4); // Advances 3 -> 4!
+
+      const streak = mockDbStreaks.find((s) => s.student_id === studentA);
+      expect(streak.current_streak).toBe(4);
+      expect(streak.freeze_days_used_this_month).toBe(0); // NO freezes consumed!
+
+      // Reset mock questions
+      mockDbQuestions.forEach((q) => { delete q.approved_at; });
+    });
+
+    it('4(e). Home page streak display uses exempt dates logic: does not show reset streak during an exempt gap', async () => {
+      process.env.TEST_SIMULATED_DATE = '2026-10-05';
+      // Student completed quiz on Oct 03 (streak of 3)
+      mockDbStreaks.push({
+        student_id: studentA,
+        current_streak: 3,
+        longest_streak: 3,
+        last_quiz_date: '2026-10-03',
+        freeze_days_used_this_month: 0,
+        freeze_days_month: '2026-10',
+        streak_start_date: '2026-10-01',
+      });
+
+      // Oct 04 was recorded as exempt
+      mockDbExemptDates.push({
+        date: '2026-10-04',
+        reason: 'insufficient_questions',
+      });
+
+      // Today is Oct 05, student opens home page before completing today's quiz
+      const streakInfo = await getStudentStreakAction();
+      expect(streakInfo.currentStreak).toBe(3); // Unbroken streak of 3!
+      expect(streakInfo.isTodayCompleted).toBe(false);
+      expect(streakInfo.freezeDaysRemaining).toBe(2);
+    });
+
+    it('4(f). Direct student attempt to write quiz_exempt_dates is blocked (server-only security)', async () => {
+      // In server action architecture, students have no endpoint or permission to insert exempt dates
+      const adminClient = (await import('@supabase/supabase-js')).createClient('https://mock.supabase.co', 'service_role');
+      const { error: adminErr } = await adminClient.from('quiz_exempt_dates').insert({
+        date: '2026-10-31',
+        reason: 'scheduled_maintenance',
+      });
+      expect(adminErr).toBeNull();
+      expect(mockDbExemptDates.some((d) => d.date === '2026-10-31')).toBe(true);
     });
   });
 

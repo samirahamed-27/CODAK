@@ -279,5 +279,52 @@ describe('Streak & Freeze Days Calculation Engine', () => {
       expect(res14.eligible_for_7_day_bonus).toBe(false);
       expect(res14.bonus_milestone).toBeNull();
     });
+
+    it('12. Streak of 3, bank empty on day 4 (exempt date), student completes day 5: streak becomes 4 and no freeze is used', () => {
+      const day3: StudentStreakData = {
+        current_streak: 3,
+        longest_streak: 3,
+        last_quiz_date: '2026-10-03',
+        freeze_days_used_this_month: 0,
+        freeze_days_month: '2026-10',
+        streak_start_date: '2026-10-01',
+      };
+
+      // Day 4 is exempt (no approved questions in bank)
+      const exemptDates = ['2026-10-04'];
+      const res = evaluateStreakCompletion(day3, '2026-10-05', 2, exemptDates);
+
+      expect(res.current_streak).toBe(4); // 3 + 1 = 4
+      expect(res.longest_streak).toBe(4);
+      expect(res.last_quiz_date).toBe('2026-10-05');
+      expect(res.freeze_days_used_this_month).toBe(0); // NO freeze consumed!
+      expect(res.freezes_consumed).toBe(0);
+      expect(res.frozen_dates).toEqual([]);
+      expect(res.event_type).toBe('streak_increment');
+      expect(res.streak_start_date).toBe('2026-10-01');
+    });
+
+    it('13. Order of evaluation: remove exempt dates first, then apply freezes to remaining missed days', () => {
+      const day3: StudentStreakData = {
+        current_streak: 3,
+        longest_streak: 3,
+        last_quiz_date: '2026-10-03',
+        freeze_days_used_this_month: 0,
+        freeze_days_month: '2026-10',
+        streak_start_date: '2026-10-01',
+      };
+
+      // Gap is Oct 04 and Oct 05.
+      // Oct 04 is exempt; Oct 05 is a normal missed day.
+      // Completes on Oct 06.
+      const exemptDates = ['2026-10-04'];
+      const res = evaluateStreakCompletion(day3, '2026-10-06', 2, exemptDates);
+
+      expect(res.current_streak).toBe(4); // 3 + 1 for today = 4
+      expect(res.freezes_consumed).toBe(1); // 1 freeze consumed for Oct 05 only
+      expect(res.freeze_days_used_this_month).toBe(1);
+      expect(res.frozen_dates).toEqual(['2026-10-05']);
+      expect(res.event_type).toBe('streak_freeze');
+    });
   });
 });

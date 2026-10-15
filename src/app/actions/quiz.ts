@@ -2,7 +2,7 @@
 
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
-import { getKolkataDate, evaluateStreakCompletion, StudentStreakData } from '@/lib/streaks';
+import { getKolkataDate, evaluateStreakCompletion, StudentStreakData, addDaysToDate, daysBetweenDates } from '@/lib/streaks';
 
 export interface QuizOptionItem {
   id: 'A' | 'B' | 'C' | 'D';
@@ -126,7 +126,13 @@ export async function getDailyQuizSessionAction(): Promise<DailyQuizSessionResul
       .eq('status', 'approved')
       .eq('is_active', true);
 
-    if (qError || !approvedQuestions || approvedQuestions.length === 0) {
+    if (qError || !approvedQuestions || approvedQuestions.length < 3) {
+      // Register today as exempt date due to insufficient questions in bank
+      await adminClient.from('quiz_exempt_dates').upsert({
+        date: todayDate,
+        reason: 'insufficient_questions',
+      });
+
       return {
         status: 'error',
         quizDate: todayDate,
@@ -360,6 +366,61 @@ export async function submitQuizAnswerAction(input: {
 }
 
 /**
+ * Resolves all exempt dates falling in the gap between startDate and endDate.
+ * Order of evaluation:
+ * 1. Dates explicitly marked in quiz_exempt_dates.
+ * 2. Fallback: dates where fewer than 3 approved questions existed on that date.
+ */
+export async function resolveExemptDatesInRange(
+  adminClient: any,
+  startDate: string | null,
+  endDate: string
+): Promise<string[]> {
+  if (!startDate) return [];
+  const diffDays = daysBetweenDates(startDate, endDate);
+  if (diffDays <= 1) return [];
+
+  const gapDates: string[] = [];
+  for (let i = 1; i < diffDays; i++) {
+    gapDates.push(addDaysToDate(startDate, i));
+  }
+
+  // 1. Fetch explicitly recorded exempt dates
+  const { data: explicitRows } = await adminClient
+    .from('quiz_exempt_dates')
+    .select('date')
+    .in('date', gapDates);
+
+  const exemptSet = new Set<string>((explicitRows || []).map((r: any) => r.date));
+
+  // 2. Fallback check for dates without an explicit exempt row:
+  // Check if fewer than 3 approved questions existed on that date
+  for (const date of gapDates) {
+    if (exemptSet.has(date)) continue;
+
+    const endOfDayIso = `${date}T23:59:59.999+05:30`;
+    const { data: approvedOnDate } = await adminClient
+      .from('questions')
+      .select('id, approved_at, created_at')
+      .eq('status', 'approved')
+      .eq('is_active', true)
+      .or(`approved_at.lte.${endOfDayIso},and(approved_at.is.null,created_at.lte.${endOfDayIso})`);
+
+    const count = approvedOnDate?.length || 0;
+    if (count < 3) {
+      exemptSet.add(date);
+      // Cache in quiz_exempt_dates via service role
+      await adminClient.from('quiz_exempt_dates').upsert({
+        date,
+        reason: 'insufficient_questions',
+      });
+    }
+  }
+
+  return Array.from(exemptSet);
+}
+
+/**
  * Finalize Quiz Attempt:
  * Verifies all questions answered, calculates final score, awards XP via award_xp,
  * and updates student streaks (including freeze day handling and 7-day bonus).
@@ -519,7 +580,8 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
     streak_start_date: currentStreakRow?.streak_start_date ?? null,
   };
 
-  const streakEval = evaluateStreakCompletion(streakData, attempt.quiz_date, maxFreezes);
+  const exemptDates = await resolveExemptDatesInRange(adminClient, streakData.last_quiz_date, attempt.quiz_date);
+  const streakEval = evaluateStreakCompletion(streakData, attempt.quiz_date, maxFreezes, exemptDates);
 
   // Upsert into student_streaks
   await adminClient.from('student_streaks').upsert({
@@ -733,6 +795,25 @@ export async function getStudentStreakAction() {
 
   const isTodayCompleted = streakRow?.last_quiz_date === todayDate;
 
+  // Streak preservation on student dashboard:
+  // If student hasn't completed today, evaluate whether gap dates are exempt
+  let displayStreak = streakRow?.current_streak ?? 0;
+  if (streakRow?.last_quiz_date && !isTodayCompleted) {
+    const diff = daysBetweenDates(streakRow.last_quiz_date, todayDate);
+    if (diff > 1) {
+      const exemptDates = await resolveExemptDatesInRange(adminClient, streakRow.last_quiz_date, todayDate);
+      const gapDates: string[] = [];
+      for (let i = 1; i < diff; i++) {
+        gapDates.push(addDaysToDate(streakRow.last_quiz_date, i));
+      }
+      const unexcusedMissed = gapDates.filter((d) => !exemptDates.includes(d));
+      const freezesRemaining = Math.max(0, 2 - freezeUsed);
+      if (unexcusedMissed.length > freezesRemaining) {
+        displayStreak = 0;
+      }
+    }
+  }
+
   // Read max daily quiz XP from xp_rules and app_settings
   const { data: quizRule } = await adminClient
     .from('xp_rules')
@@ -752,7 +833,7 @@ export async function getStudentStreakAction() {
   const maxDailyQuizXp = baseXP + (extraXP * numQuestions);
 
   return {
-    currentStreak: streakRow?.current_streak ?? 0,
+    currentStreak: displayStreak,
     longestStreak: streakRow?.longest_streak ?? 0,
     freezeDaysRemaining: Math.max(0, 2 - freezeUsed),
     lastQuizDate: streakRow?.last_quiz_date ?? null,

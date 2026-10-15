@@ -81,7 +81,8 @@ export function daysBetweenDates(d1: string, d2: string): number {
 export function evaluateStreakCompletion(
   streak: StudentStreakData,
   quizDate: string,
-  maxFreezeDaysPerMonth: number = 2
+  maxFreezeDaysPerMonth: number = 2,
+  exemptDates: string[] = []
 ): StreakEvaluationResult {
   const currentMonth = getKolkataMonth(quizDate);
 
@@ -171,9 +172,35 @@ export function evaluateStreakCompletion(
   }
 
   // 6. Case: Gap of 1 or more missed days (diffDays >= 2)
-  const missedDates: string[] = [];
+  const gapDates: string[] = [];
   for (let i = 1; i < diffDays; i++) {
-    missedDates.push(addDaysToDate(streak.last_quiz_date, i));
+    gapDates.push(addDaysToDate(streak.last_quiz_date, i));
+  }
+
+  // Order of evaluation: remove exempt dates from missed days FIRST
+  const exemptSet = new Set(exemptDates);
+  const missedDates = gapDates.filter((d) => !exemptSet.has(d));
+
+  // If ALL gap dates were exempt, streak continues (+1 for today, 0 freezes consumed)
+  if (missedDates.length === 0) {
+    const newStreak = streak.current_streak + 1;
+    const isBonusMilestone = newStreak === 7;
+    const startDate = streak.streak_start_date || addDaysToDate(quizDate, -(newStreak - 1));
+
+    return {
+      current_streak: newStreak,
+      longest_streak: Math.max(newStreak, streak.longest_streak),
+      last_quiz_date: quizDate,
+      freeze_days_used_this_month: freezeUsedThisMonth,
+      freeze_days_month: currentMonth,
+      streak_start_date: startDate,
+      event_type: 'streak_increment',
+      freezes_consumed: 0,
+      frozen_dates: [],
+      notes: `Streak extended to ${newStreak} with ${gapDates.length} exempt date(s) in gap.`,
+      eligible_for_7_day_bonus: isBonusMilestone,
+      bonus_milestone: isBonusMilestone ? 7 : null,
+    };
   }
 
   // Group missed days by calendar month (Asia/Kolkata)
