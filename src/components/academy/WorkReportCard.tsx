@@ -1,0 +1,308 @@
+'use client';
+
+import React, { useState, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, Zap, Flame } from 'lucide-react';
+import { getHeatmapColorLevel, mockActivityCalendar } from '@/data/studentDashboardData';
+import { AnimatedCounter } from './AnimatedCounter';
+
+interface WorkReportCardProps {
+  activityData?: Record<string, number>;
+}
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+const WEEKDAY_HEADERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+export function WorkReportCard({ activityData = mockActivityCalendar }: WorkReportCardProps) {
+  // Current real month/year from system (October 2026)
+  const [currentDate, setCurrentDate] = useState(() => new Date(2026, 9, 15)); // Month is 0-indexed (9 = Oct)
+  const [hoveredDay, setHoveredDay] = useState<{
+    dateStr: string;
+    dayNum: number;
+    weekdayName: string;
+    xp: number;
+  } | null>(null);
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  // Navigate months
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1));
+  };
+
+  // Compute calendar days
+  const { calendarCells, monthlyTotalXp, bestMonthlyStreak } = useMemo(() => {
+    // Number of days in current month
+    const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // First day of month (0 = Sun, 1 = Mon ... 6 = Sat)
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    // Shift so Monday is index 0 (0: Mon, 1: Tue, ..., 6: Sun)
+    const startOffset = (firstDayIndex + 6) % 7;
+
+    const cells: Array<{
+      dayNum: number | null;
+      dateStr: string;
+      xp: number;
+      isToday: boolean;
+      weekdayName: string;
+    }> = [];
+
+    // Prepend empty slots before 1st of month
+    for (let i = 0; i < startOffset; i++) {
+      cells.push({
+        dayNum: null,
+        dateStr: '',
+        xp: 0,
+        isToday: false,
+        weekdayName: '',
+      });
+    }
+
+    let totalXp = 0;
+    let currentStreak = 0;
+    let maxStreak = 0;
+
+    // Actual days of month
+    for (let day = 1; day <= totalDaysInMonth; day++) {
+      const formattedMonth = String(month + 1).padStart(2, '0');
+      const formattedDay = String(day).padStart(2, '0');
+      const dateStr = `${year}-${formattedMonth}-${formattedDay}`;
+
+      const dateObj = new Date(year, month, day);
+      const weekdayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+
+      const xp = activityData[dateStr] || 0;
+      totalXp += xp;
+
+      if (xp > 0) {
+        currentStreak++;
+        if (currentStreak > maxStreak) maxStreak = currentStreak;
+      } else {
+        currentStreak = 0;
+      }
+
+      // Check if today (2026-10-15)
+      const isToday = year === 2026 && month === 9 && day === 15;
+
+      cells.push({
+        dayNum: day,
+        dateStr,
+        xp,
+        isToday,
+        weekdayName,
+      });
+    }
+
+    return {
+      calendarCells: cells,
+      monthlyTotalXp: totalXp,
+      bestMonthlyStreak: maxStreak,
+    };
+  }, [year, month, activityData]);
+
+  return (
+    <article
+      aria-label="Student Work Report and Heatmap"
+      className="game-card p-6 flex flex-col justify-between relative overflow-visible animate-card-pop"
+    >
+      {/* Header: Title and Month Chip with Prev/Next Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div>
+          <span className="font-pixel text-[11px] font-bold uppercase tracking-wider text-[#A9B8D6] block">
+            ACTIVITY HEATMAP
+          </span>
+          <h2 className="text-xl font-bold text-white font-body">Work Report</h2>
+        </div>
+
+        {/* Month Selector Chip */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#081534] border border-[#1E3A78] shadow-inner">
+          <button
+            type="button"
+            onClick={handlePrevMonth}
+            className="p-1 rounded-lg text-[#A9B8D6] hover:text-white hover:bg-[#7CC4FF]/20 transition-colors focus:outline-none focus:ring-1 focus:ring-[#7CC4FF]"
+            aria-label="Previous month"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          <span className="font-pixel text-xs font-bold text-[#7CC4FF] px-2 min-w-[120px] text-center select-none">
+            {MONTH_NAMES[month]} {year}
+          </span>
+
+          <button
+            type="button"
+            onClick={handleNextMonth}
+            className="p-1 rounded-lg text-[#A9B8D6] hover:text-white hover:bg-[#7CC4FF]/20 transition-colors focus:outline-none focus:ring-1 focus:ring-[#7CC4FF]"
+            aria-label="Next month"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Relative container for Heatmap Grid + Floating Tooltip */}
+      <div className="relative my-2">
+        {/* Floating Tooltip (bg #06080F, border #1E3A78, white text, XP in orange #FFB27A) */}
+        {hoveredDay && (
+          <div
+            role="tooltip"
+            className="absolute -top-11 left-1/2 -translate-x-1/2 z-50 pointer-events-none px-3 py-1.5 rounded-xl bg-[#06080F] border border-[#1E3A78] shadow-[0_4px_16px_rgba(0,0,0,0.85)] text-xs whitespace-nowrap animate-card-pop"
+          >
+            <span className="font-semibold text-white">
+              {hoveredDay.weekdayName}, {hoveredDay.dayNum}{' '}
+              {MONTH_NAMES[month].slice(0, 3)}:
+            </span>{' '}
+            {hoveredDay.xp > 0 ? (
+              <span className="font-bold text-[#FFB27A] font-pixel">
+                +{hoveredDay.xp} XP
+              </span>
+            ) : (
+              <span className="text-[#6C7FAD]">No quest completed</span>
+            )}
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#06080F] border-r border-b border-[#1E3A78] rotate-45" />
+          </div>
+        )}
+
+        {/* Weekday Column Headers (M T W T F S S) */}
+        <div className="grid grid-cols-7 gap-2 mb-2 text-center">
+          {WEEKDAY_HEADERS.map((dayLabel, idx) => (
+            <div
+              key={idx}
+              className="text-[11px] font-pixel font-bold text-[#6C7FAD]"
+            >
+              {dayLabel}
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar Squares Grid */}
+        <div className="grid grid-cols-7 gap-2">
+          {calendarCells.map((cell, index) => {
+            if (cell.dayNum === null) {
+              return (
+                <div
+                  key={`empty-${index}`}
+                  className="w-full aspect-square rounded-lg opacity-0 pointer-events-none"
+                  aria-hidden="true"
+                />
+              );
+            }
+
+            const { color, hasGlow, level } = getHeatmapColorLevel(cell.xp);
+            // Outline rule: Orange (#FFB27A) unless it's highest level (level 4), then white
+            const todayOutlineClass =
+              level === 4
+                ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0F2350]'
+                : 'ring-2 ring-[#FFB27A] ring-offset-2 ring-offset-[#0F2350]';
+
+            // Text contrast: black on light blue / orange (levels 3 and 4), white/muted on dark navy
+            const textColor = level >= 3 ? '#06080F' : '#A9B8D6';
+
+            return (
+              <button
+                key={cell.dateStr}
+                type="button"
+                onMouseEnter={() =>
+                  setHoveredDay({
+                    dateStr: cell.dateStr,
+                    dayNum: cell.dayNum!,
+                    weekdayName: cell.weekdayName,
+                    xp: cell.xp,
+                  })
+                }
+                onMouseLeave={() => setHoveredDay(null)}
+                onFocus={() =>
+                  setHoveredDay({
+                    dateStr: cell.dateStr,
+                    dayNum: cell.dayNum!,
+                    weekdayName: cell.weekdayName,
+                    xp: cell.xp,
+                  })
+                }
+                onBlur={() => setHoveredDay(null)}
+                aria-label={`${cell.weekdayName}, ${cell.dayNum} ${MONTH_NAMES[month]}: ${
+                  cell.xp > 0 ? cell.xp + ' XP' : 'No XP'
+                }`}
+                className={`w-full aspect-square rounded-lg flex items-center justify-center text-[10px] font-pixel font-bold transition-all relative ${
+                  cell.isToday ? todayOutlineClass : ''
+                } hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#7CC4FF]`}
+                style={{
+                  backgroundColor: color,
+                  color: textColor,
+                  boxShadow: hasGlow ? '0 0 12px rgba(255, 178, 122, 0.55)' : undefined,
+                }}
+              >
+                <span>{cell.dayNum}</span>
+                {cell.isToday && (
+                  <span
+                    className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
+                      level === 4 ? 'bg-white shadow-[0_0_6px_#ffffff]' : 'bg-[#FFB27A] shadow-[0_0_6px_#FFB27A]'
+                    }`}
+                    title="Today"
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Heatmap Footer: Legend & Monthly Stats */}
+      <div className="mt-5 pt-3 border-t border-[#1E3A78]/70 flex flex-wrap items-center justify-between gap-3 text-xs">
+        {/* Power-up Legend: Less -> More (#14214A, #1F4E8C, #4A97D6, #8FD0FF, #FFB27A) */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-[#6C7FAD] font-medium">Less</span>
+          <div
+            className="w-3.5 h-3.5 rounded-sm bg-[#14214A] border border-[#1E3A78]"
+            title="0 XP"
+          />
+          <div
+            className="w-3.5 h-3.5 rounded-sm bg-[#1F4E8C]"
+            title="1 - 40 XP"
+          />
+          <div
+            className="w-3.5 h-3.5 rounded-sm bg-[#4A97D6]"
+            title="41 - 80 XP"
+          />
+          <div
+            className="w-3.5 h-3.5 rounded-sm bg-[#8FD0FF]"
+            title="81 - 120 XP"
+          />
+          <div
+            className="w-3.5 h-3.5 rounded-sm bg-[#FFB27A] shadow-[0_0_6px_rgba(255,178,122,0.6)]"
+            title="121+ XP"
+          />
+          <span className="text-[10px] text-[#FFB27A] font-bold">More</span>
+        </div>
+
+        {/* Monthly Summary Badges */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 text-[11px] text-[#A9B8D6]">
+            <Zap className="w-3.5 h-3.5 text-[#FFB27A]" />
+            <span>Month XP:</span>
+            <span className="font-pixel font-bold text-white">
+              <AnimatedCounter value={monthlyTotalXp} />
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 text-[11px] text-[#FFB27A]">
+            <Flame className="w-3.5 h-3.5 fill-[#FFB27A]" />
+            <span>Best Streak:</span>
+            <span className="font-pixel font-bold text-white">
+              {bestMonthlyStreak}d
+            </span>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
