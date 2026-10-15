@@ -22,6 +22,7 @@ export default function StudentDashboardPage() {
     freezeDaysRemaining: number;
     lastQuizDate: string | null;
     isTodayCompleted: boolean;
+    maxDailyQuizXp: number;
     loading: boolean;
   }>({
     currentStreak: 0,
@@ -29,6 +30,7 @@ export default function StudentDashboardPage() {
     freezeDaysRemaining: 2,
     lastQuizDate: null,
     isTodayCompleted: false,
+    maxDailyQuizXp: 40,
     loading: true,
   });
 
@@ -115,7 +117,7 @@ export default function StudentDashboardPage() {
                 <p className="text-xs text-slate-300 max-w-lg">
                   {streakInfo.isTodayCompleted
                     ? 'Awesome job! You earned your daily quiz XP and maintained your streak. Feel free to practice more to sharpen your skills.'
-                    : 'Answer 5 concept questions to reinforce your learning, earn +15 to +40 XP towards your level, and extend your study streak.'}
+                    : `Answer 5 concept questions to reinforce your learning, earn up to ${streakInfo.maxDailyQuizXp || 40} XP towards your level, and extend your study streak.`}
                 </p>
               </div>
             </div>
@@ -152,7 +154,11 @@ export default function StudentDashboardPage() {
                     : 'bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 shadow-rose-500/25'
                 }`}
               >
-                <span>{streakInfo.isTodayCompleted ? 'Practice Mode' : "Start Today's Quiz"}</span>
+                <span>
+                  {streakInfo.isTodayCompleted
+                    ? 'Practice Mode'
+                    : `Start Today's Quiz (earn up to ${streakInfo.maxDailyQuizXp || 40} XP)`}
+                </span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>

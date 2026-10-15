@@ -732,6 +732,24 @@ export async function getStudentStreakAction() {
 
   const isTodayCompleted = streakRow?.last_quiz_date === todayDate;
 
+  // Read max daily quiz XP from xp_rules and app_settings
+  const { data: quizRule } = await adminClient
+    .from('xp_rules')
+    .select('base_xp, extra_xp')
+    .eq('action_type', 'DAILY_QUIZ')
+    .maybeSingle();
+
+  const { data: settingRow } = await adminClient
+    .from('app_settings')
+    .select('value')
+    .eq('key', 'questions_per_daily_quiz')
+    .maybeSingle();
+
+  const numQuestions = typeof settingRow?.value === 'number' ? settingRow.value : 5;
+  const baseXP = quizRule?.base_xp ?? 15;
+  const extraXP = quizRule?.extra_xp ?? 5;
+  const maxDailyQuizXp = baseXP + (extraXP * numQuestions);
+
   return {
     currentStreak: streakRow?.current_streak ?? 0,
     longestStreak: streakRow?.longest_streak ?? 0,
@@ -739,5 +757,6 @@ export async function getStudentStreakAction() {
     lastQuizDate: streakRow?.last_quiz_date ?? null,
     isTodayCompleted,
     todayDate,
+    maxDailyQuizXp,
   };
 }
