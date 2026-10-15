@@ -98,6 +98,39 @@ export default function StudentLearnPage() {
           </div>
         </div>
 
+        {/* Learning Quests Banner */}
+        <div className="relative group overflow-hidden rounded-2xl border border-indigo-500/40 bg-gradient-to-b from-[#121629] via-[#0d1020] to-[#07080b] p-5 shadow-xl shadow-indigo-950/40 hover:border-indigo-400/80 transition-all duration-300">
+          <div className="flex items-start justify-between gap-3 mb-3 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-400/40 flex items-center justify-center text-indigo-300 shadow-inner">
+                <Sparkles className="w-5 h-5 text-indigo-400" />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-400 bg-indigo-400/10 border border-indigo-400/30 px-2 py-0.5 rounded">
+                  NEW IN PHASE 3
+                </span>
+                <h3 className="text-sm font-bold text-white mt-1">Learning Quests</h3>
+              </div>
+            </div>
+            <span className="text-xs font-mono font-bold text-amber-300 bg-amber-400/10 border border-amber-400/30 px-2 py-0.5 rounded">
+              Up to +75 XP
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-300 leading-relaxed mb-4 relative z-10">
+            Track weekly milestones, complete quiz goals, and earn unique ledger rewards verified on the server.
+          </p>
+
+          <Link
+            href="/student/quests"
+            id="link-student-quests"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 text-white font-bold text-xs tracking-wider uppercase transition-all shadow-lg shadow-indigo-500/25 active:scale-[0.98]"
+          >
+            <span>View Active Quests</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
         {/* Existing PlaceholderCard */}
         <PlaceholderCard
           title="Learn Hub & Practice Engine"
