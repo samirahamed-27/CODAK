@@ -181,5 +181,59 @@ describe('Streak & Freeze Days Calculation Engine', () => {
       expect(res.freezes_consumed).toBe(0);
       expect(res.notes).toContain('already counted');
     });
+
+    it('10. Streak reset and reaching 7 again generates a new streak_start_date for repeat bonus eligibility', () => {
+      // 1. Initial streak reaches 7 days (Oct 01 to Oct 07)
+      let streak: StudentStreakData = {
+        current_streak: 6,
+        longest_streak: 6,
+        last_quiz_date: '2026-10-06',
+        freeze_days_used_this_month: 0,
+        freeze_days_month: '2026-10',
+        streak_start_date: '2026-10-01',
+      };
+
+      const resFirst7 = evaluateStreakCompletion(streak, '2026-10-07');
+      expect(resFirst7.current_streak).toBe(7);
+      expect(resFirst7.eligible_for_7_day_bonus).toBe(true);
+      expect(resFirst7.streak_start_date).toBe('2026-10-01');
+
+      // 2. Student misses 5 days (Oct 08 through Oct 12), exceeding available freezes -> resets on Oct 13
+      streak = {
+        current_streak: resFirst7.current_streak,
+        longest_streak: resFirst7.longest_streak,
+        last_quiz_date: resFirst7.last_quiz_date,
+        freeze_days_used_this_month: 2, // Freezes exhausted
+        freeze_days_month: '2026-10',
+        streak_start_date: resFirst7.streak_start_date,
+      };
+
+      const resReset = evaluateStreakCompletion(streak, '2026-10-13');
+      expect(resReset.current_streak).toBe(1);
+      expect(resReset.event_type).toBe('streak_reset');
+      expect(resReset.streak_start_date).toBe('2026-10-13'); // New start date!
+
+      // 3. Student builds new streak consecutively for 6 more days to reach 7 again on Oct 19
+      streak = {
+        current_streak: 6,
+        longest_streak: 7,
+        last_quiz_date: '2026-10-18',
+        freeze_days_used_this_month: 2,
+        freeze_days_month: '2026-10',
+        streak_start_date: '2026-10-13',
+      };
+
+      const resSecond7 = evaluateStreakCompletion(streak, '2026-10-19');
+      expect(resSecond7.current_streak).toBe(7);
+      expect(resSecond7.eligible_for_7_day_bonus).toBe(true);
+      expect(resSecond7.streak_start_date).toBe('2026-10-13'); // Distinct start date!
+
+      // Ledger references are distinct:
+      const ref1 = `streak_7_bonus_student_${resFirst7.streak_start_date}_${resFirst7.bonus_milestone}`;
+      const ref2 = `streak_7_bonus_student_${resSecond7.streak_start_date}_${resSecond7.bonus_milestone}`;
+      expect(ref1).not.toBe(ref2);
+      expect(ref1).toBe('streak_7_bonus_student_2026-10-01_7');
+      expect(ref2).toBe('streak_7_bonus_student_2026-10-13_7');
+    });
   });
 });

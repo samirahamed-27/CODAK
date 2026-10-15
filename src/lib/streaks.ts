@@ -11,6 +11,7 @@ export interface StudentStreakData {
   last_quiz_date: string | null; // YYYY-MM-DD
   freeze_days_used_this_month: number;
   freeze_days_month: string; // YYYY-MM
+  streak_start_date?: string | null; // YYYY-MM-DD
 }
 
 export interface StreakEvaluationResult {
@@ -19,11 +20,21 @@ export interface StreakEvaluationResult {
   last_quiz_date: string;
   freeze_days_used_this_month: number;
   freeze_days_month: string;
+  streak_start_date: string;
   event_type: 'streak_increment' | 'streak_freeze' | 'streak_reset' | 'none';
   freezes_consumed: number;
   notes: string;
   eligible_for_7_day_bonus: boolean;
   bonus_milestone: number | null; // e.g. 7, 14, 21...
+}
+
+/**
+ * Adds or subtracts days from a YYYY-MM-DD date string.
+ */
+export function addDaysToDate(dateStr: string, days: number): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().split('T')[0];
 }
 
 /**
@@ -84,6 +95,7 @@ export function evaluateStreakCompletion(
       last_quiz_date: quizDate,
       freeze_days_used_this_month: freezeUsedThisMonth,
       freeze_days_month: currentMonth,
+      streak_start_date: streak.streak_start_date || quizDate,
       event_type: 'none',
       freezes_consumed: 0,
       notes: 'Quiz already counted for this date.',
@@ -100,6 +112,7 @@ export function evaluateStreakCompletion(
       last_quiz_date: quizDate,
       freeze_days_used_this_month: freezeUsedThisMonth,
       freeze_days_month: currentMonth,
+      streak_start_date: quizDate,
       event_type: 'streak_increment',
       freezes_consumed: 0,
       notes: 'Initial daily quiz completed. Streak started.',
@@ -119,6 +132,7 @@ export function evaluateStreakCompletion(
       last_quiz_date: streak.last_quiz_date,
       freeze_days_used_this_month: freezeUsedThisMonth,
       freeze_days_month: currentMonth,
+      streak_start_date: streak.streak_start_date || streak.last_quiz_date,
       event_type: 'none',
       freezes_consumed: 0,
       notes: 'Historical quiz date cannot override newer streak date.',
@@ -131,6 +145,7 @@ export function evaluateStreakCompletion(
   if (diffDays === 1) {
     const newStreak = streak.current_streak + 1;
     const isBonusMilestone = newStreak > 0 && newStreak % 7 === 0;
+    const startDate = streak.streak_start_date || addDaysToDate(quizDate, -(newStreak - 1));
 
     return {
       current_streak: newStreak,
@@ -138,6 +153,7 @@ export function evaluateStreakCompletion(
       last_quiz_date: quizDate,
       freeze_days_used_this_month: freezeUsedThisMonth,
       freeze_days_month: currentMonth,
+      streak_start_date: startDate,
       event_type: 'streak_increment',
       freezes_consumed: 0,
       notes: `Consecutive daily quiz completed. Streak extended to ${newStreak}.`,
@@ -155,6 +171,7 @@ export function evaluateStreakCompletion(
     const newFreezeUsed = freezeUsedThisMonth + missedDays;
     const newStreak = streak.current_streak + 1; // Preserved across freeze, then incremented by today
     const isBonusMilestone = newStreak > 0 && newStreak % 7 === 0;
+    const startDate = streak.streak_start_date || addDaysToDate(quizDate, -(newStreak - 1));
 
     return {
       current_streak: newStreak,
@@ -162,6 +179,7 @@ export function evaluateStreakCompletion(
       last_quiz_date: quizDate,
       freeze_days_used_this_month: newFreezeUsed,
       freeze_days_month: currentMonth,
+      streak_start_date: startDate,
       event_type: 'streak_freeze',
       freezes_consumed: missedDays,
       notes: `Streak preserved using ${missedDays} freeze day(s). Streak extended to ${newStreak}.`,
@@ -176,6 +194,7 @@ export function evaluateStreakCompletion(
       last_quiz_date: quizDate,
       freeze_days_used_this_month: freezeUsedThisMonth,
       freeze_days_month: currentMonth,
+      streak_start_date: quizDate,
       event_type: 'streak_reset',
       freezes_consumed: 0,
       notes: `Missed ${missedDays} day(s) but only had ${availableFreezes} freeze(s) left. Streak reset to 1.`,
