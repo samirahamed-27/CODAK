@@ -1,17 +1,14 @@
-'use client';
-
 import React from 'react';
 import Link from 'next/link';
 import { Sparkles, Trophy, BookOpen, Gamepad2, ArrowRight } from 'lucide-react';
 import Shuffle from '@/components/Shuffle';
-import DodgeField from '@/components/DodgeField';
 
 export default function HomePage() {
   return (
     <div className="w-full min-h-screen flex flex-col justify-between">
       <main className="w-full max-w-5xl mx-auto p-6 sm:p-12 flex flex-col justify-between flex-1">
         {/* Top Bar */}
-        <header className="flex items-center justify-between py-2 border-b border-[#1D2233]/60 mb-6 relative z-20">
+        <header className="flex items-center justify-between py-4 border-b border-[#1D2233]/60 mb-6">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-[#10131E] border border-sky-400/40 flex items-center justify-center text-xl shadow-lg shadow-sky-500/10">
               🎮
@@ -28,41 +25,12 @@ export default function HomePage() {
               style={{ fontSize: '1.25rem', letterSpacing: '0.06em' }}
             />
           </div>
-          <div className="flex items-center justify-end">
-            <DodgeField
-              patience={3}
-              fieldHeight={56}
-              reach={56}
-              radius={90}
-              axis="both"
-              inkColor="#7DD3FC"
-              contrastColor="#07080B"
-              className="w-48 sm:w-56"
-            >
-              {({ dodges, gave }) => (
-                <Link
-                  href="/login"
-                  className={`text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl transition-all shadow-sm select-none whitespace-nowrap flex items-center justify-center gap-1.5 ${
-                    gave
-                      ? 'bg-sky-400 text-slate-950 font-bold shadow-[0_0_16px_rgba(125,211,252,0.45)] scale-105'
-                      : dodges
-                      ? 'bg-sky-500/15 border border-sky-400/50 text-sky-200'
-                      : 'bg-[#10131E] border border-[#1D2233] text-slate-200 hover:text-white hover:border-sky-400/50 hover:bg-[#141826]'
-                  }`}
-                >
-                  {gave
-                    ? 'Sign In →'
-                    : dodges === 1
-                    ? 'Too slow! 😜'
-                    : dodges === 2
-                    ? 'Almost! 🏃'
-                    : dodges >= 3
-                    ? 'Okay, okay! 😂'
-                    : 'Sign In'}
-                </Link>
-              )}
-            </DodgeField>
-          </div>
+          <Link
+            href="/login"
+            className="text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl bg-[#10131E] border border-[#1D2233] text-slate-200 hover:text-white hover:border-sky-400/50 hover:bg-[#141826] transition-all shadow-sm"
+          >
+            Sign In
+          </Link>
         </header>
 
         {/* Hero Content */}
