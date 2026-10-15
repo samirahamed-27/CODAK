@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -18,6 +18,11 @@ interface NavbarProps {
 export function Navbar({ role = 'student', userName }: NavbarProps) {
   const router = useRouter();
   const supabase = createClient();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -96,23 +101,25 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
           />
         </Link>
 
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3" suppressHydrationWarning>
           {getRoleBadge()}
           {userName && (
             <span className="hidden sm:inline text-xs text-slate-400 font-medium">
               {userName}
             </span>
           )}
-          <StaggeredMenu
-            items={menuItems}
-            socialItems={socialLinks}
-            displaySocials={true}
-            displayItemNumbering={true}
-            colors={['#10131E', '#1D2233', '#162846']}
-            accentColor="#7DD3FC"
-            menuButtonColor="#E2E8F0"
-            openMenuButtonColor="#7DD3FC"
-          />
+          {mounted && (
+            <StaggeredMenu
+              items={menuItems}
+              socialItems={socialLinks}
+              displaySocials={true}
+              displayItemNumbering={true}
+              colors={['#10131E', '#1D2233', '#162846']}
+              accentColor="#7DD3FC"
+              menuButtonColor="#E2E8F0"
+              openMenuButtonColor="#7DD3FC"
+            />
+          )}
           <button
             onClick={handleSignOut}
             title="Sign out"

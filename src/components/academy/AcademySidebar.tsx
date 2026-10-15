@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Zap } from 'lucide-react';
 import { levelFromXp } from '@/lib/levels';
 import StaggeredMenu, { StaggeredMenuItem } from '@/components/StaggeredMenu';
@@ -11,6 +11,11 @@ interface AcademySidebarProps {
 
 export function AcademySidebar({ totalXp = 1420 }: AcademySidebarProps) {
   const levelInfo = levelFromXp(totalXp);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const menuItems: StaggeredMenuItem[] = [
     { label: 'Home', ariaLabel: 'Go to student home', link: '/student' },
@@ -59,21 +64,23 @@ export function AcademySidebar({ totalXp = 1420 }: AcademySidebarProps) {
   );
 
   return (
-    <div className="fixed top-5 left-5 z-40">
-      <StaggeredMenu
-        position="left"
-        headerTitle="ACADEMY"
-        items={menuItems}
-        socialItems={accountLinks}
-        displaySocials={true}
-        displayItemNumbering={true}
-        colors={['#081024', '#101B3B', '#162854']}
-        accentColor="#7DD3FC"
-        menuButtonColor="#F1F5F9"
-        openMenuButtonColor="#7DD3FC"
-      >
-        {renderLevelCard()}
-      </StaggeredMenu>
+    <div className="fixed top-5 left-5 z-40" suppressHydrationWarning>
+      {mounted && (
+        <StaggeredMenu
+          position="left"
+          headerTitle="ACADEMY"
+          items={menuItems}
+          socialItems={accountLinks}
+          displaySocials={true}
+          displayItemNumbering={true}
+          colors={['#081024', '#101B3B', '#162854']}
+          accentColor="#7DD3FC"
+          menuButtonColor="#F1F5F9"
+          openMenuButtonColor="#7DD3FC"
+        >
+          {renderLevelCard()}
+        </StaggeredMenu>
+      )}
     </div>
   );
 }
