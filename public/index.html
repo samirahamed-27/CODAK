@@ -190,51 +190,96 @@
         </div>
       </div>
 
-      <!-- Active Code Lab: 3 Stacked Sections (~25%, ~50%, ~25%) -->
+      <!-- Active Code Lab: 3 Stacked Sections -->
       <div id="code-panel-content" class="code-panel-sections">
-        <!-- Section 1: Question Picker (Top, ~25% height) -->
+        <!-- Section 1: Question Picker (Top) -->
         <section id="question-picker" class="code-section" aria-label="Question Picker">
           <div class="section-header font-pixel">
-            <span class="section-title">■ [01] ACTIVE_CHALLENGE</span>
-            <span class="section-badge font-code">STATUS: AWAITING_MOVE</span>
+            <span class="section-title">■ [01] QUESTION_PICKER</span>
+            <span id="picker-status-badge" class="section-badge font-code">SELECT DIFFICULTY TO ATTACK</span>
           </div>
-          <div class="section-body font-code">
-            <div class="code-placeholder-text">
-              &gt; SELECT AN ATTACK IN THE BATTLE ARENA TO LOAD AN ALGORITHMIC CS CHALLENGE...
-            </div>
-            <div class="challenge-meta font-pixel">
-              <span>BUFF: +30 ATK PWR</span>
-              <span>TYPE: DATA_STRUCTURES</span>
+          <div class="section-body picker-body">
+            <!-- 3 Challenge Cards: Easy, Medium, Hard -->
+            <div class="picker-cards-grid" id="picker-cards-container">
+              <!-- Rendered via JS -->
             </div>
           </div>
         </section>
 
-        <!-- Section 2: Editor Area (Middle, ~50% height) -->
+        <!-- Section 2: Editor Area (Middle) -->
         <section id="editor-area" class="code-section" aria-label="Code Editor">
           <div class="section-header font-pixel">
-            <span class="section-title">■ [02] CODE_EDITOR.PY</span>
-            <span class="section-badge font-code">RUNTIME: PYTHON 3.12</span>
+            <div class="editor-header-left">
+              <span class="section-title">■ [02] CODE_EDITOR.JS</span>
+              <span id="current-challenge-badge" class="badge-difficulty font-pixel">NO MOVE SELECTED</span>
+            </div>
+            <!-- Turn Timer Bar (60s easy, 90s medium, 120s hard) -->
+            <div id="turn-timer-container" class="turn-timer-container font-pixel">
+              <span id="turn-timer-text" class="turn-timer-text">TIME: --</span>
+              <div class="turn-timer-track">
+                <div id="turn-timer-fill" class="turn-timer-fill"></div>
+              </div>
+            </div>
           </div>
-          <div class="section-body editor-body font-code">
-            <div class="editor-line"><span class="line-idx">1</span><span class="token-kw">def</span> <span class="token-fn">cast_codemon_attack</span>(attacker, defender):</div>
-            <div class="editor-line"><span class="line-idx">2</span>    <span class="token-cmt"># Solve logic challenge to multiply power</span></div>
-            <div class="editor-line"><span class="line-idx">3</span>    power = attacker.base_attack * <span class="token-num">1.5</span></div>
-            <div class="editor-line"><span class="line-idx">4</span>    <span class="token-kw">return</span> max(<span class="token-num">1</span>, int(power - defender.defense * <span class="token-num">0.5</span>))</div>
-            <div class="editor-line"><span class="line-idx">5</span></div>
-            <div class="editor-line"><span class="line-idx">6</span><span class="token-cursor">█</span></div>
+
+          <!-- Challenge Description & Hint Box -->
+          <div class="challenge-info-strip font-code">
+            <div class="challenge-title-row">
+              <h3 id="editor-challenge-title" class="challenge-title text-yellow font-pixel">SELECT A CHALLENGE CARD ABOVE</h3>
+              <span id="editor-challenge-topic" class="challenge-topic-tag font-pixel">TOPIC: NONE</span>
+            </div>
+            <p id="editor-challenge-desc" class="challenge-desc">Pick an attack challenge above (Easy: 10 DMG, Medium: 20 DMG, Hard: 35 DMG) to load your coding turn.</p>
+            <div id="challenge-hint-box" class="challenge-hint-box" style="display: none;">
+              <span class="hint-label text-yellow font-pixel">💡 HINT:</span>
+              <span id="challenge-hint-text"></span>
+            </div>
+          </div>
+
+          <!-- Code Editor Body: Line numbers in a gutter + Textarea -->
+          <div class="editor-container font-code">
+            <div id="editor-gutter" class="editor-gutter" aria-hidden="true">1</div>
+            <textarea
+              id="code-textarea"
+              class="code-textarea font-code"
+              spellcheck="false"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              aria-label="JavaScript Code Editor"
+              placeholder="// Select a challenge card above to write your attack function..."
+            ></textarea>
+          </div>
+
+          <!-- Editor Actions Toolbar: RUN TESTS, HINT, RESET CODE -->
+          <div class="editor-toolbar font-pixel">
+            <div class="toolbar-left">
+              <button type="button" id="btn-run-tests" class="pixel-btn pixel-btn-green font-pixel" aria-label="Run test suite">
+                ▶ RUN TESTS
+              </button>
+              <button type="button" id="btn-hint" class="pixel-btn pixel-btn-blue font-pixel" aria-label="Reveal hint (-5 points)">
+                ? HINT (-5 PTS)
+              </button>
+            </div>
+            <div class="toolbar-right">
+              <button type="button" id="btn-reset-code" class="pixel-btn pixel-btn-dark font-pixel" aria-label="Reset code to starter signature">
+                ↺ RESET
+              </button>
+            </div>
           </div>
         </section>
 
-        <!-- Section 3: Output Console (Bottom, ~25% height) -->
+        <!-- Section 3: Output Console (Bottom) -->
         <section id="output-console" class="code-section" aria-label="Output Console">
           <div class="section-header font-pixel">
-            <span class="section-title">■ [03] OUTPUT_CONSOLE</span>
-            <span class="section-badge font-code text-green">SYS: READY</span>
+            <div class="console-header-left">
+              <span class="section-title">■ [03] OUTPUT_CONSOLE</span>
+            </div>
+            <span id="console-status-badge" class="section-badge font-code text-green">SYS: READY</span>
           </div>
-          <div class="section-body console-body font-code">
-            <div class="console-line">&gt; Codemons Sandbox Kernel initialized.</div>
-            <div class="console-line">&gt; 160x144 canvas buffer synchronized.</div>
-            <div class="console-line text-green">&gt; READY: Select battle moves to run test suites.</div>
+          <div id="console-output" class="section-body console-body font-code" role="log" aria-live="polite">
+            <div class="console-line text-green">&gt; Codemons Sandbox Kernel v2.4 initialized.</div>
+            <div class="console-line">&gt; Web Worker secure test runner mounted.</div>
+            <div class="console-line text-yellow">&gt; READY: Select an attack card to begin your turn.</div>
           </div>
         </section>
       </div>
@@ -243,6 +288,7 @@
 
   <!-- Game Scripts -->
   <script src="js/data.js"></script>
+  <script src="js/runner.js"></script>
   <script src="js/battle.js"></script>
   <script src="js/main.js"></script>
 </body>

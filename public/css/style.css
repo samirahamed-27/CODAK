@@ -807,133 +807,434 @@ html, body {
 
 /* 1. #question-picker (~25% height) */
 #question-picker {
+  flex: 0 0 25%;
   height: 25%;
-  min-height: 25%;
-  max-height: 25%;
+  min-height: 160px;
   border-bottom: 4px solid var(--pixel-dark);
+  display: flex;
+  flex-direction: column;
+}
+
+.picker-body {
+  padding: 10px 14px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background-color: var(--pixel-black);
+}
+
+.picker-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  height: 100%;
+  align-items: stretch;
+}
+
+/* Question Picker Cards */
+.picker-card {
+  background-color: var(--pixel-dark);
+  border: 2px solid var(--gb-mid);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+  user-select: none;
+  position: relative;
+  outline: none;
+}
+
+.picker-card:hover:not(.locked) {
+  border-color: var(--pixel-white);
+  transform: translateY(-2px);
+  background-color: #22303f;
+}
+
+.picker-card:focus-visible:not(.locked) {
+  border-color: var(--pixel-yellow);
+  box-shadow: 0 0 0 2px var(--pixel-yellow);
+}
+
+/* Card Difficulty Themes */
+.picker-card.easy {
+  border-top: 4px solid var(--pixel-green);
+}
+.picker-card.easy .picker-badge {
+  background-color: var(--pixel-green-dark);
+  color: var(--pixel-white);
+}
+
+.picker-card.medium {
+  border-top: 4px solid var(--pixel-yellow);
+}
+.picker-card.medium .picker-badge {
+  background-color: var(--pixel-yellow-dark);
+  color: var(--pixel-white);
+}
+
+.picker-card.hard {
+  border-top: 4px solid var(--pixel-red);
+}
+.picker-card.hard .picker-badge {
+  background-color: var(--pixel-red-dark);
+  color: var(--pixel-white);
+}
+
+/* Card Header: Difficulty & DMG */
+.picker-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 4px;
+}
+
+.picker-badge {
+  font-family: var(--font-game);
+  font-size: 9px;
+  padding: 2px 6px;
+  letter-spacing: 0.05em;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.picker-card-dmg {
+  font-family: var(--font-game);
+  font-size: 9px;
+  color: var(--pixel-yellow);
+  white-space: nowrap;
+}
+
+/* Card Content */
+.picker-card-title {
+  font-family: var(--font-game);
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--pixel-white);
+  margin-bottom: 4px;
+  letter-spacing: 0.03em;
+}
+
+.picker-card-desc {
+  font-family: var(--font-code);
+  font-size: 18px;
+  line-height: 1.25;
+  color: var(--gb-lightest);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.picker-card-topic {
+  font-family: var(--font-game);
+  font-size: 8px;
+  color: var(--pixel-blue);
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+}
+
+/* Card Selected State */
+.picker-card.selected {
+  border: 3px solid var(--pixel-yellow) !important;
+  background-color: #202b36;
+  box-shadow: 0 0 10px rgba(244, 180, 27, 0.4);
+  animation: cardSelectedBlink 1s infinite step-start;
+}
+
+@keyframes cardSelectedBlink {
+  50% {
+    border-color: var(--pixel-white) !important;
+  }
+}
+
+/* Card Locked State */
+.picker-card.locked {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(0.7);
+  border-color: var(--gb-dark);
 }
 
 /* 2. #editor-area (~50% height) */
 #editor-area {
-  height: 50%;
-  min-height: 50%;
-  max-height: 50%;
+  flex: 1 1 50%;
+  min-height: 260px;
   border-bottom: 4px solid var(--pixel-dark);
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.badge-difficulty {
+  font-size: 9px;
+  padding: 2px 6px;
+  background-color: var(--gb-mid);
+  color: var(--pixel-white);
+  border: 1px solid var(--gb-light);
+  letter-spacing: 0.04em;
+}
+
+.badge-difficulty.easy {
+  background-color: var(--pixel-green-dark);
+  border-color: var(--pixel-green);
+  color: var(--pixel-white);
+}
+
+.badge-difficulty.medium {
+  background-color: var(--pixel-yellow-dark);
+  border-color: var(--pixel-yellow);
+  color: var(--pixel-white);
+}
+
+.badge-difficulty.hard {
+  background-color: var(--pixel-red-dark);
+  border-color: var(--pixel-red);
+  color: var(--pixel-white);
+}
+
+/* Turn Timer Bar (60s easy, 90s medium, 120s hard) */
+.turn-timer-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.turn-timer-text {
+  font-family: var(--font-game);
+  font-size: 10px;
+  color: var(--pixel-yellow);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.turn-timer-track {
+  width: 110px;
+  height: 12px;
+  background-color: var(--gb-darkest);
+  border: 2px solid var(--gb-mid);
+  overflow: hidden;
+  position: relative;
+}
+
+.turn-timer-fill {
+  height: 100%;
+  width: 100%;
+  background-color: var(--pixel-green);
+  transition: width 0.25s linear, background-color 0.3s ease;
+}
+
+.turn-timer-fill.timer-warning {
+  background-color: var(--pixel-yellow);
+}
+
+.turn-timer-fill.timer-danger {
+  background-color: var(--pixel-red);
+  animation: timerDangerPulse 0.5s infinite step-start;
+}
+
+@keyframes timerDangerPulse {
+  50% { opacity: 0.4; }
+}
+
+/* Challenge Info Strip */
+.challenge-info-strip {
+  padding: 8px 16px;
+  background-color: #121820;
+  border-bottom: 2px solid var(--pixel-dark);
+  flex-shrink: 0;
+}
+
+.challenge-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  gap: 8px;
+}
+
+.challenge-title {
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--pixel-yellow);
+  margin: 0;
+}
+
+.challenge-topic-tag {
+  font-size: 9px;
+  color: var(--pixel-blue);
+  background-color: var(--pixel-dark);
+  padding: 2px 6px;
+  border: 1px solid var(--pixel-mid);
+}
+
+.challenge-desc {
+  font-family: var(--font-code);
+  font-size: 20px;
+  line-height: 1.3;
+  color: var(--pixel-white);
+  margin: 0;
+}
+
+.challenge-hint-box {
+  margin-top: 6px;
+  padding: 6px 10px;
+  background-color: rgba(244, 180, 27, 0.12);
+  border-left: 3px solid var(--pixel-yellow);
+  font-family: var(--font-code);
+  font-size: 19px;
+  line-height: 1.3;
+  color: var(--pixel-yellow);
+}
+
+.hint-label {
+  font-size: 10px;
+  margin-right: 6px;
+}
+
+/* Code Editor Body: Line numbers gutter + Textarea */
+.editor-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background-color: var(--pixel-black);
+  position: relative;
+  overflow: hidden;
+  border-bottom: 2px solid var(--pixel-dark);
+}
+
+.editor-gutter {
+  width: 44px;
+  min-width: 44px;
+  background-color: #0f141b;
+  border-right: 2px solid var(--gb-mid);
+  color: var(--gb-light);
+  font-family: var(--font-code);
+  font-size: 20px;
+  line-height: 1.45;
+  text-align: right;
+  padding: 8px 8px 8px 0;
+  user-select: none;
+  overflow: hidden;
+  white-space: pre;
+}
+
+.code-textarea {
+  flex: 1;
+  height: 100%;
+  width: 100%;
+  background-color: var(--pixel-black);
+  color: var(--pixel-white);
+  font-family: var(--font-code);
+  font-size: 20px;
+  line-height: 1.45;
+  padding: 8px 12px;
+  border: none;
+  outline: none;
+  resize: none;
+  tab-size: 2;
+  white-space: pre;
+  word-wrap: normal;
+  overflow-x: auto;
+  overflow-y: auto;
+  caret-color: var(--pixel-green);
+}
+
+.code-textarea::selection {
+  background-color: var(--gb-mid);
+  color: var(--pixel-white);
+}
+
+/* Editor Toolbar */
+.editor-toolbar {
+  padding: 8px 16px;
+  background-color: var(--pixel-dark);
+  border-top: 2px solid var(--pixel-black);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.toolbar-left {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.toolbar-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 /* 3. #output-console (~25% height) */
 #output-console {
+  flex: 0 0 25%;
   height: 25%;
-  min-height: 25%;
-  max-height: 25%;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Section Header Bar */
-.section-header {
+.console-header-left {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
-  background-color: var(--pixel-dark);
-  color: var(--pixel-white);
-  font-size: 13px;
-  border-bottom: 2px solid var(--pixel-black);
-  flex-shrink: 0;
-  letter-spacing: 0.06em;
+  gap: 8px;
 }
 
-.section-title {
-  color: var(--pixel-blue);
-}
-
-.section-badge {
-  font-size: 22px;
-  color: var(--pixel-yellow);
-  letter-spacing: 0.05em;
-}
-
-/* Section Body & Typography */
-.section-body {
-  padding: 20px 24px;
-  flex: 1;
-  overflow-y: auto;
-  font-family: var(--font-code);
-  font-size: 25px;
-  line-height: 1.55;
-  color: var(--pixel-white);
-  background-color: var(--pixel-black);
-  letter-spacing: 0.03em;
-}
-
-.code-placeholder-text {
-  color: var(--pixel-yellow);
-  font-size: 25px;
-  line-height: 1.5;
-  margin-bottom: 16px;
-}
-
-.challenge-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--gb-yellow);
-  border-top: 2px solid var(--pixel-dark);
-  padding-top: 14px;
-  letter-spacing: 0.05em;
-}
-
-/* Editor Syntax Elements */
-.editor-body {
-  background-color: var(--pixel-black);
-}
-
-.editor-line {
-  white-space: pre;
-  line-height: 1.55;
-  font-size: 25px;
-}
-
-.line-idx {
-  color: var(--pixel-light);
-  display: inline-block;
-  width: 32px;
-  user-select: none;
-}
-
-.token-kw {
-  color: var(--pixel-yellow);
-}
-
-.token-fn {
-  color: var(--pixel-blue);
-}
-
-.token-cmt {
-  color: var(--pixel-light);
-}
-
-.token-num {
-  color: var(--pixel-green);
-}
-
-.token-cursor {
-  color: var(--pixel-green);
-  animation: blinkCursor 0.8s infinite step-start;
-}
-
-@keyframes blinkCursor {
-  50% { opacity: 0; }
-}
-
-/* Console Lines */
 .console-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 16px;
+  font-family: var(--font-code);
+  font-size: 20px;
+  line-height: 1.4;
   background-color: var(--pixel-black);
 }
 
 .console-line {
-  margin-bottom: 8px;
-  font-size: 25px;
-  line-height: 1.5;
+  margin-bottom: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.console-line.console-pass {
+  color: var(--pixel-green);
+  font-weight: bold;
+}
+
+.console-line.console-fail {
+  color: var(--pixel-red);
+  font-weight: bold;
+}
+
+.console-line.console-error {
+  color: #ff5252;
+  background-color: rgba(224, 60, 60, 0.15);
+  padding: 3px 8px;
+  border-left: 3px solid var(--pixel-red);
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.console-line.console-info {
+  color: var(--pixel-blue);
+}
+
+.console-line.console-warn {
+  color: var(--pixel-yellow);
 }
 
 /* Utility Color Helpers (Restricted to Palette) */

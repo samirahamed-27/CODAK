@@ -41,15 +41,53 @@ document.addEventListener('DOMContentLoaded', async () => {
   const startersContainer = document.getElementById('starters-list');
   const soundToggleBtn = document.getElementById('sound-toggle-btn');
 
+  // Code Panel DOM Elements
+  const pickerCardsContainer = document.getElementById('picker-cards-container');
+  const pickerStatusBadge = document.getElementById('picker-status-badge');
+
+  const currentChallengeBadge = document.getElementById('current-challenge-badge');
+  const turnTimerText = document.getElementById('turn-timer-text');
+  const turnTimerFill = document.getElementById('turn-timer-fill');
+
+  const editorChallengeTitle = document.getElementById('editor-challenge-title');
+  const editorChallengeTopic = document.getElementById('editor-challenge-topic');
+  const editorChallengeDesc = document.getElementById('editor-challenge-desc');
+  const challengeHintBox = document.getElementById('challenge-hint-box');
+  const challengeHintText = document.getElementById('challenge-hint-text');
+
+  const editorGutter = document.getElementById('editor-gutter');
+  const codeTextarea = document.getElementById('code-textarea');
+
+  const btnRunTests = document.getElementById('btn-run-tests');
+  const btnHint = document.getElementById('btn-hint');
+  const btnResetCode = document.getElementById('btn-reset-code');
+
+  const consoleStatusBadge = document.getElementById('console-status-badge');
+  const consoleOutput = document.getElementById('console-output');
+
   // State
   let currentScreen = 'title';
   let selectedIndex = 0;
   let selectedCodemon = null;
   let activeEnemy = null;
   let soundEnabled = true;
-  let questionsPool = [];
+  let challengesCatalog = [];
   let animFrameId = null;
   let animTick = 0;
+
+  // Battle & Turn State
+  let battleActive = false;
+  let currentPoints = 0;
+  const targetPoints = 120;
+  let turnsLeft = 8;
+  const battleUsedChallenges = new Set();
+  let currentTurnCards = [];
+  let activeChallenge = null;
+  let hintUsedThisTurn = false;
+  let turnTimerId = null;
+  let timerRemaining = 0;
+  let timerTotal = 60;
+  let isTestingCode = false;
 
   // Web Audio Context for Retro 8-bit Sound FX
   let audioCtx = null;
@@ -121,10 +159,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Expose sound system globally for battle module and code panel
   window.playSound = playSound;
 
-  // Load questions data from data/questions.json
-  if (window.CodemonData && typeof window.CodemonData.loadQuestions === 'function') {
-    questionsPool = await window.CodemonData.loadQuestions();
+  // Load challenges data from data/challenges.json
+  try {
+    const res = await fetch('data/challenges.json');
+    if (res.ok) {
+      challengesCatalog = await res.json();
+    }
+  } catch (err) {
+    console.warn('Could not load data/challenges.json:', err);
   }
+  window.challengesCatalog = challengesCatalog;
 
   // Starters Catalog from js/data.js (CODEMONS)
   const starters = window.CODEMONS || (window.CodemonData ? window.CodemonData.CODEMONS : []);
@@ -300,6 +344,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         codeLockedOverlay.classList.add('unlocked');
       } else {
         codeLockedOverlay.classList.remove('unlocked');
+        battleActive = false;
+        stopTurnTimer();
       }
     }
 
@@ -439,6 +485,599 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // -------------------------------------------------------------------------
+  // CODE PANEL CONTROLLER & BATTLE ENGINE INTEGRATION
+  // -------------------------------------------------------------------------
+
+  // Output console helpers
+  function clearConsole() {
+    if (consoleOutput) {
+      consoleOutput.innerHTML = '';
+    }
+  }
+
+  function appendConsoleLine(text, className = '') {
+    if (!consoleOutput) return;
+    const line = document.createElement('div');
+    line.className = `console-line ${className}`.trim();
+    line.textContent = text;
+    consoleOutput.appendChild(line);
+    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+  }
+
+  function formatOutputValue(val) {
+    if (val === undefined) return 'undefined';
+    if (val === null) return 'null';
+    if (typeof val === 'string') return `"${val}"`;
+    try {
+      return JSON.stringify(val);
+    } catch (_) {
+      return String(val);
+    }
+  }
+
+  // Gutter line numbers and scroll synchronization
+  function updateGutter() {
+    if (!editorGutter || !codeTextarea) return;
+    const lines = (codeTextarea.value.split('\n').length) || 1;
+    editorGutter.textContent = Array.from({ length: lines }, (_, i) => i + 1).join('\n');
+    editorGutter.scrollTop = codeTextarea.scrollTop;
+  }
+
+  if (codeTextarea) {
+    codeTextarea.addEventListener('input', updateGutter);
+    codeTextarea.addEventListener('scroll', () => {
+      if (editorGutter) {
+        editorGutter.scrollTop = codeTextarea.scrollTop;
+      }
+    });
+
+    // Tab key inserts 2 spaces instead of changing focus
+    codeTextarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = codeTextarea.selectionStart;
+        const end = codeTextarea.selectionEnd;
+        const val = codeTextarea.value;
+        codeTextarea.value = val.substring(0, start) + '  ' + val.substring(end);
+        codeTextarea.selectionStart = codeTextarea.selectionEnd = start + 2;
+        updateGutter();
+      }
+    });
+  }
+
+  // Turn Timer Helpers (60s easy, 90s medium, 120s hard)
+  function startTurnTimer(seconds) {
+    stopTurnTimer();
+    timerRemaining = seconds;
+    timerTotal = seconds;
+    updateTimerUI();
+
+    turnTimerId = setInterval(() => {
+      timerRemaining--;
+      updateTimerUI();
+
+      if (timerRemaining <= 0) {
+        stopTurnTimer();
+        handleTurnTimeout();
+      }
+    }, 1000);
+  }
+
+  function stopTurnTimer() {
+    if (turnTimerId) {
+      clearInterval(turnTimerId);
+      turnTimerId = null;
+    }
+  }
+
+  function updateTimerUI() {
+    if (!turnTimerText || !turnTimerFill) return;
+
+    if (timerRemaining <= 0 && !activeChallenge) {
+      turnTimerText.textContent = 'TIME: --';
+      turnTimerFill.style.width = '100%';
+      turnTimerFill.className = 'turn-timer-fill';
+      return;
+    }
+
+    const pct = Math.max(0, Math.min(100, (timerRemaining / timerTotal) * 100));
+    turnTimerText.textContent = `TIME: ${timerRemaining}s`;
+    turnTimerFill.style.width = `${pct}%`;
+
+    if (pct <= 25) {
+      turnTimerFill.className = 'turn-timer-fill timer-danger';
+    } else if (pct <= 50) {
+      turnTimerFill.className = 'turn-timer-fill timer-warning';
+    } else {
+      turnTimerFill.className = 'turn-timer-fill';
+    }
+  }
+
+  function handleTurnTimeout() {
+    if (!battleActive || !activeChallenge) return;
+
+    playSound('hit');
+    appendConsoleLine('TIMEOUT: Turn timer expired! Turn failed.', 'console-error');
+    if (consoleStatusBadge) {
+      consoleStatusBadge.textContent = 'SYS: TIMEOUT';
+      consoleStatusBadge.className = 'section-badge font-code text-red';
+    }
+
+    if (codeTextarea) codeTextarea.disabled = true;
+    if (btnRunTests) btnRunTests.disabled = true;
+    if (btnHint) btnHint.disabled = true;
+    if (btnResetCode) btnResetCode.disabled = true;
+
+    turnsLeft = Math.max(0, turnsLeft - 1);
+    if (window.updateHud) {
+      window.updateHud(currentPoints, turnsLeft);
+    }
+
+    if (window.typeText) {
+      window.typeText("Time's up! Turn failed! Bugmon strikes back!", 20);
+    }
+
+    setTimeout(() => {
+      if (!battleActive) return;
+      executeEnemyTurn();
+    }, 1500);
+  }
+
+  // -------------------------------------------------------------------------
+  // QUESTION PICKER: 3 cards (EASY 10 dmg, MEDIUM 20 dmg, HARD 35 dmg)
+  // -------------------------------------------------------------------------
+  function pickRandomChallenge(difficulty) {
+    const diffPool = challengesCatalog.filter(c => c.difficulty === difficulty);
+    if (!diffPool.length) return null;
+
+    let available = diffPool.filter(c => !battleUsedChallenges.has(c.id));
+    if (available.length === 0) {
+      diffPool.forEach(c => battleUsedChallenges.delete(c.id));
+      available = diffPool;
+    }
+
+    const randomIndex = Math.floor(Math.random() * available.length);
+    return available[randomIndex];
+  }
+
+  function startPlayerTurn() {
+    if (!battleActive) return;
+
+    activeChallenge = null;
+    hintUsedThisTurn = false;
+    stopTurnTimer();
+
+    // 3 challenge cards: 1 Easy (10 dmg), 1 Medium (20 dmg), 1 Hard (35 dmg)
+    const easyCard = pickRandomChallenge('easy');
+    const mediumCard = pickRandomChallenge('medium');
+    const hardCard = pickRandomChallenge('hard');
+
+    currentTurnCards = [easyCard, mediumCard, hardCard].filter(Boolean);
+    renderPickerCards(currentTurnCards);
+
+    // Reset Editor Area to waiting prompt
+    if (currentChallengeBadge) {
+      currentChallengeBadge.textContent = 'NO MOVE SELECTED';
+      currentChallengeBadge.className = 'badge-difficulty font-pixel';
+    }
+    if (editorChallengeTitle) editorChallengeTitle.textContent = 'SELECT A CHALLENGE CARD ABOVE';
+    if (editorChallengeTopic) editorChallengeTopic.textContent = 'TOPIC: NONE';
+    if (editorChallengeDesc) {
+      editorChallengeDesc.textContent = 'Pick an attack challenge above (Easy: 10 DMG, Medium: 20 DMG, Hard: 35 DMG) to load your coding turn.';
+    }
+    if (challengeHintBox) challengeHintBox.style.display = 'none';
+
+    if (codeTextarea) {
+      codeTextarea.value = '';
+      codeTextarea.placeholder = '// Select an attack card above to begin coding...';
+      codeTextarea.disabled = true;
+    }
+    updateGutter();
+
+    if (turnTimerText) turnTimerText.textContent = 'TIME: --';
+    if (turnTimerFill) {
+      turnTimerFill.style.width = '100%';
+      turnTimerFill.className = 'turn-timer-fill';
+    }
+
+    if (btnRunTests) btnRunTests.disabled = true;
+    if (btnHint) {
+      btnHint.disabled = true;
+      btnHint.textContent = '? HINT (-5 PTS)';
+    }
+    if (btnResetCode) btnResetCode.disabled = true;
+
+    if (pickerStatusBadge) {
+      pickerStatusBadge.textContent = 'SELECT DIFFICULTY TO ATTACK';
+      pickerStatusBadge.className = 'section-badge font-code text-yellow';
+    }
+    if (consoleStatusBadge) {
+      consoleStatusBadge.textContent = 'SYS: READY';
+      consoleStatusBadge.className = 'section-badge font-code text-green';
+    }
+  }
+
+  function renderPickerCards(cards) {
+    if (!pickerCardsContainer) return;
+    pickerCardsContainer.innerHTML = '';
+
+    cards.forEach((challenge) => {
+      const dmgMap = { easy: 10, medium: 20, hard: 35 };
+      const dmg = dmgMap[challenge.difficulty] || 10;
+
+      const card = document.createElement('div');
+      card.className = `picker-card ${challenge.difficulty}`;
+      card.id = `card-${challenge.id}`;
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-label', `${challenge.difficulty.toUpperCase()} challenge: ${challenge.title}. Deals ${dmg} damage.`);
+
+      card.innerHTML = `
+        <div class="picker-card-header">
+          <span class="picker-badge font-pixel">${challenge.difficulty.toUpperCase()}</span>
+          <span class="picker-card-dmg font-pixel">${dmg} DMG</span>
+        </div>
+        <div class="picker-card-title font-pixel">${challenge.title}</div>
+        <div class="picker-card-desc font-code">${challenge.description}</div>
+        <div class="picker-card-topic font-pixel">TOPIC: ${challenge.topic.toUpperCase()}</div>
+      `;
+
+      card.addEventListener('click', () => {
+        selectChallengeCard(challenge, card);
+      });
+
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          selectChallengeCard(challenge, card);
+        }
+      });
+
+      pickerCardsContainer.appendChild(card);
+    });
+  }
+
+  function selectChallengeCard(challenge, cardElement) {
+    if (!battleActive || activeChallenge) return;
+
+    playSound('select');
+    activeChallenge = challenge;
+    battleUsedChallenges.add(challenge.id);
+
+    // Clicking a card selects it, locks the other two for this turn
+    const allCards = pickerCardsContainer ? pickerCardsContainer.querySelectorAll('.picker-card') : [];
+    allCards.forEach((c) => {
+      if (c === cardElement) {
+        c.classList.add('selected');
+        c.classList.remove('locked');
+        c.setAttribute('aria-selected', 'true');
+      } else {
+        c.classList.add('locked');
+        c.classList.remove('selected');
+        c.setAttribute('aria-disabled', 'true');
+        c.tabIndex = -1;
+      }
+    });
+
+    if (pickerStatusBadge) {
+      pickerStatusBadge.textContent = `MOVE LOCKED: ${challenge.difficulty.toUpperCase()}`;
+      pickerStatusBadge.className = 'section-badge font-code text-green';
+    }
+
+    const dmgMap = { easy: 10, medium: 20, hard: 35 };
+    const dmg = dmgMap[challenge.difficulty] || 10;
+
+    // Load the challenge into editor
+    if (currentChallengeBadge) {
+      currentChallengeBadge.textContent = `[${challenge.difficulty.toUpperCase()}] ${dmg} DMG`;
+      currentChallengeBadge.className = `badge-difficulty ${challenge.difficulty} font-pixel`;
+    }
+    if (editorChallengeTitle) editorChallengeTitle.textContent = challenge.title;
+    if (editorChallengeTopic) editorChallengeTopic.textContent = `TOPIC: ${challenge.topic.toUpperCase()}`;
+    if (editorChallengeDesc) editorChallengeDesc.textContent = challenge.description;
+    if (challengeHintBox) challengeHintBox.style.display = 'none';
+
+    if (codeTextarea) {
+      codeTextarea.disabled = false;
+      codeTextarea.value = challenge.starterCode || `function ${challenge.functionName}() {\n  \n}`;
+      codeTextarea.focus();
+    }
+    updateGutter();
+
+    if (btnRunTests) btnRunTests.disabled = false;
+    if (btnHint) {
+      btnHint.disabled = false;
+      btnHint.textContent = '? HINT (-5 PTS)';
+    }
+    if (btnResetCode) btnResetCode.disabled = false;
+
+    // Start turn timer (60s easy, 90s medium, 120s hard)
+    const timeMap = { easy: 60, medium: 90, hard: 120 };
+    const duration = timeMap[challenge.difficulty] || 60;
+    startTurnTimer(duration);
+
+    appendConsoleLine(`> Move selected: "${challenge.title}" [${challenge.difficulty.toUpperCase()} • ${dmg} DMG]`, 'console-info');
+    appendConsoleLine(`> Timer started: ${duration}s. Implement ${challenge.functionName}() and click RUN TESTS.`, 'console-info');
+
+    if (window.typeText) {
+      window.typeText(`You picked ${challenge.title}! Solve the challenge to unleash ${dmg} DMG!`, 20);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // BUTTONS: HINT, RESET, RUN TESTS
+  // -------------------------------------------------------------------------
+  if (btnHint) {
+    btnHint.addEventListener('click', () => {
+      if (!battleActive || !activeChallenge) return;
+      playSound('click');
+
+      if (!hintUsedThisTurn) {
+        hintUsedThisTurn = true;
+        currentPoints = Math.max(0, currentPoints - 5);
+        if (window.updateHud) {
+          window.updateHud(currentPoints, turnsLeft);
+        }
+        appendConsoleLine(`> HINT UNLOCKED (-5 PTS). Current score: ${currentPoints} / ${targetPoints}.`, 'console-warn');
+      }
+
+      if (challengeHintBox && challengeHintText) {
+        challengeHintText.textContent = activeChallenge.hint || 'No hint provided.';
+        challengeHintBox.style.display = 'block';
+      }
+      btnHint.textContent = '💡 HINT REVEALED';
+    });
+  }
+
+  if (btnResetCode) {
+    btnResetCode.addEventListener('click', () => {
+      if (!battleActive || !activeChallenge || !codeTextarea) return;
+      playSound('click');
+      codeTextarea.value = activeChallenge.starterCode || `function ${activeChallenge.functionName}() {\n  \n}`;
+      updateGutter();
+      codeTextarea.focus();
+      appendConsoleLine('> Editor code restored to original starter signature.', 'console-info');
+    });
+  }
+
+  if (btnRunTests) {
+    btnRunTests.addEventListener('click', async () => {
+      if (!battleActive || !activeChallenge || isTestingCode) return;
+
+      const userCode = codeTextarea ? codeTextarea.value : '';
+      if (!userCode.trim()) {
+        appendConsoleLine('> Error: Please write some code before running tests.', 'console-fail');
+        return;
+      }
+
+      isTestingCode = true;
+      btnRunTests.disabled = true;
+      playSound('click');
+
+      if (consoleStatusBadge) {
+        consoleStatusBadge.textContent = 'SYS: COMPILING...';
+        consoleStatusBadge.className = 'section-badge font-code text-yellow';
+      }
+
+      appendConsoleLine(`> Compiling and running tests for ${activeChallenge.functionName}()...`, 'console-info');
+
+      try {
+        const outcome = await window.runCode(userCode, activeChallenge);
+
+        // Shows test results line by line: "TEST 1: PASS", "TEST 2: FAIL (expected 5, got 4)"
+        if (outcome.results && outcome.results.length) {
+          outcome.results.forEach((test, idx) => {
+            if (test.pass) {
+              appendConsoleLine(`TEST ${idx + 1}: PASS`, 'console-pass');
+            } else {
+              const expStr = formatOutputValue(test.expected);
+              const gotStr = formatOutputValue(test.got);
+              appendConsoleLine(`TEST ${idx + 1}: FAIL (expected ${expStr}, got ${gotStr})`, 'console-fail');
+            }
+          });
+        }
+
+        // Syntax or runtime error in red
+        if (outcome.error) {
+          appendConsoleLine(`ERROR: ${outcome.error}`, 'console-error');
+        }
+
+        if (outcome.passed) {
+          stopTurnTimer();
+          if (consoleStatusBadge) {
+            consoleStatusBadge.textContent = 'SYS: PASSED';
+            consoleStatusBadge.className = 'section-badge font-code text-green';
+          }
+          appendConsoleLine(`> PASS: All ${outcome.results.length} tests passed cleanly! Unleashing attack...`, 'console-pass');
+
+          if (btnHint) btnHint.disabled = true;
+          if (btnResetCode) btnResetCode.disabled = true;
+          if (codeTextarea) codeTextarea.disabled = true;
+
+          executePlayerAttack();
+        } else {
+          if (consoleStatusBadge) {
+            consoleStatusBadge.textContent = 'SYS: FAILED';
+            consoleStatusBadge.className = 'section-badge font-code text-red';
+          }
+          appendConsoleLine(`> Tests failed. Check console output and adjust your code before time expires!`, 'console-warn');
+          if (window.typeText) {
+            window.typeText(`Tests failed! Check the console output and try again!`, 18);
+          }
+          btnRunTests.disabled = false;
+        }
+
+      } catch (err) {
+        appendConsoleLine(`UNEXPECTED RUNNER ERROR: ${err.message || String(err)}`, 'console-error');
+        btnRunTests.disabled = false;
+      } finally {
+        isTestingCode = false;
+      }
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // COMBAT MOVE EXECUTION & RESOLUTION
+  // -------------------------------------------------------------------------
+  function executePlayerAttack() {
+    const player = window.gameState.player;
+    const enemy = window.gameState.enemy;
+    if (!player || !enemy) return;
+
+    const dmgMap = { easy: 10, medium: 20, hard: 35 };
+    const baseDmg = dmgMap[activeChallenge.difficulty] || 10;
+    const multiplier = player.attackPower || 1.0;
+    const finalDmg = Math.round(baseDmg * multiplier);
+    const earnedPoints = baseDmg;
+
+    currentPoints += earnedPoints;
+    turnsLeft = Math.max(0, turnsLeft - 1);
+
+    if (window.updateHud) {
+      window.updateHud(currentPoints, turnsLeft);
+    }
+
+    if (window.playAttackAnimation) {
+      window.playAttackAnimation('player');
+    }
+    playSound('hit');
+
+    const prevEnemyHp = enemy.hp || enemy.maxHp;
+    const newEnemyHp = Math.max(0, prevEnemyHp - finalDmg);
+    enemy.hp = newEnemyHp;
+    enemy.currentHp = newEnemyHp;
+
+    if (window.setHp) {
+      window.setHp('enemy', newEnemyHp, enemy.maxHp);
+    }
+
+    if (window.typeText) {
+      window.typeText(`${player.name.toUpperCase()} executed clean code! Dealt ${finalDmg} DMG to ${enemy.name.toUpperCase()}!`, 20);
+    }
+
+    appendConsoleLine(`> Attack hit! +${earnedPoints} Points. Bugmon took ${finalDmg} DMG.`, 'console-info');
+
+    // Win check
+    if (newEnemyHp <= 0 || currentPoints >= targetPoints) {
+      setTimeout(() => {
+        handleBattleOutcome('victory');
+      }, 1400);
+      return;
+    }
+
+    // Turns exhausted check
+    if (turnsLeft <= 0) {
+      setTimeout(() => {
+        handleBattleOutcome('defeat');
+      }, 1400);
+      return;
+    }
+
+    // Bugmon counter-attacks after delay
+    setTimeout(() => {
+      if (!battleActive) return;
+      executeEnemyTurn();
+    }, 1500);
+  }
+
+  function executeEnemyTurn() {
+    const player = window.gameState.player;
+    const enemy = window.gameState.enemy;
+    if (!player || !enemy || !battleActive) return;
+
+    if (window.typeText) {
+      window.typeText(`${enemy.name.toUpperCase()} countered with NullPointer Crash!`, 20);
+    }
+
+    setTimeout(() => {
+      if (!battleActive) return;
+
+      if (window.playAttackAnimation) {
+        window.playAttackAnimation('enemy');
+      }
+      playSound('hit');
+
+      const enemyDmg = 16;
+      const prevPlayerHp = player.hp || player.maxHp;
+      const newPlayerHp = Math.max(0, prevPlayerHp - enemyDmg);
+      player.hp = newPlayerHp;
+      player.currentHp = newPlayerHp;
+
+      if (window.setHp) {
+        window.setHp('player', newPlayerHp, player.maxHp);
+      }
+
+      appendConsoleLine(`> ${enemy.name} struck player for ${enemyDmg} DMG!`, 'console-fail');
+
+      // Defeat check
+      if (newPlayerHp <= 0 || turnsLeft <= 0) {
+        setTimeout(() => {
+          handleBattleOutcome('defeat');
+        }, 1200);
+        return;
+      }
+
+      // Start next player turn
+      setTimeout(() => {
+        if (!battleActive) return;
+        startPlayerTurn();
+      }, 1400);
+    }, 1000);
+  }
+
+  function handleBattleOutcome(outcome) {
+    battleActive = false;
+    stopTurnTimer();
+
+    const player = window.gameState.player || { name: 'Codemon' };
+    const enemy = window.gameState.enemy || { name: 'Bugmon' };
+
+    if (outcome === 'victory') {
+      playSound('battle');
+      if (window.typeText) {
+        window.typeText(`VICTORY! ${enemy.name.toUpperCase()} was debugged! You reached ${currentPoints} PTS!`, 22);
+      }
+      appendConsoleLine('========================================', 'console-pass');
+      appendConsoleLine('★ BATTLE VICTORY! BUG MONSTER DEFEATED ★', 'console-pass');
+      appendConsoleLine(`Final Score: ${currentPoints} / ${targetPoints} Points. Turns remaining: ${turnsLeft}.`, 'console-pass');
+      appendConsoleLine('========================================', 'console-pass');
+
+      if (pickerStatusBadge) {
+        pickerStatusBadge.textContent = 'VICTORY ACHIEVED!';
+        pickerStatusBadge.className = 'section-badge font-code text-green';
+      }
+      if (consoleStatusBadge) {
+        consoleStatusBadge.textContent = 'SYS: VICTORY';
+        consoleStatusBadge.className = 'section-badge font-code text-green';
+      }
+    } else {
+      playSound('hit');
+      const reason = player.hp <= 0 ? `${player.name.toUpperCase()} fainted!` : 'Turn limit reached!';
+      if (window.typeText) {
+        window.typeText(`DEFEAT! ${reason} Bugmon overwhelmed your code.`, 22);
+      }
+      appendConsoleLine('========================================', 'console-fail');
+      appendConsoleLine('✖ BATTLE DEFEAT: SYSTEM OVERFLOW ✖', 'console-fail');
+      appendConsoleLine(`Final Score: ${currentPoints} / ${targetPoints} Points.`, 'console-fail');
+      appendConsoleLine('========================================', 'console-fail');
+
+      if (pickerStatusBadge) {
+        pickerStatusBadge.textContent = 'BATTLE OVER';
+        pickerStatusBadge.className = 'section-badge font-code text-red';
+      }
+      if (consoleStatusBadge) {
+        consoleStatusBadge.textContent = 'SYS: CRASHED';
+        consoleStatusBadge.className = 'section-badge font-code text-red';
+      }
+    }
+
+    if (codeTextarea) codeTextarea.disabled = true;
+    if (btnRunTests) btnRunTests.disabled = true;
+    if (btnHint) btnHint.disabled = true;
+    if (btnResetCode) btnResetCode.disabled = true;
+  }
+
+  // -------------------------------------------------------------------------
   // BATTLE INITIALIZATION & CODE LAB UNLOCK
   // -------------------------------------------------------------------------
   function initBattle() {
@@ -446,7 +1085,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const enemy = window.gameState.enemy || activeEnemy;
     if (!player) return;
 
-    // Ensure gameState has both player and enemy
     window.gameState.player = {
       ...player,
       hp: player.maxHp,
@@ -458,36 +1096,43 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentHp: enemy.maxHp
     };
 
-    // Initialize HP state with max HP immediately
     if (window.setHp) {
       window.setHp('player', player.maxHp, player.maxHp, true);
       window.setHp('enemy', enemy.maxHp, enemy.maxHp, true);
     }
 
-    // Initialize HUD: 0 points, 8 turns left
+    currentPoints = 0;
+    turnsLeft = 8;
+    battleActive = true;
+    battleUsedChallenges.clear();
+
     if (window.updateHud) {
       window.updateHud(0, 8);
     }
 
-    // Update Versus title in card
     const versusTitle = document.getElementById('battle-versus-title');
     if (versusTitle && enemy) {
       versusTitle.textContent = `${player.name.toUpperCase()} VS ${enemy.name.toUpperCase()}`;
     }
 
-    // Show battle screen (which unlocks #code-panel)
     showScreen('battle');
 
-    // Type initial battle greeting
+    clearConsole();
+    appendConsoleLine('> Codemons Sandbox Kernel v2.4 initialized.', 'console-info');
+    appendConsoleLine(`> Target: ${targetPoints} Points within ${turnsLeft} Turns.`, 'console-info');
+    appendConsoleLine('> Web Worker secure test runner mounted.', 'console-info');
+    appendConsoleLine('> Select an attack challenge card above to begin your turn.', 'console-warn');
+
     if (window.typeText && enemy) {
       window.typeText(`A wild ${enemy.name} appeared! Compile code on the right to strike.`, 22);
     }
+
+    startPlayerTurn();
   }
 
   // -------------------------------------------------------------------------
   // EVENT LISTENERS & KEYBOARD CONTROLS
   // -------------------------------------------------------------------------
-  // How to Play text box toggle
   if (btnHowToPlay && howToPlayBox) {
     btnHowToPlay.addEventListener('click', () => {
       playSound('click');
@@ -503,16 +1148,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Pressing Start calls showScreen("select")
   if (btnStartGame) {
     btnStartGame.addEventListener('click', () => {
       showScreen('select');
     });
   }
 
-  // Keyboard navigation:
-  // - On title: Enter calls showScreen("select")
-  // - On select: Left/Right arrows move selection, Enter confirms choice
   document.addEventListener('keydown', (e) => {
     if (currentScreen === 'title') {
       if (e.key === 'Enter') {
@@ -547,6 +1188,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (btnForfeitBattle) {
     btnForfeitBattle.addEventListener('click', () => {
+      battleActive = false;
+      stopTurnTimer();
       showScreen('title');
     });
   }
