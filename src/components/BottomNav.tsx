@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, BookOpen, Gamepad2, Trophy, User } from 'lucide-react';
 import MagneticDock, { DockItem } from '@/components/ui/magnetic-dock';
@@ -8,6 +8,11 @@ import MagneticDock, { DockItem } from '@/components/ui/magnetic-dock';
 export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navItems = [
     { id: '/student', label: 'Home', icon: <Home className="w-6 h-6" />, exact: true },
@@ -37,23 +42,26 @@ export function BottomNav() {
   };
 
   return (
-    <div
+    <nav
       aria-label="Bottom Navigation Bar"
+      suppressHydrationWarning
       className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none flex justify-center pb-4 px-4 sm:px-6"
     >
-      <div className="pointer-events-auto w-full max-w-lg sm:max-w-xl flex justify-center">
-        <MagneticDock
-          items={dockItems}
-          magnetRadius={135}
-          maxScale={1.5}
-          lift={16}
-          idleWave={false}
-          tooltip={true}
-          onSelect={handleSelect}
-          barClassName="w-full justify-between sm:justify-around px-6 sm:px-10"
-          wrapperClassName="pt-0 pb-0 w-full"
-        />
-      </div>
-    </div>
+      {mounted && (
+        <div className="pointer-events-auto w-full max-w-lg sm:max-w-xl flex justify-center">
+          <MagneticDock
+            items={dockItems}
+            magnetRadius={135}
+            maxScale={1.5}
+            lift={16}
+            idleWave={false}
+            tooltip={true}
+            onSelect={handleSelect}
+            barClassName="w-full justify-between sm:justify-around px-6 sm:px-10"
+            wrapperClassName="pt-0 pb-0 w-full"
+          />
+        </div>
+      )}
+    </nav>
   );
 }
