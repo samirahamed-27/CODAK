@@ -3,8 +3,25 @@
  * Mirai-Game / Gamify Platform
  * 
  * Implements 160x144 Canvas visual rendering, pixel-grid sprite arrays,
- * HP bar animations, typewriter dialogue, and exposed animation hooks.
+ * HP bar animations, typewriter dialogue, points system, and win/lose conditions.
  */
+
+// ===========================================================================
+// BATTLE CONFIGURATION (Easily tweakable parameters)
+// ===========================================================================
+const BATTLE_CONFIG = {
+  turnLimit: 8,
+  minPoints: 120,
+  points: {
+    easy: 10,
+    medium: 25,
+    hard: 50
+  }
+};
+
+if (typeof window !== 'undefined') {
+  window.BATTLE_CONFIG = BATTLE_CONFIG;
+}
 
 // ---------------------------------------------------------------------------
 // 1. GAME BOY COLOR PALETTE MAPPING FOR SPRITE ARRAYS
@@ -143,8 +160,9 @@ const battleVisualState = {
 
   // HUD Stats
   points: 0,
-  maxPoints: 120,
-  turnsLeft: 8,
+  maxPoints: BATTLE_CONFIG.minPoints,
+  turnsLeft: BATTLE_CONFIG.turnLimit,
+  isGlitching: false,
 
   // Animation offsets & effects
   player: {
@@ -295,27 +313,61 @@ function getHpColor(percentage) {
 // 6. HUD STRIP UPDATE: POINTS & TURNS LEFT
 // ---------------------------------------------------------------------------
 function updateHud(points, turnsLeft) {
+  const minPts = (typeof BATTLE_CONFIG !== 'undefined' && BATTLE_CONFIG.minPoints) || 120;
+
   if (typeof points === 'number') {
+    const prevPoints = battleVisualState.points;
     battleVisualState.points = points;
     const ptsEl = document.getElementById('hud-points-val');
     if (ptsEl) {
-      ptsEl.textContent = `${points} / ${battleVisualState.maxPoints}`;
+      ptsEl.textContent = `${points} / ${minPts}`;
+
+      // Pop animation on points update
+      if (points !== prevPoints) {
+        ptsEl.classList.remove('hud-pop');
+        void ptsEl.offsetWidth; // Force DOM reflow to restart CSS animation
+        ptsEl.classList.add('hud-pop');
+      }
     }
+
+    // Thin progress bar under HUD points showing progress toward minimum (120)
+    const barFill = document.getElementById('hud-points-bar-fill');
+    if (barFill) {
+      const pct = Math.min(100, Math.round((points / minPts) * 100));
+      barFill.style.width = `${pct}%`;
+      if (points >= minPts) {
+        barFill.classList.add('target-reached');
+      } else {
+        barFill.classList.remove('target-reached');
+      }
+    }
+
     if (window.gameState) {
       window.gameState.score = points;
     }
   }
+
   if (typeof turnsLeft === 'number') {
     battleVisualState.turnsLeft = turnsLeft;
     const turnsEl = document.getElementById('hud-turns-val');
     if (turnsEl) {
       turnsEl.textContent = `${turnsLeft}`;
+      // When 2 turns remain, make the counter blink red as a warning
       if (turnsLeft <= 2) {
-        turnsEl.className = 'text-red';
+        turnsEl.className = 'turn-blink-red font-pixel';
+        if (turnsEl.classList && turnsEl.classList.add) {
+          turnsEl.classList.add('turn-blink-red');
+        }
       } else if (turnsLeft <= 4) {
-        turnsEl.className = 'text-yellow';
+        turnsEl.className = 'text-yellow font-pixel';
+        if (turnsEl.classList && turnsEl.classList.remove) {
+          turnsEl.classList.remove('turn-blink-red');
+        }
       } else {
-        turnsEl.className = 'text-green';
+        turnsEl.className = 'text-green font-pixel';
+        if (turnsEl.classList && turnsEl.classList.remove) {
+          turnsEl.classList.remove('turn-blink-red');
+        }
       }
     }
     if (window.gameState) {
@@ -649,14 +701,90 @@ const BASE_DAMAGE = {
 };
 
 // Points mapping per difficulty: easy 10, medium 25, hard 50
-const POINTS_AWARDED = {
-  easy: 10,
-  medium: 25,
-  hard: 50
-};
+const POINTS_AWARDED = (typeof BATTLE_CONFIG !== 'undefined' && BATTLE_CONFIG.points)
+  ? BATTLE_CONFIG.points
+  : { easy: 10, medium: 25, hard: 50 };
 
 // Enemy base attack power
 const ENEMY_BASE_DAMAGE = 16;
+
+/**
+ * evaluateBattleConditions(playerHp, enemyHp, points, turnsLeft)
+ * Evaluates the 4 end-of-battle conditions according to BATTLE_CONFIG:
+ * 1. If enemy HP <= 0 AND points >= minPoints: WIN. Show a victory screen.
+ * 2. If enemy HP <= 0 but points < minPoints: not a true win. Show
+ *    "The enemy is still glitching..." and trigger the Bugmon transformation (Piece 7).
+ * 3. If turns run out and points < minPoints: trigger the Bugmon transformation.
+ * 4. If player HP <= 0: lose.
+ */
+function evaluateBattleConditions(playerHp, enemyHp, points, turnsLeft) {
+  const minPts = (typeof BATTLE_CONFIG !== 'undefined' && BATTLE_CONFIG.minPoints) || 120;
+
+  // 4. If player HP <= 0: lose.
+  if (playerHp <= 0) {
+    return { outcome: 'defeat', reason: 'player_fainted' };
+  }
+
+  // 1 & 2. If enemy HP <= 0
+  if (enemyHp <= 0) {
+    if (points >= minPts) {
+      // 1. If enemy HP <= 0 AND points >= minPoints: WIN. Show a victory screen.
+      return { outcome: 'victory', reason: 'enemy_debugged' };
+    } else {
+      // 2. If enemy HP <= 0 but points < minPoints: not a true win.
+      // Show "The enemy is still glitching..." and trigger the Bugmon transformation (Piece 7).
+      return { outcome: 'transformation', reason: 'enemy_glitching' };
+    }
+  }
+
+  // 3. If turns run out and points < minPoints: trigger the Bugmon transformation.
+  if (turnsLeft <= 0) {
+    if (points < minPts) {
+      return { outcome: 'transformation', reason: 'timeout_glitching' };
+    } else {
+      return { outcome: 'defeat', reason: 'turns_exhausted' };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * triggerBugmonTransformation()
+ * Triggers the Bugmon transformation (Piece 7).
+ * Sets glitch state, displays glitch dialogue and console warnings,
+ * activates screen shake, and signals the transformation outcome.
+ */
+async function triggerBugmonTransformation() {
+  battleVisualState.isGlitching = true;
+  if (window.gameState) {
+    window.gameState.isGlitching = true;
+    window.gameState.isTransformed = true;
+  }
+
+  // Screen shake & glitch effect
+  battleVisualState.screenShake.duration = 20;
+
+  if (window.appendConsoleLine) {
+    window.appendConsoleLine('========================================', 'console-error');
+    window.appendConsoleLine('⚠ GLITCH PHASE TRIGGERED: BUGMON TRANSFORMATION (PIECE 7) ⚠', 'console-error');
+    window.appendConsoleLine('> Insufficient points! Unresolved syntax errors trigger Glitch Mutation!', 'console-warn');
+    window.appendConsoleLine('> Bugmon absorbed unhandled exceptions and transformed into Glitch Spectre v2.0!', 'console-warn');
+    window.appendConsoleLine('========================================', 'console-error');
+  }
+
+  if (window.playSound) {
+    window.playSound('hit');
+  }
+
+  const triggerMsg = window.showMessage || showMessage;
+  const enemy = (window.gameState && window.gameState.enemy) || { name: 'Bugmon' };
+  await triggerMsg(`CRITICAL GLITCH! ${enemy.name.toUpperCase()} is mutating into an unstable anomaly!`);
+
+  if (window.handleBattleOutcome) {
+    window.handleBattleOutcome('transformation');
+  }
+}
 
 /**
  * Update code panel elements to reflect "ENEMY TURN..." state
@@ -720,7 +848,9 @@ function setCodePanelEnemyTurnUI(isEnemyTurn) {
  * - damage = baseDamage[difficulty] * player.attackPower (easy 10, medium 20, hard 35)
  * - Call playAttackAnimation("player"), playHitAnimation("enemy")
  * - Animate the enemy HP bar
- * - Award points (easy 10, medium 25, hard 50)
+ * - Award points only on correct answers (easy 10, medium 25, hard 50)
+ * - Pop animation on points update
+ * - End-of-battle check if enemy HP <= 0
  * - Then start the enemy turn
  */
 async function handlePlayerCodeSuccess(challenge, outcome) {
@@ -733,17 +863,15 @@ async function handlePlayerCodeSuccess(challenge, outcome) {
   const attackMultiplier = (player && typeof player.attackPower === 'number') ? player.attackPower : 1.0;
   const damage = Math.round(baseDmg * attackMultiplier);
 
-  // 2. Award points (easy 10, medium 25, hard 50)
-  const pts = POINTS_AWARDED[diff] || 10;
+  // 2. Award points only on correct answers (easy 10, medium 25, hard 50)
+  const pts = (BATTLE_CONFIG && BATTLE_CONFIG.points && BATTLE_CONFIG.points[diff]) || POINTS_AWARDED[diff] || 10;
   battleVisualState.points += pts;
 
-  // Turn count update
-  battleVisualState.turnsLeft = Math.max(0, battleVisualState.turnsLeft - 1);
+  // Update HUD with points and small pop animation (turnsLeft updated after full round)
   updateHud(battleVisualState.points, battleVisualState.turnsLeft);
 
   if (window.gameState) {
     window.gameState.score = battleVisualState.points;
-    window.gameState.turnsLeft = battleVisualState.turnsLeft;
   }
 
   // 3. Sequential attack and hit animations
@@ -774,29 +902,29 @@ async function handlePlayerCodeSuccess(challenge, outcome) {
 
   await triggerMsg(`${player.name.toUpperCase()} compiled clean code! Dealt ${damage} DMG to ${enemy.name.toUpperCase()}! (+${pts} PTS)`);
 
-  // Check victory condition
-  if (newEnemyHp <= 0 || battleVisualState.points >= battleVisualState.maxPoints) {
-    if (window.handleBattleOutcome) {
-      window.handleBattleOutcome('victory');
+  // End-of-battle check if enemy HP <= 0:
+  if (newEnemyHp <= 0) {
+    const minPts = (BATTLE_CONFIG && BATTLE_CONFIG.minPoints) || 120;
+    if (battleVisualState.points >= minPts) {
+      // 1. If enemy HP <= 0 AND points >= minPoints: WIN. Show a victory screen.
+      if (window.handleBattleOutcome) {
+        window.handleBattleOutcome('victory');
+      } else {
+        await triggerMsg(`VICTORY! ${enemy.name.toUpperCase()} was debugged! Final Score: ${battleVisualState.points} PTS!`);
+      }
+      return { outcome: 'victory', damage, points: pts };
     } else {
-      await showMessage(`VICTORY! ${enemy.name.toUpperCase()} was debugged! Final Score: ${battleVisualState.points} PTS!`);
+      // 2. If enemy HP <= 0 but points < minPoints: not a true win. Show
+      // "The enemy is still glitching..." and trigger the Bugmon transformation (Piece 7).
+      await triggerMsg('The enemy is still glitching...');
+      await triggerBugmonTransformation();
+      return { outcome: 'transformation', reason: 'enemy_glitching', damage, points: pts };
     }
-    return { outcome: 'victory', damage, points: pts };
   }
 
-  // Check turns exhausted
-  if (battleVisualState.turnsLeft <= 0) {
-    if (window.handleBattleOutcome) {
-      window.handleBattleOutcome('defeat');
-    } else {
-      await showMessage(`DEFEAT! Turns ran out before Bugmon could be debugged!`);
-    }
-    return { outcome: 'defeat' };
-  }
-
-  // 5. Then start the enemy turn
-  await startEnemyTurn(false);
-  return { outcome: 'turn_complete', damage, points: pts };
+  // 5. Enemy survived -> start the enemy turn to complete the full round
+  const enemyTurnRes = await startEnemyTurn(false);
+  return { outcome: (enemyTurnRes && enemyTurnRes.outcome) || 'turn_complete', damage, points: pts };
 }
 
 /**
@@ -846,20 +974,17 @@ async function handleTurnTimeout() {
   // showMessage("Out of time!")
   await triggerMsg('Out of time!');
 
-  // Decrement turns left on timeout
-  battleVisualState.turnsLeft = Math.max(0, battleVisualState.turnsLeft - 1);
-  updateHud(battleVisualState.points, battleVisualState.turnsLeft);
-  if (window.gameState) {
-    window.gameState.turnsLeft = battleVisualState.turnsLeft;
-  }
-
-  // Enemy attacks with 50% bonus damage
+  // Enemy attacks with 50% bonus damage and completes the full round
   await startEnemyTurn(true);
 }
 
 /**
  * startEnemyTurn(isBonusDamage = false)
  * - During the enemy turn, disable the editor and show "ENEMY TURN..." in the code panel.
+ * - Enemy attacks and damages player.
+ * - Updates "Turns left: Y" after every full round.
+ * - When 2 turns remain, counter blinks red as a warning.
+ * - End-of-battle check (run after every round).
  * - When it's the player's turn again, show 3 new challenge cards.
  */
 async function startEnemyTurn(isBonusDamage = false) {
@@ -915,17 +1040,61 @@ async function startEnemyTurn(isBonusDamage = false) {
     window.appendConsoleLine(`> ${enemy.name} dealt ${enemyDmg} DMG to ${player.name}!`, 'console-fail');
   }
 
-  // 5. Check defeat condition
-  if (newPlayerHp <= 0 || battleVisualState.turnsLeft <= 0) {
-    if (window.handleBattleOutcome) {
-      window.handleBattleOutcome('defeat');
-    } else {
-      await showMessage(newPlayerHp <= 0 ? `DEFEAT! ${player.name.toUpperCase()} fainted!` : `DEFEAT! Turns ran out!`);
-    }
-    return { outcome: 'defeat' };
+  // =========================================================================
+  // END OF FULL ROUND:
+  // Update "Turns left: Y" after every full round.
+  // When 2 turns remain, make the counter blink red as a warning.
+  // =========================================================================
+  battleVisualState.turnsLeft = Math.max(0, battleVisualState.turnsLeft - 1);
+  updateHud(battleVisualState.points, battleVisualState.turnsLeft);
+  if (window.gameState) {
+    window.gameState.turnsLeft = battleVisualState.turnsLeft;
   }
 
-  // 6. When it's the player's turn again, show 3 new challenge cards
+  // =========================================================================
+  // END-OF-BATTLE CHECK (Run after every round):
+  // 1. If enemy HP <= 0 AND points >= minPoints: WIN. Show a victory screen.
+  // 2. If enemy HP <= 0 but points < minPoints: not a true win. Show
+  //    "The enemy is still glitching..." and trigger the Bugmon transformation (Piece 7).
+  // 3. If turns run out and points < minPoints: trigger the Bugmon transformation.
+  // 4. If player HP <= 0: lose.
+  // =========================================================================
+  const roundEval = evaluateBattleConditions(
+    newPlayerHp,
+    battleVisualState.hp.enemy.current,
+    battleVisualState.points,
+    battleVisualState.turnsLeft
+  );
+
+  if (roundEval) {
+    if (roundEval.outcome === 'victory') {
+      if (window.handleBattleOutcome) {
+        window.handleBattleOutcome('victory');
+      } else {
+        await triggerMsg(`VICTORY! ${enemy.name.toUpperCase()} was debugged! Final Score: ${battleVisualState.points} PTS!`);
+      }
+      return roundEval;
+    }
+
+    if (roundEval.outcome === 'defeat') {
+      if (window.handleBattleOutcome) {
+        window.handleBattleOutcome('defeat');
+      } else {
+        await triggerMsg(newPlayerHp <= 0 ? `DEFEAT! ${player.name.toUpperCase()} fainted!` : `DEFEAT! Turns ran out!`);
+      }
+      return roundEval;
+    }
+
+    if (roundEval.outcome === 'transformation') {
+      if (roundEval.reason === 'enemy_glitching') {
+        await triggerMsg('The enemy is still glitching...');
+      }
+      await triggerBugmonTransformation();
+      return roundEval;
+    }
+  }
+
+  // When it's the player's turn again, show 3 new challenge cards
   await new Promise(r => setTimeout(r, 800));
   if (window.startPlayerTurn) {
     window.startPlayerTurn();
@@ -937,7 +1106,8 @@ async function startEnemyTurn(isBonusDamage = false) {
 // 10. EXPOSE FUNCTIONS FOR CODE PANEL & GLOBAL SCOPE
 // ---------------------------------------------------------------------------
 window.BattleEngine = {
-  // Constants
+  // Constants & Config
+  BATTLE_CONFIG,
   BASE_DAMAGE,
   POINTS_AWARDED,
   ENEMY_BASE_DAMAGE,
@@ -958,7 +1128,9 @@ window.BattleEngine = {
   setHp,
   updateHud,
 
-  // Battle Logic Handlers
+  // Battle Logic Handlers & Conditions
+  evaluateBattleConditions,
+  triggerBugmonTransformation,
   handlePlayerCodeSuccess,
   handlePlayerCodePartial,
   handleTurnTimeout,
@@ -971,6 +1143,9 @@ window.BattleEngine = {
 };
 
 // Global direct bindings for code panel and external modules
+window.BATTLE_CONFIG = BATTLE_CONFIG;
+window.evaluateBattleConditions = evaluateBattleConditions;
+window.triggerBugmonTransformation = triggerBugmonTransformation;
 window.playAttackAnimation = playAttackAnimation;
 window.playHitAnimation = playHitAnimation;
 window.showMessage = showMessage;

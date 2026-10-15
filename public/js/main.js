@@ -78,8 +78,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Battle & Turn State
   let battleActive = false;
   let currentPoints = 0;
-  const targetPoints = 120;
-  let turnsLeft = 8;
+  const targetPoints = (typeof window !== 'undefined' && window.BATTLE_CONFIG && window.BATTLE_CONFIG.minPoints) || 120;
+  let turnsLeft = (typeof window !== 'undefined' && window.BATTLE_CONFIG && window.BATTLE_CONFIG.turnLimit) || 8;
   const battleUsedChallenges = new Set();
   let currentTurnCards = [];
   let activeChallenge = null;
@@ -1103,8 +1103,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (typeof window.gameState.turnsLeft === 'number') turnsLeft = window.gameState.turnsLeft;
     }
 
+    const minPoints = (window.BATTLE_CONFIG && window.BATTLE_CONFIG.minPoints) || targetPoints;
     const player = window.gameState.player || { name: 'Codemon' };
     const enemy = window.gameState.enemy || { name: 'Bugmon' };
+
+    const resultOverlay = document.getElementById('battle-result-overlay');
+    const resultBadge = document.getElementById('result-badge');
+    const resultTitle = document.getElementById('result-title');
+    const resultSubtitle = document.getElementById('result-subtitle');
+    const resultScoreVal = document.getElementById('result-score-val');
+    const resultTargetVal = document.getElementById('result-target-val');
+    const resultTurnsVal = document.getElementById('result-turns-val');
+    const btnResultAction = document.getElementById('btn-result-action');
 
     if (outcome === 'victory') {
       playSound('battle');
@@ -1113,7 +1123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       appendConsoleLine('========================================', 'console-pass');
       appendConsoleLine('★ BATTLE VICTORY! BUG MONSTER DEFEATED ★', 'console-pass');
-      appendConsoleLine(`Final Score: ${currentPoints} / ${targetPoints} Points. Turns remaining: ${turnsLeft}.`, 'console-pass');
+      appendConsoleLine(`Final Score: ${currentPoints} / ${minPoints} Points. Turns remaining: ${turnsLeft}.`, 'console-pass');
       appendConsoleLine('========================================', 'console-pass');
 
       if (pickerStatusBadge) {
@@ -1124,6 +1134,58 @@ document.addEventListener('DOMContentLoaded', async () => {
         consoleStatusBadge.textContent = 'SYS: VICTORY';
         consoleStatusBadge.className = 'section-badge font-code text-green';
       }
+
+      if (resultOverlay) {
+        if (resultBadge) {
+          resultBadge.className = 'result-badge victory font-pixel';
+          resultBadge.textContent = '★ BATTLE VICTORY ★';
+        }
+        if (resultTitle) resultTitle.textContent = 'BUGMON DEBUGGED!';
+        if (resultSubtitle) resultSubtitle.textContent = `Clean code eliminated all bugs and reached ${currentPoints} PTS!`;
+        if (resultScoreVal) resultScoreVal.textContent = `${currentPoints} / ${minPoints} PTS`;
+        if (resultTargetVal) {
+          resultTargetVal.className = 'text-green';
+          resultTargetVal.textContent = `TARGET MET (${minPoints} MIN)`;
+        }
+        if (resultTurnsVal) resultTurnsVal.textContent = `${turnsLeft} REMAINING`;
+        if (btnResultAction) btnResultAction.textContent = 'PLAY AGAIN ▶';
+        resultOverlay.style.display = 'flex';
+      }
+    } else if (outcome === 'transformation') {
+      playSound('hit');
+      if (window.typeText) {
+        window.typeText(`The enemy is still glitching... Bugmon initiated Glitch Transformation!`, 22);
+      }
+      appendConsoleLine('========================================', 'console-error');
+      appendConsoleLine('⚠ GLITCH MUTATION: INSUFFICIENT MINIMUM POINTS ⚠', 'console-error');
+      appendConsoleLine(`Score ${currentPoints} / ${minPoints} PTS. Enemy absorbed unhandled exceptions!`, 'console-warn');
+      appendConsoleLine('========================================', 'console-error');
+
+      if (pickerStatusBadge) {
+        pickerStatusBadge.textContent = 'ENEMY GLITCHING...';
+        pickerStatusBadge.className = 'section-badge font-code text-red';
+      }
+      if (consoleStatusBadge) {
+        consoleStatusBadge.textContent = 'SYS: GLITCH CORRUPTION';
+        consoleStatusBadge.className = 'section-badge font-code text-red';
+      }
+
+      if (resultOverlay) {
+        if (resultBadge) {
+          resultBadge.className = 'result-badge transformation font-pixel';
+          resultBadge.textContent = '⚠ GLITCH MUTATION (PIECE 7) ⚠';
+        }
+        if (resultTitle) resultTitle.textContent = 'THE ENEMY IS STILL GLITCHING...';
+        if (resultSubtitle) resultSubtitle.textContent = `Points: ${currentPoints}/${minPoints} PTS. Easy-only play cannot defeat Bugmon without medium/hard challenges!`;
+        if (resultScoreVal) resultScoreVal.textContent = `${currentPoints} / ${minPoints} PTS`;
+        if (resultTargetVal) {
+          resultTargetVal.className = 'text-red';
+          resultTargetVal.textContent = `FAILED (<${minPoints} MIN)`;
+        }
+        if (resultTurnsVal) resultTurnsVal.textContent = `${turnsLeft} REMAINING`;
+        if (btnResultAction) btnResultAction.textContent = 'CONTINUE (PIECE 7) ▶';
+        resultOverlay.style.display = 'flex';
+      }
     } else {
       playSound('hit');
       const reason = player.hp <= 0 ? `${player.name.toUpperCase()} fainted!` : 'Turn limit reached!';
@@ -1132,7 +1194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       appendConsoleLine('========================================', 'console-fail');
       appendConsoleLine('✖ BATTLE DEFEAT: SYSTEM OVERFLOW ✖', 'console-fail');
-      appendConsoleLine(`Final Score: ${currentPoints} / ${targetPoints} Points.`, 'console-fail');
+      appendConsoleLine(`Final Score: ${currentPoints} / ${minPoints} Points.`, 'console-fail');
       appendConsoleLine('========================================', 'console-fail');
 
       if (pickerStatusBadge) {
@@ -1142,6 +1204,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (consoleStatusBadge) {
         consoleStatusBadge.textContent = 'SYS: CRASHED';
         consoleStatusBadge.className = 'section-badge font-code text-red';
+      }
+
+      if (resultOverlay) {
+        if (resultBadge) {
+          resultBadge.className = 'result-badge defeat font-pixel';
+          resultBadge.textContent = '✖ BATTLE DEFEAT ✖';
+        }
+        if (resultTitle) resultTitle.textContent = player.hp <= 0 ? `${player.name.toUpperCase()} FAINTED!` : 'SYSTEM CRASH';
+        if (resultSubtitle) resultSubtitle.textContent = player.hp <= 0 ? 'Bugmon overwhelmed your defenses with fatal errors.' : 'Turn limit expired before Bugmon could be debugged.';
+        if (resultScoreVal) resultScoreVal.textContent = `${currentPoints} / ${minPoints} PTS`;
+        if (resultTargetVal) {
+          resultTargetVal.className = currentPoints >= minPoints ? 'text-green' : 'text-red';
+          resultTargetVal.textContent = currentPoints >= minPoints ? `MET (${minPoints} MIN)` : `FAILED (<${minPoints})`;
+        }
+        if (resultTurnsVal) resultTurnsVal.textContent = `${turnsLeft} REMAINING`;
+        if (btnResultAction) btnResultAction.textContent = 'TRY AGAIN ▶';
+        resultOverlay.style.display = 'flex';
       }
     }
 
@@ -1175,14 +1254,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.setHp('enemy', enemy.maxHp, enemy.maxHp, true);
     }
 
+    const startingTurns = (window.BATTLE_CONFIG && window.BATTLE_CONFIG.turnLimit) || 8;
     currentPoints = 0;
-    turnsLeft = 8;
+    turnsLeft = startingTurns;
     battleActive = true;
     window.gameState.battleActive = true;
     battleUsedChallenges.clear();
 
+    if (window.BattleEngine && window.BattleEngine.visualState) {
+      window.BattleEngine.visualState.isGlitching = false;
+      window.BattleEngine.visualState.points = 0;
+      window.BattleEngine.visualState.turnsLeft = startingTurns;
+    }
+
+    const resultOverlay = document.getElementById('battle-result-overlay');
+    if (resultOverlay) {
+      resultOverlay.style.display = 'none';
+    }
+
     if (window.updateHud) {
-      window.updateHud(0, 8);
+      window.updateHud(0, startingTurns);
     }
 
     const versusTitle = document.getElementById('battle-versus-title');
@@ -1277,6 +1368,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       soundEnabled = !soundEnabled;
       soundToggleBtn.textContent = soundEnabled ? 'SFX: ON' : 'SFX: OFF';
       playSound('click');
+    });
+  }
+
+  // Result overlay buttons
+  const btnResultAction = document.getElementById('btn-result-action');
+  const btnResultTitle = document.getElementById('btn-result-title');
+  const resultOverlay = document.getElementById('battle-result-overlay');
+
+  if (btnResultAction) {
+    btnResultAction.addEventListener('click', () => {
+      playSound('click');
+      if (resultOverlay) resultOverlay.style.display = 'none';
+      initBattle();
+    });
+  }
+
+  if (btnResultTitle) {
+    btnResultTitle.addEventListener('click', () => {
+      playSound('click');
+      if (resultOverlay) resultOverlay.style.display = 'none';
+      showScreen('title');
     });
   }
 

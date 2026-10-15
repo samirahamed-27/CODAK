@@ -136,9 +136,15 @@
         <section id="screen-battle" class="game-screen battle-screen" aria-label="Battle Screen" aria-hidden="true">
           <!-- HUD strip at the top of #game-panel: POINTS & TURNS LEFT -->
           <div id="battle-hud-strip" class="battle-hud-strip font-pixel">
-            <div class="hud-strip-item">
-              <span class="text-yellow">POINTS:</span>
-              <span id="hud-points-val" class="text-white">0 / 120</span>
+            <div class="hud-points-col">
+              <div class="hud-strip-item">
+                <span class="text-yellow">POINTS:</span>
+                <span id="hud-points-val" class="text-white">0 / 120</span>
+              </div>
+              <!-- Thin progress bar under the HUD points showing progress toward the minimum (120) -->
+              <div id="hud-points-progress-track" class="hud-points-progress-track" aria-label="Points progress toward minimum (120)">
+                <div id="hud-points-bar-fill" class="hud-points-bar-fill" style="width: 0%;"></div>
+              </div>
             </div>
             <div class="hud-strip-center">
               <span class="text-blue">■ BATTLE ARENA ■</span>
@@ -171,6 +177,39 @@
               <button type="button" class="pixel-btn-sm font-pixel" id="btn-forfeit-battle">
                 ◀ RUN / FORFEIT
               </button>
+            </div>
+          </div>
+
+          <!-- Battle End Result Overlay (Victory / Defeat / Glitch Transformation) -->
+          <div id="battle-result-overlay" class="battle-result-overlay font-pixel" style="display: none;" role="dialog" aria-modal="true" aria-label="Battle Outcome">
+            <div class="result-modal-box">
+              <div id="result-badge" class="result-badge font-pixel">VICTORY ACHIEVED</div>
+              <h2 id="result-title" class="result-title font-pixel">BUGMON DEBUGGED!</h2>
+              <p id="result-subtitle" class="result-subtitle font-code">All rogue syntax glitches eliminated with clean code.</p>
+              
+              <div class="result-stats-card font-code">
+                <div class="result-stat-row">
+                  <span>FINAL SCORE:</span>
+                  <span id="result-score-val" class="text-yellow">120 / 120 PTS</span>
+                </div>
+                <div class="result-stat-row">
+                  <span>TARGET MET:</span>
+                  <span id="result-target-val" class="text-green">YES (120 MIN)</span>
+                </div>
+                <div class="result-stat-row">
+                  <span>TURNS REMAINING:</span>
+                  <span id="result-turns-val" class="text-white">4</span>
+                </div>
+              </div>
+
+              <div class="result-actions">
+                <button type="button" id="btn-result-action" class="pixel-btn pixel-btn-green font-pixel">
+                  PLAY AGAIN ▶
+                </button>
+                <button type="button" id="btn-result-title" class="pixel-btn pixel-btn-dark font-pixel">
+                  MAIN MENU ◀
+                </button>
+              </div>
             </div>
           </div>
         </section>
