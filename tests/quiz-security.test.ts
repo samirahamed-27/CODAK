@@ -563,7 +563,34 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
 
       const firstBonus = mockAwardXpCalls.find((c) => c.p_action_type === 'STREAK_7_BONUS');
       expect(firstBonus).toBeDefined();
-      expect(firstBonus.p_reference_id).toBe(`streak_7_bonus_${studentA}_2026-10-01_7`);
+      expect(firstBonus.p_reference_id).toBe(`streak_7_bonus_${studentA}_2026-10-01`);
+
+      // Replaying finalize on day 7 never pays twice
+      const replayRes = await finalizeQuizAction({ attemptId: session1.attemptId! });
+      expect(replayRes.success).toBe(true);
+      expect(replayRes.alreadyFinalized).toBe(true);
+      const bonusesAfterReplay = mockAwardXpCalls.filter((c) => c.p_action_type === 'STREAK_7_BONUS');
+      expect(bonusesAfterReplay.length).toBe(1);
+
+      // Day 14 pays nothing: reach day 14 on Oct 14
+      const streakRowFor14 = mockDbStreaks.find((s) => s.student_id === studentA);
+      streakRowFor14.current_streak = 13;
+      streakRowFor14.last_quiz_date = '2026-10-13';
+      streakRowFor14.streak_start_date = '2026-10-01';
+
+      mockDbAttempts = [];
+      const session14 = await getDailyQuizSessionAction();
+      const att14 = mockDbAttempts.find((a) => a.id === session14.attemptId);
+      att14.quiz_date = '2026-10-14';
+      for (const q of session14.questions!) {
+        await submitQuizAnswerAction({ attemptId: session14.attemptId!, questionId: q.id, selectedOption: 'B' });
+      }
+      const res14 = await finalizeQuizAction({ attemptId: session14.attemptId! });
+      expect(res14.success).toBe(true);
+      expect(res14.currentStreak).toBe(14);
+      expect(res14.bonusAwarded).toBe(false);
+      const bonusesAt14 = mockAwardXpCalls.filter((c) => c.p_action_type === 'STREAK_7_BONUS');
+      expect(bonusesAt14.length).toBe(1); // Day 14 pays nothing!
 
       // 2. Streak resets: student missed 5 days, starts a brand new streak on Oct 15
       const streakRow = mockDbStreaks.find((s) => s.student_id === studentA);
@@ -587,7 +614,7 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
 
       const bonuses = mockAwardXpCalls.filter((c) => c.p_action_type === 'STREAK_7_BONUS');
       expect(bonuses.length).toBe(2);
-      expect(bonuses[1].p_reference_id).toBe(`streak_7_bonus_${studentA}_2026-10-15_7`);
+      expect(bonuses[1].p_reference_id).toBe(`streak_7_bonus_${studentA}_2026-10-15`);
     });
 
     it('4(a). No approved questions today does NOT break or mutate student streak', async () => {

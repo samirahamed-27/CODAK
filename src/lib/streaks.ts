@@ -144,7 +144,7 @@ export function evaluateStreakCompletion(
   // 5. Case: Exactly consecutive day (e.g. yesterday -> today)
   if (diffDays === 1) {
     const newStreak = streak.current_streak + 1;
-    const isBonusMilestone = newStreak > 0 && newStreak % 7 === 0;
+    const isBonusMilestone = newStreak === 7;
     const startDate = streak.streak_start_date || addDaysToDate(quizDate, -(newStreak - 1));
 
     return {
@@ -158,7 +158,7 @@ export function evaluateStreakCompletion(
       freezes_consumed: 0,
       notes: `Consecutive daily quiz completed. Streak extended to ${newStreak}.`,
       eligible_for_7_day_bonus: isBonusMilestone,
-      bonus_milestone: isBonusMilestone ? newStreak : null,
+      bonus_milestone: isBonusMilestone ? 7 : null,
     };
   }
 
@@ -170,7 +170,7 @@ export function evaluateStreakCompletion(
     // Freeze days cover the gap!
     const newFreezeUsed = freezeUsedThisMonth + missedDays;
     const newStreak = streak.current_streak + 1; // Preserved across freeze, then incremented by today
-    const isBonusMilestone = newStreak > 0 && newStreak % 7 === 0;
+    const isBonusMilestone = newStreak === 7;
     const startDate = streak.streak_start_date || addDaysToDate(quizDate, -(newStreak - 1));
 
     return {
@@ -184,7 +184,7 @@ export function evaluateStreakCompletion(
       freezes_consumed: missedDays,
       notes: `Streak preserved using ${missedDays} freeze day(s). Streak extended to ${newStreak}.`,
       eligible_for_7_day_bonus: isBonusMilestone,
-      bonus_milestone: isBonusMilestone ? newStreak : null,
+      bonus_milestone: isBonusMilestone ? 7 : null,
     };
   } else {
     // Missed days exceed available freezes -> Streak resets

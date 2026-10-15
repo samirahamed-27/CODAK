@@ -507,10 +507,10 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
   }
 
   // 7. Check 7-Day Streak Bonus Milestone
-  // Reference includes streak start date so every new streak can earn it once
+  // Pay ONLY at day 7 of a streak (once per streak). Reference = streak_7_bonus_<student>_<streak_start_date>
   let bonusAwarded = false;
-  if (streakEval.eligible_for_7_day_bonus && streakEval.bonus_milestone) {
-    const bonusRef = `streak_7_bonus_${user.id}_${streakEval.streak_start_date}_${streakEval.bonus_milestone}`;
+  if (streakEval.eligible_for_7_day_bonus) {
+    const bonusRef = `streak_7_bonus_${user.id}_${streakEval.streak_start_date}`;
     const { data: bonusRes } = await adminClient.rpc('award_xp', {
       p_student_id: user.id,
       p_action_type: 'STREAK_7_BONUS',
@@ -526,7 +526,7 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
         quiz_date: attempt.quiz_date,
         streak_before: streakEval.current_streak,
         streak_after: streakEval.current_streak,
-        notes: `Awarded 7-day milestone bonus of 50 XP for milestone ${streakEval.bonus_milestone}.`,
+        notes: `Awarded 7-day milestone bonus of 50 XP for streak started ${streakEval.streak_start_date}.`,
       });
     }
   }

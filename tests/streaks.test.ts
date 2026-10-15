@@ -229,11 +229,28 @@ describe('Streak & Freeze Days Calculation Engine', () => {
       expect(resSecond7.streak_start_date).toBe('2026-10-13'); // Distinct start date!
 
       // Ledger references are distinct:
-      const ref1 = `streak_7_bonus_student_${resFirst7.streak_start_date}_${resFirst7.bonus_milestone}`;
-      const ref2 = `streak_7_bonus_student_${resSecond7.streak_start_date}_${resSecond7.bonus_milestone}`;
+      const ref1 = `streak_7_bonus_student_${resFirst7.streak_start_date}`;
+      const ref2 = `streak_7_bonus_student_${resSecond7.streak_start_date}`;
       expect(ref1).not.toBe(ref2);
-      expect(ref1).toBe('streak_7_bonus_student_2026-10-01_7');
-      expect(ref2).toBe('streak_7_bonus_student_2026-10-13_7');
+      expect(ref1).toBe('streak_7_bonus_student_2026-10-01');
+      expect(ref2).toBe('streak_7_bonus_student_2026-10-13');
+    });
+
+    it('11. Day 14 pays nothing: 7-day bonus is paid ONLY on day 7 (once per streak)', () => {
+      const day13: StudentStreakData = {
+        current_streak: 13,
+        longest_streak: 13,
+        last_quiz_date: '2026-10-13',
+        freeze_days_used_this_month: 0,
+        freeze_days_month: '2026-10',
+        streak_start_date: '2026-10-01',
+      };
+
+      const res14 = evaluateStreakCompletion(day13, '2026-10-14');
+      expect(res14.current_streak).toBe(14);
+      // Must NOT be eligible for 7-day bonus on day 14
+      expect(res14.eligible_for_7_day_bonus).toBe(false);
+      expect(res14.bonus_milestone).toBeNull();
     });
   });
 });
