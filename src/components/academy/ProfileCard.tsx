@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Trash2, Shield, AlertTriangle } from 'lucide-react';
 import { StudentProfile } from '@/data/studentDashboardData';
 import Shuffle from '@/components/Shuffle';
+import Aurora from '@/components/Aurora';
 
 interface ProfileCardProps {
   profile: StudentProfile;
@@ -14,7 +15,10 @@ const STORAGE_KEY = 'academy_student_avatar';
 
 export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatarUrl);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Hydrate avatar from localStorage on client mount to prevent server-client HTML mismatch
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -23,8 +27,6 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
       // Storage access blocked or unavailable
     }
   }, []);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMsg(null);
@@ -79,8 +81,21 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
       aria-label="Student Profile Card"
       className="game-card p-6 flex flex-col items-center justify-between text-center relative overflow-hidden animate-card-pop"
     >
+      {/* Ambient WebGL Aurora Background */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-30 rounded-2xl">
+        <Aurora
+          colorStops={['#2c0fa1', '#104572', '#2284c1']}
+          amplitude={1}
+          blend={0.5}
+          height={0.5}
+          speed={0.7}
+          glow={0.6}
+          brightness={1}
+        />
+      </div>
+
       {/* Background ambient glow */}
-      <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#7CC4FF]/10 rounded-full blur-2xl pointer-events-none" />
+      <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#7CC4FF]/10 rounded-full blur-2xl pointer-events-none z-10" />
 
       {/* Top Title */}
       <div className="w-full flex items-center justify-between mb-4">

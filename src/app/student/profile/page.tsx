@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { levelFromXp, LevelProgress } from '@/lib/levels';
 import { XpEvent } from '@/types/database';
 import { ShieldCheck, EyeOff, Award, Sparkles, TrendingUp, History, Clock } from 'lucide-react';
+import Aurora from '@/components/Aurora';
 
 export default function StudentProfilePage() {
   const supabase = createClient();
@@ -112,15 +113,33 @@ export default function StudentProfilePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 pb-24">
-      <Navbar role="student" userName={studentName} />
+    <div className="min-h-screen flex flex-col relative pb-24 overflow-x-hidden bg-transparent">
+      {/* Ambient WebGL Aurora Background for Profile Page */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-[#07080b]/75">
+        <Aurora
+          colorStops={['#2c0fa1', '#104572', '#2284c1']}
+          amplitude={1.1}
+          blend={0.5}
+          height={0.55}
+          speed={0.9}
+          glow={0.6}
+          scale={1}
+          brightness={1}
+          layers={1}
+          direction="top"
+          mouseInteraction={true}
+        />
+      </div>
 
-      <main className="flex-1 max-w-md w-full mx-auto px-4 py-6 flex flex-col gap-6">
-        {/* Profile Card */}
-        <section
-          aria-label="Student profile card"
-          className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 text-center shadow-xl backdrop-blur-md"
-        >
+      <div className="relative z-10 flex-1 flex flex-col w-full">
+        <Navbar role="student" userName={studentName} />
+
+        <main className="flex-1 max-w-md w-full mx-auto px-4 py-6 flex flex-col gap-6">
+          {/* Profile Card */}
+          <section
+            aria-label="Student profile card"
+            className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 text-center shadow-xl backdrop-blur-xl"
+          >
           <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-500 to-violet-600 mx-auto flex items-center justify-center text-3xl shadow-xl shadow-indigo-500/25 mb-4">
             👨‍🎓
           </div>
@@ -304,5 +323,6 @@ export default function StudentProfilePage() {
 
       <BottomNav />
     </div>
+  </div>
   );
 }
