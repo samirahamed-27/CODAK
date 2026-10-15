@@ -596,31 +596,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   function handleTurnTimeout() {
     if (!battleActive || !activeChallenge) return;
 
-    playSound('hit');
-    appendConsoleLine('TIMEOUT: Turn timer expired! Turn failed.', 'console-error');
-    if (consoleStatusBadge) {
-      consoleStatusBadge.textContent = 'SYS: TIMEOUT';
-      consoleStatusBadge.className = 'section-badge font-code text-red';
-    }
-
+    stopTurnTimer();
     if (codeTextarea) codeTextarea.disabled = true;
     if (btnRunTests) btnRunTests.disabled = true;
     if (btnHint) btnHint.disabled = true;
     if (btnResetCode) btnResetCode.disabled = true;
 
-    turnsLeft = Math.max(0, turnsLeft - 1);
-    if (window.updateHud) {
-      window.updateHud(currentPoints, turnsLeft);
+    if (window.BattleEngine && typeof window.BattleEngine.handleTurnTimeout === 'function') {
+      window.BattleEngine.handleTurnTimeout();
+    } else if (window.handleTurnTimeout) {
+      window.handleTurnTimeout();
+    } else {
+      playSound('hit');
+      if (window.showMessage) {
+        window.showMessage("Out of time!");
+      }
+      setTimeout(() => {
+        if (!battleActive) return;
+        executeEnemyTurn(true);
+      }, 1000);
     }
-
-    if (window.typeText) {
-      window.typeText("Time's up! Turn failed! Bugmon strikes back!", 20);
-    }
-
-    setTimeout(() => {
-      if (!battleActive) return;
-      executeEnemyTurn();
-    }, 1500);
   }
 
   // -------------------------------------------------------------------------
@@ -894,15 +889,32 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (btnResetCode) btnResetCode.disabled = true;
           if (codeTextarea) codeTextarea.disabled = true;
 
-          executePlayerAttack();
+          if (window.BattleEngine && typeof window.BattleEngine.handlePlayerCodeSuccess === 'function') {
+            window.BattleEngine.handlePlayerCodeSuccess(activeChallenge, outcome);
+          } else if (window.handlePlayerCodeSuccess) {
+            window.handlePlayerCodeSuccess(activeChallenge, outcome);
+          } else {
+            executePlayerAttack();
+          }
         } else {
+          // Partial passes (some tests pass, not all): no damage, but show
+          // "N/M tests passed" in the console, and the player may keep editing and
+          // re-running until the timer ends. Each failed run costs nothing, but only the
+          // first full pass counts.
           if (consoleStatusBadge) {
             consoleStatusBadge.textContent = 'SYS: FAILED';
             consoleStatusBadge.className = 'section-badge font-code text-red';
           }
-          appendConsoleLine(`> Tests failed. Check console output and adjust your code before time expires!`, 'console-warn');
-          if (window.typeText) {
-            window.typeText(`Tests failed! Check the console output and try again!`, 18);
+
+          if (window.BattleEngine && typeof window.BattleEngine.handlePlayerCodePartial === 'function') {
+            window.BattleEngine.handlePlayerCodePartial(outcome, activeChallenge);
+          } else if (window.handlePlayerCodePartial) {
+            window.handlePlayerCodePartial(outcome, activeChallenge);
+          } else {
+            const results = outcome.results || [];
+            const passedCount = results.filter(r => r.pass).length;
+            const totalCount = results.length;
+            appendConsoleLine(`${passedCount}/${totalCount} tests passed`, 'console-warn');
           }
           btnRunTests.disabled = false;
         }
@@ -925,10 +937,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!player || !enemy) return;
 
     const dmgMap = { easy: 10, medium: 20, hard: 35 };
-    const baseDmg = dmgMap[activeChallenge.difficulty] || 10;
+    const pointsMap = { easy: 10, medium: 25, hard: 50 };
+    const diff = (activeChallenge && activeChallenge.difficulty) ? activeChallenge.difficulty.toLowerCase() : 'easy';
+    const baseDmg = dmgMap[diff] || 10;
     const multiplier = player.attackPower || 1.0;
     const finalDmg = Math.round(baseDmg * multiplier);
-    const earnedPoints = baseDmg;
+    const earnedPoints = pointsMap[diff] || 10;
 
     currentPoints += earnedPoints;
     turnsLeft = Math.max(0, turnsLeft - 1);
@@ -937,9 +951,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.updateHud(currentPoints, turnsLeft);
     }
 
+    // Call playAttackAnimation("player") and playHitAnimation("enemy")
     if (window.playAttackAnimation) {
       window.playAttackAnimation('player');
     }
+    setTimeout(() => {
+      if (window.playHitAnimation) {
+        window.playHitAnimation('enemy');
+      }
+    }, 280);
     playSound('hit');
 
     const prevEnemyHp = enemy.hp || enemy.maxHp;
@@ -952,7 +972,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (window.typeText) {
-      window.typeText(`${player.name.toUpperCase()} executed clean code! Dealt ${finalDmg} DMG to ${enemy.name.toUpperCase()}!`, 20);
+      window.typeText(`${player.name.toUpperCase()} executed clean code! Dealt ${finalDmg} DMG to ${enemy.name.toUpperCase()}! (+${earnedPoints} PTS)`, 20);
     }
 
     appendConsoleLine(`> Attack hit! +${earnedPoints} Points. Bugmon took ${finalDmg} DMG.`, 'console-info');
@@ -976,17 +996,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Bugmon counter-attacks after delay
     setTimeout(() => {
       if (!battleActive) return;
-      executeEnemyTurn();
+      executeEnemyTurn(false);
     }, 1500);
   }
 
-  function executeEnemyTurn() {
+  function executeEnemyTurn(isBonusDamage = false) {
     const player = window.gameState.player;
     const enemy = window.gameState.enemy;
     if (!player || !enemy || !battleActive) return;
 
+    // During enemy turn, disable editor and show "ENEMY TURN..." in the code panel
+    if (pickerStatusBadge) {
+      pickerStatusBadge.textContent = 'ENEMY TURN...';
+      pickerStatusBadge.className = 'section-badge font-code text-red';
+    }
+    if (currentChallengeBadge) {
+      currentChallengeBadge.textContent = 'ENEMY TURN...';
+      currentChallengeBadge.className = 'badge-difficulty hard font-pixel';
+    }
+    if (consoleStatusBadge) {
+      consoleStatusBadge.textContent = 'SYS: ENEMY TURN';
+      consoleStatusBadge.className = 'section-badge font-code text-red';
+    }
+    if (codeTextarea) codeTextarea.disabled = true;
+    if (btnRunTests) btnRunTests.disabled = true;
+    if (btnHint) btnHint.disabled = true;
+    if (btnResetCode) btnResetCode.disabled = true;
+
+    appendConsoleLine('> ENEMY TURN...', 'console-warn');
+
+    const baseEnemyDmg = 16;
+    const enemyDmg = isBonusDamage ? Math.round(baseEnemyDmg * 1.5) : baseEnemyDmg;
+
     if (window.typeText) {
-      window.typeText(`${enemy.name.toUpperCase()} countered with NullPointer Crash!`, 20);
+      const atkDesc = isBonusDamage
+        ? `${enemy.name.toUpperCase()} strikes with 50% BONUS DAMAGE (${enemyDmg} DMG)!`
+        : `${enemy.name.toUpperCase()} countered with Segfault Slam (${enemyDmg} DMG)!`;
+      window.typeText(atkDesc, 20);
     }
 
     setTimeout(() => {
@@ -995,9 +1041,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (window.playAttackAnimation) {
         window.playAttackAnimation('enemy');
       }
+      setTimeout(() => {
+        if (window.playHitAnimation) {
+          window.playHitAnimation('player');
+        }
+      }, 280);
       playSound('hit');
 
-      const enemyDmg = 16;
       const prevPlayerHp = player.hp || player.maxHp;
       const newPlayerHp = Math.max(0, prevPlayerHp - enemyDmg);
       player.hp = newPlayerHp;
@@ -1017,7 +1067,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      // Start next player turn
+      // When it's player's turn again, show 3 new challenge cards
       setTimeout(() => {
         if (!battleActive) return;
         startPlayerTurn();
@@ -1201,6 +1251,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       playSound('click');
     });
   }
+
+  // Expose methods for BattleEngine in battle.js and external integration
+  window.startPlayerTurn = startPlayerTurn;
+  window.appendConsoleLine = appendConsoleLine;
+  window.handleBattleOutcome = handleBattleOutcome;
 
   // Initial setup
   renderStarters();

@@ -262,13 +262,19 @@ function setHp(target, current, max, immediate = false) {
     }
 
     // Wait until display catches up to target
+    let safetyCounter = 0;
     const checkInterval = setInterval(() => {
-      if (Math.abs(hp.display - hp.target) < 0.5) {
+      safetyCounter++;
+      const diff = hp.target - hp.display;
+      if (Math.abs(diff) > 0.4) {
+        hp.display += diff * 0.25;
+      }
+      if (Math.abs(hp.display - hp.target) < 0.5 || safetyCounter > 25) {
         hp.display = hp.target;
         clearInterval(checkInterval);
         resolve();
       }
-    }, 40);
+    }, 30);
   });
 }
 
@@ -624,9 +630,291 @@ function renderBattleScene(ctx, animTick = 0) {
 }
 
 // ---------------------------------------------------------------------------
-// 9. EXPOSE FUNCTIONS FOR CODE PANEL & GLOBAL SCOPE
+// 9. BATTLE LOGIC & CODE PANEL INTEGRATION
+// ---------------------------------------------------------------------------
+
+// Damage mapping per difficulty: easy 10, medium 20, hard 35
+const BASE_DAMAGE = {
+  easy: 10,
+  medium: 20,
+  hard: 35
+};
+
+// Points mapping per difficulty: easy 10, medium 25, hard 50
+const POINTS_AWARDED = {
+  easy: 10,
+  medium: 25,
+  hard: 50
+};
+
+// Enemy base attack power
+const ENEMY_BASE_DAMAGE = 16;
+
+/**
+ * Update code panel elements to reflect "ENEMY TURN..." state
+ */
+function setCodePanelEnemyTurnUI(isEnemyTurn) {
+  const pickerBadge = document.getElementById('picker-status-badge');
+  const challengeBadge = document.getElementById('current-challenge-badge');
+  const consoleBadge = document.getElementById('console-status-badge');
+  const textarea = document.getElementById('code-textarea');
+  const btnRun = document.getElementById('btn-run-tests');
+  const btnHint = document.getElementById('btn-hint');
+  const btnReset = document.getElementById('btn-reset-code');
+  const pickerContainer = document.getElementById('picker-cards-container');
+
+  if (isEnemyTurn) {
+    if (pickerBadge) {
+      pickerBadge.textContent = 'ENEMY TURN...';
+      pickerBadge.className = 'section-badge font-code text-red';
+    }
+    if (challengeBadge) {
+      challengeBadge.textContent = 'ENEMY TURN...';
+      challengeBadge.className = 'badge-difficulty hard font-pixel';
+    }
+    if (consoleBadge) {
+      consoleBadge.textContent = 'SYS: ENEMY TURN';
+      consoleBadge.className = 'section-badge font-code text-red';
+    }
+    if (textarea) textarea.disabled = true;
+    if (btnRun) btnRun.disabled = true;
+    if (btnHint) btnHint.disabled = true;
+    if (btnReset) btnReset.disabled = true;
+
+    if (pickerContainer) {
+      const cards = pickerContainer.querySelectorAll('.picker-card');
+      cards.forEach((c) => {
+        c.classList.add('locked');
+        c.style.pointerEvents = 'none';
+      });
+    }
+  }
+}
+
+/**
+ * handlePlayerCodeSuccess(challenge, outcome)
+ * When RUN TESTS returns passed: true, count it as a correct attempt:
+ * - damage = baseDamage[difficulty] * player.attackPower (easy 10, medium 20, hard 35)
+ * - Call playAttackAnimation("player"), playHitAnimation("enemy")
+ * - Animate the enemy HP bar
+ * - Award points (easy 10, medium 25, hard 50)
+ * - Then start the enemy turn
+ */
+async function handlePlayerCodeSuccess(challenge, outcome) {
+  const player = (window.gameState && window.gameState.player) || { attackPower: 1.0, name: 'Pyrawr' };
+  const enemy = (window.gameState && window.gameState.enemy) || { name: 'Bugmon', maxHp: 130 };
+  const diff = (challenge && challenge.difficulty) ? challenge.difficulty.toLowerCase() : 'easy';
+
+  // 1. Calculate damage = baseDamage[difficulty] * player.attackPower
+  const baseDmg = BASE_DAMAGE[diff] || 10;
+  const attackMultiplier = (player && typeof player.attackPower === 'number') ? player.attackPower : 1.0;
+  const damage = Math.round(baseDmg * attackMultiplier);
+
+  // 2. Award points (easy 10, medium 25, hard 50)
+  const pts = POINTS_AWARDED[diff] || 10;
+  battleVisualState.points += pts;
+
+  // Turn count update
+  battleVisualState.turnsLeft = Math.max(0, battleVisualState.turnsLeft - 1);
+  updateHud(battleVisualState.points, battleVisualState.turnsLeft);
+
+  if (window.gameState) {
+    window.gameState.score = battleVisualState.points;
+    window.gameState.turnsLeft = battleVisualState.turnsLeft;
+  }
+
+  // 3. Sequential attack and hit animations
+  const triggerAttack = window.playAttackAnimation || playAttackAnimation;
+  const triggerHit = window.playHitAnimation || playHitAnimation;
+  const triggerSetHp = window.setHp || setHp;
+  const triggerMsg = window.showMessage || showMessage;
+
+  await triggerAttack('player');
+  await triggerHit('enemy');
+
+  // 4. Animate the enemy HP bar
+  const currentEnemyHp = (window.gameState && window.gameState.enemy && typeof window.gameState.enemy.hp === 'number')
+    ? window.gameState.enemy.hp
+    : battleVisualState.hp.enemy.current;
+  const newEnemyHp = Math.max(0, currentEnemyHp - damage);
+
+  if (window.gameState && window.gameState.enemy) {
+    window.gameState.enemy.hp = newEnemyHp;
+    window.gameState.enemy.currentHp = newEnemyHp;
+  }
+
+  await triggerSetHp('enemy', newEnemyHp, battleVisualState.hp.enemy.max);
+
+  if (window.appendConsoleLine) {
+    window.appendConsoleLine(`> Attack hit! Dealt ${damage} DMG to Bugmon. +${pts} PTS awarded.`, 'console-pass');
+  }
+
+  await triggerMsg(`${player.name.toUpperCase()} compiled clean code! Dealt ${damage} DMG to ${enemy.name.toUpperCase()}! (+${pts} PTS)`);
+
+  // Check victory condition
+  if (newEnemyHp <= 0 || battleVisualState.points >= battleVisualState.maxPoints) {
+    if (window.handleBattleOutcome) {
+      window.handleBattleOutcome('victory');
+    } else {
+      await showMessage(`VICTORY! ${enemy.name.toUpperCase()} was debugged! Final Score: ${battleVisualState.points} PTS!`);
+    }
+    return { outcome: 'victory', damage, points: pts };
+  }
+
+  // Check turns exhausted
+  if (battleVisualState.turnsLeft <= 0) {
+    if (window.handleBattleOutcome) {
+      window.handleBattleOutcome('defeat');
+    } else {
+      await showMessage(`DEFEAT! Turns ran out before Bugmon could be debugged!`);
+    }
+    return { outcome: 'defeat' };
+  }
+
+  // 5. Then start the enemy turn
+  await startEnemyTurn(false);
+  return { outcome: 'turn_complete', damage, points: pts };
+}
+
+/**
+ * handlePlayerCodePartial(outcome, challenge)
+ * Partial passes (some tests pass, not all):
+ * - No damage, but show "N/M tests passed" in the console.
+ * - Player may keep editing and re-running until the timer ends.
+ * - Each failed run costs nothing, but only the first full pass counts.
+ */
+function handlePlayerCodePartial(outcome, challenge) {
+  const results = (outcome && outcome.results) ? outcome.results : [];
+  const totalCount = results.length;
+  const passedCount = results.filter(r => r.pass).length;
+  const passSummaryText = `${passedCount}/${totalCount} tests passed`;
+
+  // Show "N/M tests passed" in console
+  if (window.appendConsoleLine) {
+    window.appendConsoleLine(passSummaryText, 'console-warn');
+    window.appendConsoleLine('> No damage dealt. Keep editing and re-run before time expires!', 'console-info');
+  }
+
+  if (window.typeText) {
+    window.typeText(`${passSummaryText}. Adjust your code and re-run!`, 18);
+  }
+
+  return {
+    passedCount,
+    totalCount,
+    summary: passSummaryText
+  };
+}
+
+/**
+ * handleTurnTimeout()
+ * When the timer ends without a full pass:
+ * - showMessage("Out of time!")
+ * - no damage
+ * - enemy attacks with 50% bonus damage
+ */
+async function handleTurnTimeout() {
+  if (window.appendConsoleLine) {
+    window.appendConsoleLine('TIMEOUT: Out of time! Turn failed. Bugmon attacks with 50% BONUS DAMAGE!', 'console-error');
+  }
+
+  const triggerMsg = window.showMessage || showMessage;
+
+  // showMessage("Out of time!")
+  await triggerMsg('Out of time!');
+
+  // Decrement turns left on timeout
+  battleVisualState.turnsLeft = Math.max(0, battleVisualState.turnsLeft - 1);
+  updateHud(battleVisualState.points, battleVisualState.turnsLeft);
+  if (window.gameState) {
+    window.gameState.turnsLeft = battleVisualState.turnsLeft;
+  }
+
+  // Enemy attacks with 50% bonus damage
+  await startEnemyTurn(true);
+}
+
+/**
+ * startEnemyTurn(isBonusDamage = false)
+ * - During the enemy turn, disable the editor and show "ENEMY TURN..." in the code panel.
+ * - When it's the player's turn again, show 3 new challenge cards.
+ */
+async function startEnemyTurn(isBonusDamage = false) {
+  const player = (window.gameState && window.gameState.player) || { name: 'Codemon', maxHp: 100 };
+  const enemy = (window.gameState && window.gameState.enemy) || { name: 'Bugmon', maxHp: 130 };
+
+  const triggerAttack = window.playAttackAnimation || playAttackAnimation;
+  const triggerHit = window.playHitAnimation || playHitAnimation;
+  const triggerSetHp = window.setHp || setHp;
+  const triggerMsg = window.showMessage || showMessage;
+
+  // 1. Disable the editor and show "ENEMY TURN..." in the code panel
+  setCodePanelEnemyTurnUI(true);
+
+  if (window.appendConsoleLine) {
+    window.appendConsoleLine('> ENEMY TURN...', 'console-warn');
+  }
+
+  // 2. Compute damage: normal or with 50% bonus damage
+  const baseDmg = ENEMY_BASE_DAMAGE;
+  const enemyDmg = isBonusDamage ? Math.round(baseDmg * 1.5) : baseDmg;
+
+  await new Promise(r => setTimeout(r, 600));
+
+  if (isBonusDamage) {
+    await triggerMsg(`${enemy.name.toUpperCase()} strikes with 50% BONUS DAMAGE (${enemyDmg} DMG)!`);
+  } else {
+    await triggerMsg(`${enemy.name.toUpperCase()} countered with Segfault Slam (${enemyDmg} DMG)!`);
+  }
+
+  // 3. Enemy attack animations
+  await triggerAttack('enemy');
+  await triggerHit('player');
+
+  // 4. Animate player HP bar
+  const currentPlayerHp = (window.gameState && window.gameState.player && typeof window.gameState.player.hp === 'number')
+    ? window.gameState.player.hp
+    : battleVisualState.hp.player.current;
+  const newPlayerHp = Math.max(0, currentPlayerHp - enemyDmg);
+
+  if (window.gameState && window.gameState.player) {
+    window.gameState.player.hp = newPlayerHp;
+    window.gameState.player.currentHp = newPlayerHp;
+  }
+
+  await triggerSetHp('player', newPlayerHp, battleVisualState.hp.player.max);
+
+  if (window.appendConsoleLine) {
+    window.appendConsoleLine(`> ${enemy.name} dealt ${enemyDmg} DMG to ${player.name}!`, 'console-fail');
+  }
+
+  // 5. Check defeat condition
+  if (newPlayerHp <= 0 || battleVisualState.turnsLeft <= 0) {
+    if (window.handleBattleOutcome) {
+      window.handleBattleOutcome('defeat');
+    } else {
+      await showMessage(newPlayerHp <= 0 ? `DEFEAT! ${player.name.toUpperCase()} fainted!` : `DEFEAT! Turns ran out!`);
+    }
+    return { outcome: 'defeat' };
+  }
+
+  // 6. When it's the player's turn again, show 3 new challenge cards
+  await new Promise(r => setTimeout(r, 800));
+  if (window.startPlayerTurn) {
+    window.startPlayerTurn();
+  }
+  return { outcome: 'player_turn' };
+}
+
+// ---------------------------------------------------------------------------
+// 10. EXPOSE FUNCTIONS FOR CODE PANEL & GLOBAL SCOPE
 // ---------------------------------------------------------------------------
 window.BattleEngine = {
+  // Constants
+  BASE_DAMAGE,
+  POINTS_AWARDED,
+  ENEMY_BASE_DAMAGE,
+
   // Sprites
   SPRITE_PALETTE,
   SPRITE_BUGMON_FRONT,
@@ -635,7 +923,7 @@ window.BattleEngine = {
   SPRITE_CPLUSAUR_BACK,
   drawPixelSprite,
 
-  // Functions requested by user
+  // Visual & Animation Functions
   playAttackAnimation,
   playHitAnimation,
   showMessage,
@@ -643,16 +931,29 @@ window.BattleEngine = {
   setHp,
   updateHud,
 
+  // Battle Logic Handlers
+  handlePlayerCodeSuccess,
+  handlePlayerCodePartial,
+  handleTurnTimeout,
+  startEnemyTurn,
+  setCodePanelEnemyTurnUI,
+
   // Renderer & state
   render: renderBattleScene,
   visualState: battleVisualState
 };
 
-// Direct global convenience bindings
+// Global direct bindings for code panel and external modules
 window.playAttackAnimation = playAttackAnimation;
 window.playHitAnimation = playHitAnimation;
 window.showMessage = showMessage;
 window.typeText = typeText;
 window.setHp = setHp;
 window.updateHud = updateHud;
+window.handlePlayerCodeSuccess = handlePlayerCodeSuccess;
+window.handlePlayerCodePartial = handlePlayerCodePartial;
+window.handleTurnTimeout = handleTurnTimeout;
+window.startEnemyTurn = startEnemyTurn;
+window.setCodePanelEnemyTurnUI = setCodePanelEnemyTurnUI;
 window.BattleScene = window.BattleEngine;
+
