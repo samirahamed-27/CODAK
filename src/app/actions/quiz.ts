@@ -361,7 +361,36 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
 
   const adminClient = getAdminClient();
 
-  // 1. Fetch attempt
+  // 1. Try atomic database transaction procedure if present
+  try {
+    const { data: rpcData, error: rpcErr } = await adminClient.rpc('finalize_daily_quiz', {
+      p_attempt_id: input.attemptId,
+      p_student_id: user.id,
+    });
+
+    if (!rpcErr && rpcData && typeof rpcData === 'object' && 'success' in rpcData) {
+      const typed = rpcData as any;
+      if (!typed.success) {
+        return { success: false, error: typed.error || 'Finalization failed.' };
+      }
+      return {
+        success: true,
+        alreadyFinalized: Boolean(typed.already_finalized),
+        score: typed.score,
+        totalQuestions: typed.total_questions,
+        xpAwarded: typed.xp_awarded,
+        bonusAwarded: typed.bonus_awarded,
+        currentStreak: typed.current_streak,
+        longestStreak: typed.longest_streak,
+        streakEventType: typed.streak_event_type,
+        notes: typed.notes,
+      };
+    }
+  } catch {
+    // Proceed to robust application-level flow below
+  }
+
+  // 2. Fetch attempt
   const { data: attempt, error: attemptError } = await adminClient
     .from('quiz_attempts')
     .select('*')
@@ -395,7 +424,7 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
     };
   }
 
-  // 2. Fetch all recorded answers
+  // 3. Fetch all recorded answers
   const { data: answers, error: answersError } = await adminClient
     .from('quiz_answers')
     .select('is_correct')
@@ -412,26 +441,40 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
     };
   }
 
-  // 3. Compute score
+  // 4. Compute score
   const score = (answers || []).filter((a) => a.is_correct).length;
 
-  // 4. Award Daily Quiz XP via existing award_xp procedure
-  // Golden Rule: Stable reference based on quiz_date so duplicate calls cannot re-award
+  // 5. Award Daily Quiz XP via existing award_xp procedure
+  // Formula: base_xp (15) + extra_xp (5) * extra_units (score)
+  // E.g., 0 correct = 15 XP, 3 correct = 30 XP, 5 correct = 40 XP
   const quizRef = `daily_quiz_${attempt.quiz_date}_${user.id}`;
   const { data: xpRes, error: xpError } = await adminClient.rpc('award_xp', {
     p_student_id: user.id,
     p_action_type: 'DAILY_QUIZ',
     p_reference_id: quizRef,
-    p_extra_units: 0, // Configured base XP from xp_rules (15 XP)
+    p_extra_units: score,
   });
 
   if (xpError) {
     console.error('award_xp error during daily quiz finalization:', xpError.message);
   }
 
-  const xpAwarded = (xpRes as any)?.xp_awarded ?? 0;
+  let xpAwarded = (xpRes as any)?.xp_awarded ?? 0;
+  if ((xpRes as any)?.status === 'duplicate' && attempt.xp_awarded > 0) {
+    xpAwarded = attempt.xp_awarded;
+  } else if ((xpRes as any)?.status === 'duplicate' && xpAwarded === 0) {
+    const { data: pastEvent } = await adminClient
+      .from('xp_events')
+      .select('xp_amount')
+      .eq('reference_id', quizRef)
+      .eq('voided', false)
+      .maybeSingle();
+    if (pastEvent) {
+      xpAwarded = pastEvent.xp_amount;
+    }
+  }
 
-  // 5. Update attempt status
+  // 6. Update attempt status
   await adminClient
     .from('quiz_attempts')
     .update({
@@ -463,6 +506,7 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
     last_quiz_date: currentStreakRow?.last_quiz_date ?? null,
     freeze_days_used_this_month: currentStreakRow?.freeze_days_used_this_month ?? 0,
     freeze_days_month: currentStreakRow?.freeze_days_month ?? getKolkataDate().substring(0, 7),
+    streak_start_date: currentStreakRow?.streak_start_date ?? null,
   };
 
   const streakEval = evaluateStreakCompletion(streakData, attempt.quiz_date, maxFreezes);
@@ -475,6 +519,7 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
     last_quiz_date: streakEval.last_quiz_date,
     freeze_days_used_this_month: streakEval.freeze_days_used_this_month,
     freeze_days_month: streakEval.freeze_days_month,
+    streak_start_date: streakEval.streak_start_date,
     updated_at: new Date().toISOString(),
   });
 
@@ -491,9 +536,10 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
   }
 
   // 7. Check 7-Day Streak Bonus Milestone
+  // Reference includes streak start date so every new streak can earn it once
   let bonusAwarded = false;
   if (streakEval.eligible_for_7_day_bonus && streakEval.bonus_milestone) {
-    const bonusRef = `streak_7_bonus_${streakEval.bonus_milestone}_${user.id}`;
+    const bonusRef = `streak_7_bonus_${user.id}_${streakEval.streak_start_date}_${streakEval.bonus_milestone}`;
     const { data: bonusRes } = await adminClient.rpc('award_xp', {
       p_student_id: user.id,
       p_action_type: 'STREAK_7_BONUS',
@@ -530,7 +576,7 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
 
 /**
  * Practice Mode: Fetch 5 random approved questions for practice.
- * Does not alter daily quiz attempts, streaks, or daily XP.
+ * Strictly hides correct answers and explanations until submission.
  */
 export async function getPracticeQuizSessionAction() {
   const supabaseServer = await createServerClient();
@@ -545,7 +591,7 @@ export async function getPracticeQuizSessionAction() {
   const adminClient = getAdminClient();
   const { data: approvedQuestions, error } = await adminClient
     .from('questions')
-    .select('id, topic, question_text, option_a, option_b, option_c, option_d, correct_option, explanation')
+    .select('id, topic, question_text, option_a, option_b, option_c, option_d')
     .eq('status', 'approved')
     .eq('is_active', true);
 
@@ -569,12 +615,52 @@ export async function getPracticeQuizSessionAction() {
       topic: q.topic,
       questionText: q.question_text,
       options,
-      correctOption: q.correct_option,
-      explanation: q.explanation,
     };
   });
 
   return { success: true, questions };
+}
+
+/**
+ * Submit an answer for a Practice question.
+ * Verifies choice on server and reveals explanation only after submission.
+ */
+export async function submitPracticeAnswerAction(input: {
+  questionId: string;
+  selectedOption: 'A' | 'B' | 'C' | 'D';
+}) {
+  const supabaseServer = await createServerClient();
+  const {
+    data: { user },
+  } = await supabaseServer.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Unauthorized: You must be logged in.' };
+  }
+
+  if (!['A', 'B', 'C', 'D'].includes(input.selectedOption)) {
+    return { success: false, error: 'Invalid option selected.' };
+  }
+
+  const adminClient = getAdminClient();
+  const { data: question, error } = await adminClient
+    .from('questions')
+    .select('correct_option, explanation')
+    .eq('id', input.questionId)
+    .single();
+
+  if (error || !question) {
+    return { success: false, error: 'Question not found.' };
+  }
+
+  const isCorrect = input.selectedOption === question.correct_option;
+
+  return {
+    success: true,
+    isCorrect,
+    correctOption: question.correct_option,
+    explanation: question.explanation,
+  };
 }
 
 /**
@@ -586,8 +672,17 @@ export async function getStudentStreakAction() {
     data: { user },
   } = await supabaseServer.auth.getUser();
 
+  const todayDate = getKolkataDate();
+
   if (!user) {
-    return { currentStreak: 0, longestStreak: 0, freezeDaysRemaining: 2, lastQuizDate: null };
+    return {
+      currentStreak: 0,
+      longestStreak: 0,
+      freezeDaysRemaining: 2,
+      lastQuizDate: null,
+      isTodayCompleted: false,
+      todayDate,
+    };
   }
 
   const adminClient = getAdminClient();
@@ -597,16 +692,20 @@ export async function getStudentStreakAction() {
     .eq('student_id', user.id)
     .maybeSingle();
 
-  const currentMonth = getKolkataDate().substring(0, 7);
+  const currentMonth = todayDate.substring(0, 7);
   let freezeUsed = streakRow?.freeze_days_used_this_month ?? 0;
   if (streakRow && streakRow.freeze_days_month !== currentMonth) {
     freezeUsed = 0;
   }
+
+  const isTodayCompleted = streakRow?.last_quiz_date === todayDate;
 
   return {
     currentStreak: streakRow?.current_streak ?? 0,
     longestStreak: streakRow?.longest_streak ?? 0,
     freezeDaysRemaining: Math.max(0, 2 - freezeUsed),
     lastQuizDate: streakRow?.last_quiz_date ?? null,
+    isTodayCompleted,
+    todayDate,
   };
 }

@@ -44,6 +44,32 @@ const mockDbQuestions = [
     status: 'approved',
     is_active: true,
   },
+  {
+    id: 'q-104',
+    topic: 'Networking',
+    question_text: 'What protocol resolves IP addresses to MAC addresses?',
+    option_a: 'DNS',
+    option_b: 'ARP',
+    option_c: 'DHCP',
+    option_d: 'HTTP',
+    correct_option: 'B',
+    explanation: 'ARP resolves network layer IPv4 addresses to link layer hardware MAC addresses.',
+    status: 'approved',
+    is_active: true,
+  },
+  {
+    id: 'q-105',
+    topic: 'Database Systems',
+    question_text: 'Which ACID property ensures that transactions are all-or-nothing?',
+    option_a: 'Consistency',
+    option_b: 'Atomicity',
+    option_c: 'Isolation',
+    option_d: 'Durability',
+    correct_option: 'B',
+    explanation: 'Atomicity guarantees that all operations within a transaction succeed or all fail together.',
+    status: 'approved',
+    is_active: true,
+  },
 ];
 
 let mockDbAttempts: any[] = [];
@@ -96,7 +122,22 @@ vi.mock('@supabase/supabase-js', () => ({
         insert: (data: any) => {
           currentInsertData = data;
           if (table === 'quiz_attempts') {
-            const row = { id: `att-${Date.now()}`, ...data };
+            if (data.mode === 'daily') {
+              const conflict = mockDbAttempts.find(
+                (a) => a.student_id === data.student_id && a.quiz_date === data.quiz_date && a.mode === 'daily'
+              );
+              if (conflict) {
+                return {
+                  select: () => ({
+                    single: async () => ({
+                      data: null,
+                      error: { code: '23505', message: 'duplicate key value violates unique constraint' },
+                    }),
+                  }),
+                };
+              }
+            }
+            const row = { id: `att-${Date.now()}-${Math.random()}`, ...data };
             mockDbAttempts.push(row);
             return {
               select: () => ({
@@ -154,7 +195,7 @@ vi.mock('@supabase/supabase-js', () => ({
         if (table === 'student_streaks') list = [...mockDbStreaks];
         if (table === 'app_settings') {
           list = [
-            { key: 'questions_per_daily_quiz', value: 3 },
+            { key: 'questions_per_daily_quiz', value: 5 },
             { key: 'max_freeze_days_per_month', value: 2 },
           ];
         }
@@ -173,12 +214,31 @@ vi.mock('@supabase/supabase-js', () => ({
     },
     rpc: async (fnName: string, args: any) => {
       if (fnName === 'award_xp') {
+        const existing = mockAwardXpCalls.find(
+          (c) => c.p_reference_id === args.p_reference_id && c.p_action_type === args.p_action_type
+        );
+        if (existing) {
+          return {
+            data: {
+              status: 'duplicate',
+              xp_awarded: 0,
+              message: 'Duplicate reference',
+            },
+            error: null,
+          };
+        }
         mockAwardXpCalls.push(args);
+        let xp = 15;
+        if (args.p_action_type === 'DAILY_QUIZ') {
+          xp = 15 + (args.p_extra_units ?? 0) * 5;
+        } else if (args.p_action_type === 'STREAK_7_BONUS') {
+          xp = 50;
+        }
         return {
           data: {
             status: 'awarded',
-            xp_awarded: 15,
-            message: '15 XP awarded for DAILY_QUIZ',
+            xp_awarded: xp,
+            message: `${xp} XP awarded for ${args.p_action_type}`,
           },
           error: null,
         };
@@ -193,6 +253,7 @@ import {
   submitQuizAnswerAction,
   finalizeQuizAction,
   getPracticeQuizSessionAction,
+  submitPracticeAnswerAction,
 } from '../src/app/actions/quiz';
 
 describe('Daily Quiz Engine & Streaks Security Suite', () => {
@@ -349,7 +410,7 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
       const session = await getDailyQuizSessionAction();
       const attemptId = session.attemptId!;
 
-      // Answer all 3 questions
+      // Answer all 5 questions correctly
       for (const q of session.questions!) {
         await submitQuizAnswerAction({
           attemptId,
@@ -360,19 +421,82 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
 
       const finalizeRes = await finalizeQuizAction({ attemptId });
       expect(finalizeRes.success).toBe(true);
-      expect(finalizeRes.score).toBeDefined();
+      expect(finalizeRes.score).toBe(5);
       expect(finalizeRes.currentStreak).toBe(1);
-      expect(finalizeRes.xpAwarded).toBe(15);
+      expect(finalizeRes.xpAwarded).toBe(40); // 15 + 5 * 5 = 40
 
       // Verify award_xp call details
       expect(mockAwardXpCalls.length).toBe(1);
       expect(mockAwardXpCalls[0].p_action_type).toBe('DAILY_QUIZ');
-      expect(mockAwardXpCalls[0].p_extra_units).toBe(0);
+      expect(mockAwardXpCalls[0].p_extra_units).toBe(5);
       expect(mockAwardXpCalls[0].p_reference_id).toMatch(/^daily_quiz_/);
       expect(mockAwardXpCalls[0].p_student_id).toBe(studentA);
     });
 
-    it('Is strictly idempotent on multiple finalization calls', async () => {
+    it('Daily quiz XP calculation: 0 correct awards exactly 15 XP (base 15 + 0 extra)', async () => {
+      const session = await getDailyQuizSessionAction();
+      const attemptId = session.attemptId!;
+
+      // Answer all 5 questions incorrectly
+      for (const q of session.questions!) {
+        await submitQuizAnswerAction({
+          attemptId,
+          questionId: q.id,
+          selectedOption: 'A',
+        });
+      }
+
+      const finalizeRes = await finalizeQuizAction({ attemptId });
+      expect(finalizeRes.success).toBe(true);
+      expect(finalizeRes.score).toBe(0);
+      expect(finalizeRes.xpAwarded).toBe(15);
+      expect(mockAwardXpCalls.length).toBe(1);
+      expect(mockAwardXpCalls[0].p_extra_units).toBe(0);
+    });
+
+    it('Daily quiz XP calculation: 3 correct awards exactly 30 XP (base 15 + 3*5)', async () => {
+      const session = await getDailyQuizSessionAction();
+      const attemptId = session.attemptId!;
+
+      // Answer first 3 correct ('B'), remaining 2 incorrect ('A')
+      for (let i = 0; i < session.questions!.length; i++) {
+        await submitQuizAnswerAction({
+          attemptId,
+          questionId: session.questions![i].id,
+          selectedOption: i < 3 ? 'B' : 'A',
+        });
+      }
+
+      const finalizeRes = await finalizeQuizAction({ attemptId });
+      expect(finalizeRes.success).toBe(true);
+      expect(finalizeRes.score).toBe(3);
+      expect(finalizeRes.xpAwarded).toBe(30);
+      expect(mockAwardXpCalls.length).toBe(1);
+      expect(mockAwardXpCalls[0].p_extra_units).toBe(3);
+    });
+
+    it('Daily quiz XP calculation: 5 correct awards exactly 40 XP (base 15 + 5*5)', async () => {
+      const session = await getDailyQuizSessionAction();
+      const attemptId = session.attemptId!;
+
+      // Answer all 5 correct ('B')
+      for (const q of session.questions!) {
+        await submitQuizAnswerAction({
+          attemptId,
+          questionId: q.id,
+          selectedOption: 'B',
+        });
+      }
+
+      const finalizeRes = await finalizeQuizAction({ attemptId });
+      expect(finalizeRes.success).toBe(true);
+      expect(finalizeRes.score).toBe(5);
+      expect(finalizeRes.xpAwarded).toBe(40);
+      expect(mockAwardXpCalls.length).toBe(1);
+      expect(mockAwardXpCalls[0].p_extra_units).toBe(5);
+    });
+
+    it('Finalizing twice does NOT pay twice (idempotency & duplicate protection)', async () => {
       const session = await getDailyQuizSessionAction();
       const attemptId = session.attemptId!;
 
@@ -388,12 +512,14 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
       const firstRes = await finalizeQuizAction({ attemptId });
       expect(firstRes.success).toBe(true);
       expect(firstRes.alreadyFinalized).toBe(false);
+      expect(firstRes.xpAwarded).toBe(40);
       expect(mockAwardXpCalls.length).toBe(1);
 
       // Second finalization call (e.g. network retry or double-click)
       const secondRes = await finalizeQuizAction({ attemptId });
       expect(secondRes.success).toBe(true);
       expect(secondRes.alreadyFinalized).toBe(true);
+      expect(secondRes.xpAwarded).toBe(40);
       // award_xp must NOT be called again
       expect(mockAwardXpCalls.length).toBe(1);
     });
@@ -408,22 +534,291 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
       expect(res.success).toBe(false);
       expect(res.error).toMatch(/forbidden: you do not own this quiz session/i);
     });
+
+    it('7-day streak bonus: ledger reference includes streak start date so every new streak earns it once', async () => {
+      // 1. First streak: starts Oct 01, reaches day 7 on Oct 07
+      mockDbStreaks.push({
+        student_id: studentA,
+        current_streak: 6,
+        longest_streak: 6,
+        last_quiz_date: '2026-10-06',
+        freeze_days_used_this_month: 0,
+        freeze_days_month: '2026-10',
+        streak_start_date: '2026-10-01',
+      });
+
+      const session1 = await getDailyQuizSessionAction();
+      // Set quiz_date to 2026-10-07
+      const att1 = mockDbAttempts.find((a) => a.id === session1.attemptId);
+      att1.quiz_date = '2026-10-07';
+
+      for (const q of session1.questions!) {
+        await submitQuizAnswerAction({ attemptId: session1.attemptId!, questionId: q.id, selectedOption: 'B' });
+      }
+
+      const res1 = await finalizeQuizAction({ attemptId: session1.attemptId! });
+      expect(res1.success).toBe(true);
+      expect(res1.currentStreak).toBe(7);
+      expect(res1.bonusAwarded).toBe(true);
+
+      const firstBonus = mockAwardXpCalls.find((c) => c.p_action_type === 'STREAK_7_BONUS');
+      expect(firstBonus).toBeDefined();
+      expect(firstBonus.p_reference_id).toBe(`streak_7_bonus_${studentA}_2026-10-01_7`);
+
+      // 2. Streak resets: student missed 5 days, starts a brand new streak on Oct 15
+      const streakRow = mockDbStreaks.find((s) => s.student_id === studentA);
+      streakRow.current_streak = 6;
+      streakRow.last_quiz_date = '2026-10-20';
+      streakRow.streak_start_date = '2026-10-15'; // New streak started on Oct 15
+
+      mockDbAttempts = []; // Reset attempts for new day
+      const session2 = await getDailyQuizSessionAction();
+      const att2 = mockDbAttempts.find((a) => a.id === session2.attemptId);
+      att2.quiz_date = '2026-10-21'; // Day 7 of second streak
+
+      for (const q of session2.questions!) {
+        await submitQuizAnswerAction({ attemptId: session2.attemptId!, questionId: q.id, selectedOption: 'B' });
+      }
+
+      const res2 = await finalizeQuizAction({ attemptId: session2.attemptId! });
+      expect(res2.success).toBe(true);
+      expect(res2.currentStreak).toBe(7);
+      expect(res2.bonusAwarded).toBe(true);
+
+      const bonuses = mockAwardXpCalls.filter((c) => c.p_action_type === 'STREAK_7_BONUS');
+      expect(bonuses.length).toBe(2);
+      expect(bonuses[1].p_reference_id).toBe(`streak_7_bonus_${studentA}_2026-10-15_7`);
+    });
+
+    it('4(a). No approved questions today does NOT break or mutate student streak', async () => {
+      mockDbStreaks.push({
+        student_id: studentA,
+        current_streak: 5,
+        longest_streak: 5,
+        last_quiz_date: '2026-10-14',
+        freeze_days_used_this_month: 0,
+        freeze_days_month: '2026-10',
+        streak_start_date: '2026-10-10',
+      });
+
+      // Temporarily mark all questions as pending
+      mockDbQuestions.forEach((q) => { q.status = 'pending'; });
+
+      const session = await getDailyQuizSessionAction();
+      expect(session.status).toBe('error');
+      expect(session.error).toMatch(/no approved questions/i);
+
+      // Verify streak in database is completely untouched (still 5)
+      const streak = mockDbStreaks.find((s) => s.student_id === studentA);
+      expect(streak.current_streak).toBe(5);
+      expect(streak.last_quiz_date).toBe('2026-10-14');
+      expect(streak.freeze_days_used_this_month).toBe(0);
+
+      // Restore questions
+      mockDbQuestions.forEach((q) => { q.status = 'approved'; });
+    });
+
+    it('4(b). Quiz started before midnight and finished after midnight credits the start date', async () => {
+      // Start quiz on Day 1 (e.g. 2026-10-14)
+      const session = await getDailyQuizSessionAction();
+      const attemptId = session.attemptId!;
+      const attempt = mockDbAttempts.find((a) => a.id === attemptId);
+      attempt.quiz_date = '2026-10-14';
+
+      for (const q of session.questions!) {
+        await submitQuizAnswerAction({ attemptId, questionId: q.id, selectedOption: 'B' });
+      }
+
+      // Midnight has passed in real world, but finalization evaluates against attempt.quiz_date
+      const finalizeRes = await finalizeQuizAction({ attemptId });
+      expect(finalizeRes.success).toBe(true);
+
+      const streak = mockDbStreaks.find((s) => s.student_id === studentA);
+      expect(streak.last_quiz_date).toBe('2026-10-14');
+    });
+
+    it('4(c). Student reaching quiz page twice at the same moment returns the exact same session', async () => {
+      const [session1, session2] = await Promise.all([
+        getDailyQuizSessionAction(),
+        getDailyQuizSessionAction(),
+      ]);
+
+      expect(session1.status).toBe('active');
+      expect(session2.status).toBe('active');
+      expect(session1.attemptId).toBe(session2.attemptId);
+      expect(mockDbAttempts.length).toBe(1);
+    });
   });
 
-  describe('4. Practice Mode Isolation', () => {
-    it('Practice mode generates questions without daily attempt record or streak change', async () => {
+  describe('4. Practice Mode Isolation & Zero-Leakage Security', () => {
+    it('Practice session never leaks correct_option or explanation in pre-submission payload', async () => {
       const practice = await getPracticeQuizSessionAction();
 
       expect(practice.success).toBe(true);
       expect(practice.questions).toBeDefined();
       expect(practice.questions!.length).toBeGreaterThan(0);
 
+      // Verify ZERO answers or explanations leaked to the client
+      for (const q of practice.questions!) {
+        expect((q as any).correct_option).toBeUndefined();
+        expect((q as any).correctOption).toBeUndefined();
+        expect((q as any).explanation).toBeUndefined();
+        expect(q.options.length).toBe(4);
+      }
+
       // No quiz_attempts should be created
       expect(mockDbAttempts.length).toBe(0);
       // No XP awarded
       expect(mockAwardXpCalls.length).toBe(0);
-      // Practice mode supplies explanation for study
-      expect(practice.questions![0].explanation).toBeTruthy();
+    });
+
+    it('Evaluates practice answers on server and reveals explanation only post-submission', async () => {
+      const practice = await getPracticeQuizSessionAction();
+      const firstQ = practice.questions![0];
+      const matchingQ = mockDbQuestions.find((q) => q.id === firstQ.id)!;
+
+      // Submit correct answer to practice
+      const res = await submitPracticeAnswerAction({
+        questionId: firstQ.id,
+        selectedOption: matchingQ.correct_option as any,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.isCorrect).toBe(true);
+      expect(res.correctOption).toBe(matchingQ.correct_option);
+      expect(res.explanation).toBe(matchingQ.explanation);
+    });
+
+    it('Correctly identifies incorrect practice answer on server', async () => {
+      const practice = await getPracticeQuizSessionAction();
+      const firstQ = practice.questions![0];
+      const matchingQ = mockDbQuestions.find((q) => q.id === firstQ.id)!;
+
+      const wrongOpt = (['A', 'B', 'C', 'D'].find((o) => o !== matchingQ.correct_option) ?? 'A') as any;
+
+      const res = await submitPracticeAnswerAction({
+        questionId: firstQ.id,
+        selectedOption: wrongOpt,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.isCorrect).toBe(false);
+      expect(res.correctOption).toBe(matchingQ.correct_option);
+      expect(res.explanation).toBe(matchingQ.explanation);
+    });
+
+    it('Rejects invalid option keys in practice mode', async () => {
+      const res = await submitPracticeAnswerAction({
+        questionId: 'q-101',
+        selectedOption: 'Z' as any,
+      });
+
+      expect(res.success).toBe(false);
+      expect(res.error).toMatch(/invalid option selected/i);
+    });
+  });
+
+  describe('5. Client-Written Answer Prevention & Tampering Defense', () => {
+    it('Calculates is_correct strictly on the server regardless of client input', async () => {
+      const session = await getDailyQuizSessionAction();
+      const attemptId = session.attemptId!;
+      const q1 = session.questions![0];
+      const matchingQ = mockDbQuestions.find((q) => q.id === q1.id)!;
+
+      const wrongOpt = (['A', 'B', 'C', 'D'].find((o) => o !== matchingQ.correct_option) ?? 'A') as any;
+
+      // Even if client tried to claim it was correct, submitQuizAnswerAction only takes selectedOption
+      const res = await submitQuizAnswerAction({
+        attemptId,
+        questionId: q1.id,
+        selectedOption: wrongOpt,
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.isCorrect).toBe(false);
+
+      // Verify what was stored in the database
+      const storedAnswer = mockDbAnswers.find((a) => a.attempt_id === attemptId && a.question_id === q1.id);
+      expect(storedAnswer).toBeDefined();
+      expect(storedAnswer.is_correct).toBe(false);
+    });
+
+    it('Rejects duplicate answer submissions for the same question in an attempt', async () => {
+      const session = await getDailyQuizSessionAction();
+      const attemptId = session.attemptId!;
+      const q1 = session.questions![0];
+
+      await submitQuizAnswerAction({
+        attemptId,
+        questionId: q1.id,
+        selectedOption: 'A',
+      });
+
+      const dup = await submitQuizAnswerAction({
+        attemptId,
+        questionId: q1.id,
+        selectedOption: 'A',
+      });
+
+      expect(dup.success).toBe(false);
+      expect(dup.error).toMatch(/already been answered/i);
+    });
+  });
+
+  describe('6. Concurrent Finalization & Failure Recovery Safety', () => {
+    it('Handles concurrent finalization calls safely without duplicate XP or streak distortion', async () => {
+      const session = await getDailyQuizSessionAction();
+      const attemptId = session.attemptId!;
+
+      // Answer all questions
+      for (const q of session.questions!) {
+        await submitQuizAnswerAction({
+          attemptId,
+          questionId: q.id,
+          selectedOption: 'B',
+        });
+      }
+
+      // Simulate simultaneous double-tap / concurrent submission
+      const [res1, res2] = await Promise.all([
+        finalizeQuizAction({ attemptId }),
+        finalizeQuizAction({ attemptId }),
+      ]);
+
+      expect(res1.success).toBe(true);
+      expect(res2.success).toBe(true);
+
+      // award_xp should only be called once with awarded status
+      expect(mockAwardXpCalls.length).toBe(1);
+
+      // Streak record should be exactly 1 streak
+      expect(mockDbStreaks.length).toBe(1);
+      expect(mockDbStreaks[0].current_streak).toBe(1);
+    });
+
+    it('Safely recovers score and XP if finalization is re-invoked on an already completed attempt', async () => {
+      const session = await getDailyQuizSessionAction();
+      const attemptId = session.attemptId!;
+
+      for (const q of session.questions!) {
+        await submitQuizAnswerAction({
+          attemptId,
+          questionId: q.id,
+          selectedOption: 'B',
+        });
+      }
+
+      const initialRes = await finalizeQuizAction({ attemptId });
+      expect(initialRes.success).toBe(true);
+      expect(initialRes.xpAwarded).toBe(40);
+
+      // Re-invoke (e.g. page reload or network recovery)
+      const retryRes = await finalizeQuizAction({ attemptId });
+      expect(retryRes.success).toBe(true);
+      expect(retryRes.alreadyFinalized).toBe(true);
+      expect(retryRes.xpAwarded).toBe(40);
+      expect(retryRes.score).toBe(initialRes.score);
+      expect(mockAwardXpCalls.length).toBe(1); // No re-award
     });
   });
 });
