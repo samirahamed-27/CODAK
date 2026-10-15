@@ -68,13 +68,13 @@ export default function StudentDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07080B] game-bg-grid text-white flex flex-col lg:flex-row font-body selection:bg-sky-400 selection:text-[#07080B]">
-      {/* 1. Left Fixed Sidebar (~18% width on desktop, drawer on mobile) */}
+    <div className="min-h-screen bg-[#07080B] game-bg-grid text-white flex flex-col font-body selection:bg-sky-400 selection:text-[#07080B]">
+      {/* Sleek Floating Menu Button */}
       <AcademySidebar totalXp={profile.totalXp} />
 
-      {/* 2. Main Dashboard Area */}
-      <div className="flex-1 lg:ml-[18%] min-h-screen flex flex-col pt-16 lg:pt-0">
-        <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+      {/* Main Dashboard Area */}
+      <div className="flex-1 w-full min-h-screen flex flex-col">
+        <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8 lg:pl-32 flex flex-col gap-6">
           {/* Main Top Header */}
           <AcademyHeader profile={profile} />
 

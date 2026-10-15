@@ -8,6 +8,7 @@ import { UserRole } from '@/types/database';
 import { LogOut, GraduationCap, ShieldAlert, Award } from 'lucide-react';
 
 import Shuffle from '@/components/Shuffle';
+import StaggeredMenu, { StaggeredMenuItem } from '@/components/StaggeredMenu';
 
 interface NavbarProps {
   role?: UserRole;
@@ -55,6 +56,26 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
     }
   };
 
+  const menuItems: StaggeredMenuItem[] =
+    role === 'faculty'
+      ? [
+          { label: 'Dashboard', ariaLabel: 'Go to Faculty Dashboard', link: '/faculty' },
+          { label: 'Questions', ariaLabel: 'Manage Question Bank', link: '/faculty/questions' },
+          { label: 'Student View', ariaLabel: 'Switch to Student View', link: '/student' },
+        ]
+      : [
+          { label: 'Dashboard', ariaLabel: 'Go to student dashboard', link: '/student' },
+          { label: 'Learn', ariaLabel: 'Explore learning modules', link: '/student/learn' },
+          { label: 'Play Quiz', ariaLabel: 'Daily quiz and practice mode', link: '/student/play' },
+          { label: 'Compete', ariaLabel: 'League tables and duels', link: '/student/compete' },
+        ];
+
+  const socialLinks = [
+    { label: 'Leaderboard', link: '/student#leaderboard' },
+    { label: 'Community', link: 'https://discord.com', target: '_blank' },
+    { label: 'Home', link: '/' },
+  ];
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[#1D2233] bg-[#07080B]/90 backdrop-blur-md">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -75,13 +96,23 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
           />
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3">
           {getRoleBadge()}
           {userName && (
             <span className="hidden sm:inline text-xs text-slate-400 font-medium">
               {userName}
             </span>
           )}
+          <StaggeredMenu
+            items={menuItems}
+            socialItems={socialLinks}
+            displaySocials={true}
+            displayItemNumbering={true}
+            colors={['#10131E', '#1D2233', '#162846']}
+            accentColor="#7DD3FC"
+            menuButtonColor="#E2E8F0"
+            openMenuButtonColor="#7DD3FC"
+          />
           <button
             onClick={handleSignOut}
             title="Sign out"
