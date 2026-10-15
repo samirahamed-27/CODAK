@@ -1,0 +1,658 @@
+/**
+ * Battle Scene Engine & Visuals Module
+ * Mirai-Game / Gamify Platform
+ * 
+ * Implements 160x144 Canvas visual rendering, pixel-grid sprite arrays,
+ * HP bar animations, typewriter dialogue, and exposed animation hooks.
+ */
+
+// ---------------------------------------------------------------------------
+// 1. GAME BOY COLOR PALETTE MAPPING FOR SPRITE ARRAYS
+// ---------------------------------------------------------------------------
+const SPRITE_PALETTE = [
+  'transparent', // 0: Transparent
+  '#0c1015',     // 1: gb-darkest
+  '#1b2632',     // 2: gb-dark
+  '#2c3e50',     // 3: gb-mid
+  '#526f8a',     // 4: gb-light
+  '#eef5fc',     // 5: gb-lightest
+  '#38b764',     // 6: gb-green
+  '#206d39',     // 7: gb-green-dark
+  '#f4b41b',     // 8: gb-yellow
+  '#9f7209',     // 9: gb-yellow-dark
+  '#e03c3c',     // 10: gb-red
+  '#941e1e',     // 11: gb-red-dark
+  '#38bdf8',     // 12: gb-blue
+  '#1e40af'      // 13: gb-blue-dark
+];
+
+// ---------------------------------------------------------------------------
+// 2. 16x16 PIXEL SPRITE GRIDS (Editable arrays of palette indexes)
+// ---------------------------------------------------------------------------
+
+// Bugmon Enemy (Front View): Rogue Glitch Spectre with Red Core & Glowing Optics
+const SPRITE_BUGMON_FRONT = [
+  [0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0],
+  [0, 0, 10, 1, 10, 0, 0, 0, 0, 0, 0, 10, 1, 10, 0, 0],
+  [0, 0, 0, 10, 1, 10, 0, 0, 0, 0, 10, 1, 10, 0, 0, 0],
+  [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+  [0, 0, 0, 1, 10, 10, 10, 10, 10, 10, 10, 10, 1, 0, 0, 0],
+  [0, 0, 1, 10, 5, 5, 10, 10, 10, 5, 5, 10, 1, 0, 0],
+  [0, 0, 1, 10, 5, 1, 10, 10, 10, 5, 1, 10, 1, 0, 0],
+  [0, 1, 1, 10, 10, 10, 8, 8, 10, 10, 10, 10, 1, 1, 0],
+  [1, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10, 1],
+  [1, 10, 1, 10, 10, 10, 10, 10, 10, 10, 10, 1, 10, 1],
+  [0, 1, 1, 10, 1, 10, 1, 1, 10, 1, 10, 1, 1, 0],
+  [0, 0, 1, 10, 10, 10, 10, 10, 10, 10, 10, 1, 0, 0],
+  [0, 0, 0, 1, 10, 10, 10, 10, 10, 10, 1, 0, 0, 0],
+  [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0],
+  [0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0],
+  [1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1]
+];
+
+// Pyrawr Player (Back View): Python Yellow / Blue Crest & Armored Spine
+const SPRITE_PYRAWR_BACK = [
+  [0, 0, 0, 0, 8, 8, 0, 0, 0, 0, 12, 12, 0, 0, 0, 0],
+  [0, 0, 0, 8, 8, 8, 8, 0, 0, 12, 12, 12, 12, 0, 0, 0],
+  [0, 0, 0, 8, 1, 8, 8, 0, 0, 12, 1, 12, 12, 0, 0, 0],
+  [0, 0, 0, 0, 8, 8, 8, 8, 12, 12, 12, 12, 0, 0, 0, 0],
+  [0, 0, 0, 1, 8, 8, 8, 8, 12, 12, 12, 12, 1, 0, 0, 0],
+  [0, 0, 1, 8, 8, 8, 12, 12, 12, 12, 12, 12, 1, 0, 0],
+  [0, 0, 1, 8, 8, 12, 1, 1, 12, 12, 12, 12, 1, 0, 0],
+  [0, 1, 8, 8, 12, 12, 1, 1, 12, 12, 12, 12, 1, 0],
+  [0, 1, 8, 8, 12, 12, 12, 12, 12, 12, 13, 13, 1, 0],
+  [0, 1, 8, 12, 12, 12, 1, 1, 12, 13, 13, 13, 1, 0],
+  [0, 1, 12, 12, 12, 12, 1, 1, 13, 13, 13, 13, 1, 0],
+  [0, 0, 1, 12, 12, 13, 13, 13, 13, 13, 13, 1, 0, 0],
+  [0, 0, 1, 13, 13, 13, 13, 13, 13, 13, 13, 1, 0, 0],
+  [0, 1, 0, 1, 13, 13, 0, 0, 13, 13, 1, 0, 1, 0],
+  [0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0],
+  [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1]
+];
+
+// Jaskull Player (Back View): JavaScript Amber Ghost Skull & Energy Trails
+const SPRITE_JASKULL_BACK = [
+  [0, 0, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 0, 0],
+  [0, 0, 0, 8, 8, 0, 0, 0, 0, 0, 0, 8, 8, 0, 0, 0],
+  [0, 0, 0, 0, 8, 8, 0, 0, 0, 0, 8, 8, 0, 0, 0, 0],
+  [0, 0, 0, 1, 5, 5, 5, 5, 5, 5, 5, 5, 1, 0, 0, 0],
+  [0, 0, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1, 0, 0],
+  [0, 1, 5, 5, 5, 5, 4, 4, 4, 5, 5, 5, 5, 1, 0],
+  [0, 1, 5, 5, 5, 4, 4, 4, 4, 4, 5, 5, 5, 1, 0],
+  [0, 1, 5, 5, 5, 4, 4, 1, 4, 4, 5, 5, 5, 1, 0],
+  [0, 1, 5, 5, 5, 5, 4, 4, 4, 5, 5, 5, 5, 1, 0],
+  [0, 0, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1, 0, 0],
+  [0, 0, 0, 1, 5, 1, 5, 1, 5, 1, 5, 1, 0, 0, 0],
+  [0, 0, 0, 1, 8, 8, 8, 8, 8, 8, 8, 1, 0, 0, 0],
+  [0, 0, 1, 8, 8, 8, 8, 8, 8, 8, 8, 8, 1, 0, 0],
+  [0, 1, 8, 8, 0, 8, 8, 8, 8, 0, 8, 8, 1, 0],
+  [0, 1, 8, 0, 0, 0, 8, 8, 0, 0, 0, 8, 1, 0],
+  [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]
+];
+
+// Cplusaur Player (Back View): C++ Steel-Blue Heavy Armor & Pointer Crest
+const SPRITE_CPLUSAUR_BACK = [
+  [0, 0, 0, 0, 0, 0, 12, 12, 12, 12, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 12, 12, 12, 12, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 12, 12, 12, 12, 12, 12, 12, 12, 0, 0, 0, 0],
+  [0, 0, 0, 0, 12, 12, 12, 12, 12, 12, 12, 12, 0, 0, 0, 0],
+  [0, 0, 0, 1, 3, 3, 3, 3, 3, 3, 3, 3, 1, 0, 0, 0],
+  [0, 0, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 0, 0],
+  [0, 1, 3, 3, 12, 12, 3, 3, 12, 12, 3, 3, 3, 1, 0],
+  [0, 1, 3, 12, 12, 12, 12, 12, 12, 12, 12, 3, 3, 1, 0],
+  [0, 1, 3, 12, 12, 1, 12, 12, 1, 12, 12, 3, 3, 1, 0],
+  [0, 1, 3, 3, 12, 12, 12, 12, 12, 12, 3, 3, 3, 1, 0],
+  [0, 1, 3, 3, 3, 3, 12, 12, 3, 3, 3, 3, 3, 1, 0],
+  [0, 0, 1, 2, 2, 3, 3, 3, 3, 2, 2, 2, 1, 0, 0],
+  [0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0],
+  [0, 1, 4, 4, 1, 0, 0, 0, 0, 1, 4, 4, 1, 0],
+  [0, 1, 4, 4, 1, 0, 0, 0, 0, 1, 4, 4, 1, 0],
+  [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0]
+];
+
+// Helper to draw a pixel sprite from an array
+function drawPixelSprite(ctx, grid, startX, startY, pixelSize = 2) {
+  if (!ctx || !grid || !grid.length) return;
+  const rows = grid.length;
+  for (let r = 0; r < rows; r++) {
+    const row = grid[r];
+    for (let c = 0; c < row.length; c++) {
+      const colorIdx = row[c];
+      if (colorIdx > 0 && SPRITE_PALETTE[colorIdx]) {
+        ctx.fillStyle = SPRITE_PALETTE[colorIdx];
+        ctx.fillRect(
+          Math.floor(startX + c * pixelSize),
+          Math.floor(startY + r * pixelSize),
+          pixelSize,
+          pixelSize
+        );
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 3. BATTLE VISUAL STATE & ANIMATION ENGINE
+// ---------------------------------------------------------------------------
+const battleVisualState = {
+  // HP State with smooth animated transitions
+  hp: {
+    player: { current: 100, target: 100, max: 100, display: 100 },
+    enemy:  { current: 130, target: 130, max: 130, display: 130 }
+  },
+
+  // HUD Stats
+  points: 0,
+  maxPoints: 120,
+  turnsLeft: 8,
+
+  // Animation offsets & effects
+  player: {
+    offsetX: 0,
+    offsetY: 0,
+    visible: true,
+    flashTick: 0
+  },
+  enemy: {
+    offsetX: 0,
+    offsetY: 0,
+    visible: true,
+    flashTick: 0
+  },
+  screenShake: {
+    x: 0,
+    y: 0,
+    duration: 0
+  }
+};
+
+// ---------------------------------------------------------------------------
+// 4. TYPEWRITER FUNCTION: typeText(message, speed) & showMessage(text)
+// ---------------------------------------------------------------------------
+let typewriterTimer = null;
+let activeTypewriterResolve = null;
+
+function typeText(message, speed = 24) {
+  return new Promise((resolve) => {
+    const dialogueBox = document.getElementById('battle-dialogue-overlay');
+    const textEl = document.getElementById('battle-dialogue-text');
+
+    if (dialogueBox) {
+      dialogueBox.classList.add('active');
+      // Click on dialogue box instantly completes typing
+      dialogueBox.onclick = () => {
+        if (typewriterTimer) {
+          clearInterval(typewriterTimer);
+          typewriterTimer = null;
+          if (textEl) textEl.textContent = message;
+          if (activeTypewriterResolve) {
+            const res = activeTypewriterResolve;
+            activeTypewriterResolve = null;
+            res();
+          }
+        }
+      };
+    }
+
+    if (!textEl) {
+      resolve();
+      return;
+    }
+
+    // Clear any previous typewriter job
+    if (typewriterTimer) {
+      clearInterval(typewriterTimer);
+      typewriterTimer = null;
+    }
+    if (activeTypewriterResolve) {
+      activeTypewriterResolve();
+      activeTypewriterResolve = null;
+    }
+
+    activeTypewriterResolve = resolve;
+    textEl.textContent = '';
+    let idx = 0;
+
+    typewriterTimer = setInterval(() => {
+      if (idx < message.length) {
+        textEl.textContent += message[idx];
+        idx++;
+      } else {
+        clearInterval(typewriterTimer);
+        typewriterTimer = null;
+        activeTypewriterResolve = null;
+        resolve();
+      }
+    }, speed);
+  });
+}
+
+function showMessage(text) {
+  return typeText(text);
+}
+
+// ---------------------------------------------------------------------------
+// 5. HP BARS & setHp(target, current, max) WITH SMOOTH ANIMATION
+// ---------------------------------------------------------------------------
+function setHp(target, current, max, immediate = false) {
+  return new Promise((resolve) => {
+    const key = (target === 'player' || target === 'enemy') ? target : 'player';
+    const hp = battleVisualState.hp[key];
+    
+    if (typeof max === 'number' && max > 0) {
+      hp.max = max;
+    }
+    hp.target = Math.max(0, Math.min(current, hp.max));
+
+    if (immediate) {
+      hp.display = hp.target;
+      resolve();
+      return;
+    }
+
+    // Update global gameState if present
+    if (window.gameState) {
+      if (key === 'player' && window.gameState.player) {
+        window.gameState.player.hp = hp.target;
+        window.gameState.player.maxHp = hp.max;
+      } else if (key === 'enemy' && window.gameState.enemy) {
+        window.gameState.enemy.hp = hp.target;
+        window.gameState.enemy.maxHp = hp.max;
+      }
+    }
+
+    // Wait until display catches up to target
+    const checkInterval = setInterval(() => {
+      if (Math.abs(hp.display - hp.target) < 0.5) {
+        hp.display = hp.target;
+        clearInterval(checkInterval);
+        resolve();
+      }
+    }, 40);
+  });
+}
+
+// Helper to determine HP bar color strictly using Game Boy Palette
+function getHpColor(percentage) {
+  if (percentage > 0.50) {
+    return '#38b764'; // High: --gb-green
+  } else if (percentage >= 0.20) {
+    return '#f4b41b'; // Medium: --gb-yellow
+  } else {
+    return '#e03c3c'; // Low: --gb-red
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 6. HUD STRIP UPDATE: POINTS & TURNS LEFT
+// ---------------------------------------------------------------------------
+function updateHud(points, turnsLeft) {
+  if (typeof points === 'number') {
+    battleVisualState.points = points;
+    const ptsEl = document.getElementById('hud-points-val');
+    if (ptsEl) {
+      ptsEl.textContent = `${points} / ${battleVisualState.maxPoints}`;
+    }
+  }
+  if (typeof turnsLeft === 'number') {
+    battleVisualState.turnsLeft = turnsLeft;
+    const turnsEl = document.getElementById('hud-turns-val');
+    if (turnsEl) {
+      turnsEl.textContent = `${turnsLeft}`;
+      if (turnsLeft <= 2) {
+        turnsEl.className = 'text-red';
+      } else if (turnsLeft <= 4) {
+        turnsEl.className = 'text-yellow';
+      } else {
+        turnsEl.className = 'text-green';
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 7. ATTACK & HIT ANIMATIONS
+// ---------------------------------------------------------------------------
+
+/**
+ * playAttackAnimation(attacker)
+ * Lunges the attacking codemon forward and snaps back
+ */
+function playAttackAnimation(attacker) {
+  if (window.playSound) {
+    window.playSound('battle');
+  }
+
+  return new Promise((resolve) => {
+    const isPlayer = attacker === 'player';
+    const targetObj = isPlayer ? battleVisualState.player : battleVisualState.enemy;
+    const dirX = isPlayer ? 14 : -14;
+    const dirY = isPlayer ? -8 : 8;
+
+    const startTime = performance.now();
+    const duration = 280; // ms
+
+    function animateAttack(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+
+      if (progress < 0.4) {
+        // Lunge forward
+        const subP = progress / 0.4;
+        targetObj.offsetX = dirX * subP;
+        targetObj.offsetY = dirY * subP;
+      } else if (progress < 0.7) {
+        // Strike hold
+        targetObj.offsetX = dirX;
+        targetObj.offsetY = dirY;
+      } else {
+        // Return to base position
+        const subP = (progress - 0.7) / 0.3;
+        targetObj.offsetX = dirX * (1 - subP);
+        targetObj.offsetY = dirY * (1 - subP);
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(animateAttack);
+      } else {
+        targetObj.offsetX = 0;
+        targetObj.offsetY = 0;
+        resolve();
+      }
+    }
+
+    requestAnimationFrame(animateAttack);
+  });
+}
+
+/**
+ * playHitAnimation(target)
+ * Shakes target codemon and flashes visibility + triggers screen shake
+ */
+function playHitAnimation(target) {
+  if (window.playSound) {
+    window.playSound('hit');
+  }
+
+  return new Promise((resolve) => {
+    const isPlayer = target === 'player';
+    const targetObj = isPlayer ? battleVisualState.player : battleVisualState.enemy;
+
+    const startTime = performance.now();
+    const duration = 380; // ms
+
+    function animateHit(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+
+      if (progress < 1) {
+        // Rapid flash toggle
+        targetObj.visible = Math.floor(elapsed / 45) % 2 === 0;
+
+        // Violent horizontal jitter
+        targetObj.offsetX = (Math.random() - 0.5) * 6;
+        targetObj.offsetY = (Math.random() - 0.5) * 2;
+
+        // Screen shake
+        battleVisualState.screenShake.x = (Math.random() - 0.5) * 4;
+        battleVisualState.screenShake.y = (Math.random() - 0.5) * 2;
+
+        requestAnimationFrame(animateHit);
+      } else {
+        targetObj.visible = true;
+        targetObj.offsetX = 0;
+        targetObj.offsetY = 0;
+        battleVisualState.screenShake.x = 0;
+        battleVisualState.screenShake.y = 0;
+        resolve();
+      }
+    }
+
+    requestAnimationFrame(animateHit);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 8. 160x144 CANVAS BATTLE SCENE RENDERER
+// ---------------------------------------------------------------------------
+function renderBattleScene(ctx, animTick = 0) {
+  if (!ctx) return;
+
+  const width = 160;
+  const height = 144;
+
+  // Apply screen shake offset
+  const shakeX = Math.round(battleVisualState.screenShake.x);
+  const shakeY = Math.round(battleVisualState.screenShake.y);
+
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+
+  // Smoothly interpolate HP bars
+  ['player', 'enemy'].forEach((key) => {
+    const hp = battleVisualState.hp[key];
+    const diff = hp.target - hp.display;
+    if (Math.abs(diff) > 0.3) {
+      hp.display += diff * 0.14;
+    } else {
+      hp.display = hp.target;
+    }
+  });
+
+  // 1. Cyber Arena Upper Backdrop (y: 0 to 58)
+  ctx.fillStyle = '#0c1015'; // --gb-darkest
+  ctx.fillRect(0, 0, width, 58);
+
+  // Matrix horizontal grid scanlines
+  ctx.fillStyle = '#1b2632'; // --gb-dark
+  for (let y = 6; y < 58; y += 8) {
+    ctx.fillRect(0, y, width, 1);
+  }
+  // Matrix vertical grid lines
+  for (let x = 16; x < width; x += 24) {
+    ctx.fillRect(x, 0, 1, 58);
+  }
+
+  // Horizon Divider
+  ctx.fillStyle = '#2c3e50'; // --gb-mid
+  ctx.fillRect(0, 58, width, 2);
+
+  // 2. "Code Grid" Perspective Floor (y: 60 to 144)
+  ctx.fillStyle = '#1b2632'; // --gb-dark
+  ctx.fillRect(0, 60, width, 84);
+
+  // Perspective horizontal lines (narrower near horizon, wider near bottom)
+  const horizLines = [64, 71, 80, 91, 104, 120, 138];
+  ctx.fillStyle = '#2c3e50';
+  horizLines.forEach((hy) => {
+    ctx.fillRect(0, hy, width, 1);
+  });
+
+  // Perspective angled matrix columns
+  const floorCols = [-20, 10, 40, 70, 100, 130, 160, 190];
+  floorCols.forEach((cx) => {
+    ctx.beginPath();
+    ctx.moveTo(cx, 60);
+    ctx.lineTo(cx + (cx - 80) * 0.8, 144);
+    ctx.strokeStyle = '#2c3e50';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // 3. Cyber Battle Podiums (Drawn with filled rectangles)
+  // Enemy Platform (Top-Right: x: 92 to 154, y: 52 to 62)
+  ctx.fillStyle = '#2c3e50';
+  ctx.fillRect(92, 54, 62, 8);
+  ctx.fillStyle = '#1b2632';
+  ctx.fillRect(94, 55, 58, 6);
+  ctx.fillStyle = '#38bdf8'; // Cyan cyber edge
+  ctx.fillRect(96, 56, 54, 2);
+
+  // Player Platform (Bottom-Left: x: 8 to 74, y: 104 to 118)
+  ctx.fillStyle = '#2c3e50';
+  ctx.fillRect(8, 106, 66, 12);
+  ctx.fillStyle = '#1b2632';
+  ctx.fillRect(10, 108, 62, 8);
+  ctx.fillStyle = '#38b764'; // Green cyber edge
+  ctx.fillRect(12, 109, 58, 2);
+
+  // -------------------------------------------------------------------------
+  // 4. TOP-LEFT: ENEMY INFO BOX
+  // -------------------------------------------------------------------------
+  const enemy = (window.gameState && window.gameState.enemy) || {
+    name: 'BUGMON',
+    maxHp: 130
+  };
+  const enemyHp = battleVisualState.hp.enemy;
+  const enemyHpPct = Math.max(0, enemyHp.display / enemyHp.max);
+
+  // Outer border & fill
+  ctx.fillStyle = '#0c1015';
+  ctx.fillRect(5, 6, 80, 26);
+  ctx.fillStyle = '#2c3e50';
+  ctx.fillRect(6, 7, 78, 24);
+  ctx.fillStyle = '#1b2632';
+  ctx.fillRect(8, 9, 74, 20);
+
+  // Enemy Name & LV
+  ctx.fillStyle = '#eef5fc';
+  ctx.font = '6px monospace';
+  ctx.fillText(enemy.name.toUpperCase().substring(0, 8), 11, 16);
+
+  ctx.fillStyle = '#f4b41b';
+  ctx.fillText('LV 5', 64, 16);
+
+  // Enemy HP Bar
+  ctx.fillStyle = '#0c1015';
+  ctx.fillRect(11, 19, 68, 6);
+  ctx.fillStyle = '#f4b41b';
+  ctx.font = '5px monospace';
+  ctx.fillText('HP', 13, 24);
+
+  // Bar groove
+  ctx.fillStyle = '#2c3e50';
+  ctx.fillRect(23, 20, 54, 4);
+
+  // Bar fill
+  const enemyFillW = Math.max(0, Math.min(54, Math.round(54 * enemyHpPct)));
+  ctx.fillStyle = getHpColor(enemyHpPct);
+  ctx.fillRect(23, 20, enemyFillW, 4);
+
+  // -------------------------------------------------------------------------
+  // 5. TOP-RIGHT: ENEMY CODEMON SPRITE (16x16 Pixel Grid Array)
+  // -------------------------------------------------------------------------
+  if (battleVisualState.enemy.visible) {
+    const enemyBob = Math.sin(animTick * 0.08) * 2;
+    const enemyX = 110 + battleVisualState.enemy.offsetX;
+    const enemyY = 24 + enemyBob + battleVisualState.enemy.offsetY;
+
+    drawPixelSprite(ctx, SPRITE_BUGMON_FRONT, enemyX, enemyY, 2);
+  }
+
+  // -------------------------------------------------------------------------
+  // 6. BOTTOM-LEFT: PLAYER CODEMON SPRITE (BACK VIEW, 16x16 Pixel Grid Array)
+  // -------------------------------------------------------------------------
+  if (battleVisualState.player.visible) {
+    const player = (window.gameState && window.gameState.player) || { id: 'pyrawr', name: 'Pyrawr' };
+    const playerBob = Math.sin(animTick * 0.1) * 1.5;
+    const playerX = 22 + battleVisualState.player.offsetX;
+    const playerY = 76 + playerBob + battleVisualState.player.offsetY;
+
+    // Pick sprite based on chosen starter
+    const pId = (player.id || player.name || '').toLowerCase();
+    let playerGrid = SPRITE_PYRAWR_BACK;
+    if (pId.includes('jaskull')) {
+      playerGrid = SPRITE_JASKULL_BACK;
+    } else if (pId.includes('cplusaur')) {
+      playerGrid = SPRITE_CPLUSAUR_BACK;
+    }
+
+    drawPixelSprite(ctx, playerGrid, playerX, playerY, 2);
+  }
+
+  // -------------------------------------------------------------------------
+  // 7. BOTTOM-RIGHT: PLAYER INFO BOX (With Numeric HP like 80/100)
+  // -------------------------------------------------------------------------
+  const player = (window.gameState && window.gameState.player) || {
+    name: 'PYRAWR',
+    maxHp: 100
+  };
+  const playerHp = battleVisualState.hp.player;
+  const playerHpPct = Math.max(0, playerHp.display / playerHp.max);
+
+  // Outer border & fill
+  ctx.fillStyle = '#0c1015';
+  ctx.fillRect(72, 68, 83, 34);
+  ctx.fillStyle = '#2c3e50';
+  ctx.fillRect(73, 69, 81, 32);
+  ctx.fillStyle = '#1b2632';
+  ctx.fillRect(75, 71, 77, 28);
+
+  // Player Name & LV
+  ctx.fillStyle = '#eef5fc';
+  ctx.font = '6px monospace';
+  ctx.fillText(player.name.toUpperCase().substring(0, 8), 79, 79);
+
+  ctx.fillStyle = '#f4b41b';
+  ctx.fillText('LV 5', 134, 79);
+
+  // Player HP Bar
+  ctx.fillStyle = '#0c1015';
+  ctx.fillRect(79, 82, 70, 6);
+  ctx.fillStyle = '#f4b41b';
+  ctx.font = '5px monospace';
+  ctx.fillText('HP', 81, 87);
+
+  // Bar groove
+  ctx.fillStyle = '#2c3e50';
+  ctx.fillRect(91, 83, 56, 4);
+
+  // Bar fill
+  const playerFillW = Math.max(0, Math.min(56, Math.round(56 * playerHpPct)));
+  ctx.fillStyle = getHpColor(playerHpPct);
+  ctx.fillRect(91, 83, playerFillW, 4);
+
+  // Numeric HP display right-aligned (e.g. "80/100")
+  ctx.fillStyle = '#eef5fc';
+  ctx.font = '6px monospace';
+  ctx.textAlign = 'right';
+  const numHpStr = `${Math.max(0, Math.round(playerHp.display))}/${playerHp.max}`;
+  ctx.fillText(numHpStr, 148, 95);
+  ctx.textAlign = 'left';
+
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------------------
+// 9. EXPOSE FUNCTIONS FOR CODE PANEL & GLOBAL SCOPE
+// ---------------------------------------------------------------------------
+window.BattleEngine = {
+  // Sprites
+  SPRITE_PALETTE,
+  SPRITE_BUGMON_FRONT,
+  SPRITE_PYRAWR_BACK,
+  SPRITE_JASKULL_BACK,
+  SPRITE_CPLUSAUR_BACK,
+  drawPixelSprite,
+
+  // Functions requested by user
+  playAttackAnimation,
+  playHitAnimation,
+  showMessage,
+  typeText,
+  setHp,
+  updateHud,
+
+  // Renderer & state
+  render: renderBattleScene,
+  visualState: battleVisualState
+};
+
+// Direct global convenience bindings
+window.playAttackAnimation = playAttackAnimation;
+window.playHitAnimation = playHitAnimation;
+window.showMessage = showMessage;
+window.typeText = typeText;
+window.setHp = setHp;
+window.updateHud = updateHud;
+window.BattleScene = window.BattleEngine;
