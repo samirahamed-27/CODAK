@@ -65,4 +65,33 @@ Types,What is bool?,True or False,A string,A number,A list,Z,Boolean is True or 
     expect(res.errors.some((e) => e.row === 2 && e.field === 'question_text')).toBe(true);
     expect(res.errors.some((e) => e.row === 2 && e.field === 'explanation')).toBe(true);
   });
+
+  it('rejects CSV containing subject_code with clear explanation that subject is chosen in UI', () => {
+    const csv = `subject_code,topic,question_text,option_a,option_b,option_c,option_d,correct_option,explanation
+CS101,Math,What is 2+2?,3,4,5,6,B,2+2 is 4`;
+
+    const res = parseAndValidateQuestionsCsv(csv);
+    expect(res.success).toBe(false);
+    expect(res.errors[0].field).toBe('header');
+    expect(res.errors[0].message).toMatch(/subject_code.*must not be included.*faculty upload interface/i);
+  });
+
+  it('reports exact missing headers when columns are missing from header', () => {
+    const csv = `topic,question_text,option_a,option_b
+Math,What is 2+2?,3,4`;
+
+    const res = parseAndValidateQuestionsCsv(csv);
+    expect(res.success).toBe(false);
+    expect(res.errors[0].field).toBe('header');
+    expect(res.errors[0].message).toMatch(/missing columns: option_c, option_d, correct_option, explanation/i);
+  });
+
+  it('reports row column count mismatch when a data row has fewer or more than 8 columns', () => {
+    const csv = `topic,question_text,option_a,option_b,option_c,option_d,correct_option,explanation
+Math,What is 2+2?,3,4,5,6,B`; // 7 columns
+
+    const res = parseAndValidateQuestionsCsv(csv);
+    expect(res.success).toBe(false);
+    expect(res.errors.some((e) => e.row === 2 && e.field === 'columns' && e.message.includes('Expected exactly 8 columns but found 7'))).toBe(true);
+  });
 });

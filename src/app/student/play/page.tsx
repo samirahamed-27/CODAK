@@ -9,6 +9,7 @@ import {
   submitQuizAnswerAction,
   finalizeQuizAction,
   getPracticeQuizSessionAction,
+  submitPracticeAnswerAction,
   ClientQuizQuestion,
   DailyQuizSessionResult,
 } from '@/app/actions/quiz';
@@ -48,19 +49,21 @@ export default function StudentPlayPage() {
     notes?: string;
   } | null>(null);
 
-  // Practice Mode State
+  // Practice Mode State (Zero answer keys in state before server response)
   const [practiceQuestions, setPracticeQuestions] = useState<
     {
       id: string;
       topic: string;
       questionText: string;
       options: { id: 'A' | 'B' | 'C' | 'D'; text: string }[];
-      correctOption: string;
-      explanation: string;
     }[]
   >([]);
   const [practiceIndex, setPracticeIndex] = useState(0);
   const [practiceAnswers, setPracticeAnswers] = useState<Record<number, string>>({});
+  const [practiceFeedback, setPracticeFeedback] = useState<
+    Record<number, { isCorrect: boolean; correctOption: string; explanation: string }>
+  >({});
+  const [practiceSubmitting, setPracticeSubmitting] = useState(false);
   const [practiceLoading, setPracticeLoading] = useState(false);
 
   // Load Daily Quiz on mount
@@ -83,11 +86,38 @@ export default function StudentPlayPage() {
     setPracticeLoading(true);
     setPracticeIndex(0);
     setPracticeAnswers({});
+    setPracticeFeedback({});
     const res = await getPracticeQuizSessionAction();
     if (res.success) {
       setPracticeQuestions(res.questions);
     }
     setPracticeLoading(false);
+  }
+
+  // Handle Practice Option Submission (Server-side evaluation)
+  async function handlePracticeOptionSelect(optId: 'A' | 'B' | 'C' | 'D') {
+    if (practiceAnswers[practiceIndex] !== undefined || practiceSubmitting) return;
+    const currentQ = practiceQuestions[practiceIndex];
+    if (!currentQ) return;
+
+    setPracticeSubmitting(true);
+    const res = await submitPracticeAnswerAction({
+      questionId: currentQ.id,
+      selectedOption: optId,
+    });
+    setPracticeSubmitting(false);
+
+    if (res.success) {
+      setPracticeAnswers((prev) => ({ ...prev, [practiceIndex]: optId }));
+      setPracticeFeedback((prev) => ({
+        ...prev,
+        [practiceIndex]: {
+          isCorrect: res.isCorrect ?? false,
+          correctOption: res.correctOption ?? '',
+          explanation: res.explanation ?? '',
+        },
+      }));
+    }
   }
 
   useEffect(() => {
@@ -518,8 +548,8 @@ export default function StudentPlayPage() {
                     {practiceQuestions[practiceIndex].options.map((opt) => {
                       const hasAnswered = practiceAnswers[practiceIndex] !== undefined;
                       const isStudentChoice = practiceAnswers[practiceIndex] === opt.id;
-                      const isCorrectChoice =
-                        practiceQuestions[practiceIndex].correctOption === opt.id;
+                      const feedback = practiceFeedback[practiceIndex];
+                      const isCorrectChoice = feedback && feedback.correctOption === opt.id;
 
                       let style =
                         'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 text-slate-300';
@@ -536,10 +566,8 @@ export default function StudentPlayPage() {
                       return (
                         <button
                           key={opt.id}
-                          disabled={hasAnswered}
-                          onClick={() => {
-                            setPracticeAnswers({ ...practiceAnswers, [practiceIndex]: opt.id });
-                          }}
+                          disabled={hasAnswered || practiceSubmitting}
+                          onClick={() => handlePracticeOptionSelect(opt.id)}
                           className={`w-full p-3.5 rounded-2xl border text-xs sm:text-sm text-left flex items-center justify-between gap-3 transition-all ${style}`}
                         >
                           <div className="flex items-center gap-3">
@@ -561,15 +589,37 @@ export default function StudentPlayPage() {
                     })}
                   </div>
 
-                  {/* Explanation feedback */}
-                  {practiceAnswers[practiceIndex] !== undefined && (
-                    <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-200 leading-relaxed">
-                      <div className="font-bold text-indigo-300 mb-1">
-                        {practiceAnswers[practiceIndex] === practiceQuestions[practiceIndex].correctOption
-                          ? '✅ Correct!'
-                          : `❌ Correct choice is option ${practiceQuestions[practiceIndex].correctOption}.`}
+                  {practiceSubmitting && (
+                    <div className="text-center py-2 text-xs text-indigo-400 animate-pulse">
+                      Checking answer with server...
+                    </div>
+                  )}
+
+                  {/* Explanation feedback (Server revealed post-submission) */}
+                  {practiceAnswers[practiceIndex] !== undefined && practiceFeedback[practiceIndex] && (
+                    <div
+                      className={`p-4 rounded-2xl border text-xs leading-relaxed animate-fadeIn ${
+                        practiceFeedback[practiceIndex].isCorrect
+                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200'
+                          : 'bg-rose-500/10 border-rose-500/20 text-rose-200'
+                      }`}
+                    >
+                      <div className="font-bold flex items-center gap-1.5 mb-1">
+                        {practiceFeedback[practiceIndex].isCorrect ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                            <span>Correct answer!</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="w-4 h-4 text-rose-400" />
+                            <span>
+                              Incorrect. Correct choice is option {practiceFeedback[practiceIndex].correctOption}.
+                            </span>
+                          </>
+                        )}
                       </div>
-                      <p className="text-slate-300">{practiceQuestions[practiceIndex].explanation}</p>
+                      <p className="text-slate-300">{practiceFeedback[practiceIndex].explanation}</p>
                     </div>
                   )}
 

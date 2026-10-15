@@ -75,7 +75,8 @@ export function parseAndValidateQuestionsCsv(csvContent: string): ParseResult {
     };
   }
 
-  // 1. Validate Header
+  // 1. Validate Header (Strict 8-header contract)
+  // Contract: The subject is chosen in the faculty interface; CSV contains 8 question fields.
   const expectedHeaders = [
     'topic',
     'question_text',
@@ -93,6 +94,25 @@ export function parseAndValidateQuestionsCsv(csvContent: string): ParseResult {
     expectedHeaders.every((h, idx) => headerCells[idx] === h);
 
   if (!headerMatch) {
+    let detailMsg = `Invalid CSV header. Expected exactly 8 headers: ${expectedHeaders.join(',')}.`;
+    if (headerCells.includes('subject_code')) {
+      detailMsg +=
+        ' Note: "subject_code" must not be included as a CSV column; the subject is chosen in the faculty upload interface.';
+    } else if (headerCells.length < expectedHeaders.length) {
+      const missing = expectedHeaders.filter((h) => !headerCells.includes(h));
+      detailMsg += ` Missing columns: ${missing.join(', ')}.`;
+    } else if (headerCells.length > expectedHeaders.length) {
+      const extra = headerCells.filter((h) => !expectedHeaders.includes(h));
+      detailMsg += ` Extra columns detected: ${extra.join(', ')}. Expected 8 columns, received ${headerCells.length}.`;
+    } else {
+      const mismatched = headerCells
+        .map((h, i) =>
+          h !== expectedHeaders[i] ? `column ${i + 1} ("${h}" instead of "${expectedHeaders[i]}")` : null
+        )
+        .filter(Boolean);
+      detailMsg += ` Mismatched columns: ${mismatched.join(', ')}.`;
+    }
+
     return {
       success: false,
       questions: [],
@@ -100,7 +120,7 @@ export function parseAndValidateQuestionsCsv(csvContent: string): ParseResult {
         {
           row: 1,
           field: 'header',
-          message: `Invalid CSV header. Expected: ${expectedHeaders.join(',')}. Found: ${headerCells.join(',')}`,
+          message: detailMsg,
         },
       ],
       totalRows: 0,
@@ -118,8 +138,8 @@ export function parseAndValidateQuestionsCsv(csvContent: string): ParseResult {
     if (cells.length !== 8) {
       errors.push({
         row: lineNum,
-        field: 'row',
-        message: `Expected 8 columns but found ${cells.length}.`,
+        field: 'columns',
+        message: `Expected exactly 8 columns but found ${cells.length}.`,
       });
       continue;
     }
