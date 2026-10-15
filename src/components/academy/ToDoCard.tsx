@@ -13,7 +13,10 @@ const STORAGE_KEY = 'academy_student_quests';
 
 export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
   const [quests, setQuests] = useState<QuestItem[]>(initialQuests);
+  const [newTitle, setNewTitle] = useState('');
+  const [animatingQuestId, setAnimatingQuestId] = useState<string | null>(null);
 
+  // Hydrate quests from localStorage on client mount to prevent server-client HTML mismatch
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -27,8 +30,6 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
       // Storage unavailable
     }
   }, []);
-  const [newTitle, setNewTitle] = useState('');
-  const [animatingQuestId, setAnimatingQuestId] = useState<string | null>(null);
 
   // Save to localStorage on change
   const saveQuests = (updated: QuestItem[]) => {
@@ -114,7 +115,10 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
         </div>
 
         {/* Counter Chip (Pastel Orange #FFB27A) */}
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#081534] border border-[#1E3A78] text-xs font-semibold text-[#FFB27A]">
+        <div
+          suppressHydrationWarning
+          className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#081534] border border-[#1E3A78] text-xs font-semibold text-[#FFB27A]"
+        >
           <Sparkles className="w-3.5 h-3.5" />
           <span suppressHydrationWarning>
             {completedCount}/{quests.length} Done
