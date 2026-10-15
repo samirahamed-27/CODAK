@@ -17,15 +17,7 @@ export function AnimatedCounter({
   suffix = '',
   className = '',
 }: AnimatedCounterProps) {
-  const [displayValue, setDisplayValue] = useState(() => {
-    if (
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
-      return value;
-    }
-    return 0;
-  });
+  const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
     const prefersReducedMotion =
@@ -33,6 +25,7 @@ export function AnimatedCounter({
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (prefersReducedMotion) {
+      setDisplayValue(value);
       return;
     }
 

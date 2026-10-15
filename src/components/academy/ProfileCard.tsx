@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Trash2, Shield, AlertTriangle } from 'lucide-react';
 import { StudentProfile } from '@/data/studentDashboardData';
 import Shuffle from '@/components/Shuffle';
@@ -13,17 +13,16 @@ interface ProfileCardProps {
 const STORAGE_KEY = 'academy_student_avatar';
 
 export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) return saved;
-      } catch {
-        // Storage access blocked or unavailable
-      }
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatarUrl);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) setAvatarUrl(saved);
+    } catch {
+      // Storage access blocked or unavailable
     }
-    return profile.avatarUrl;
-  });
+  }, []);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

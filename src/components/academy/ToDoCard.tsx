@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Check, Sparkles, Swords } from 'lucide-react';
 import { initialQuests, QuestItem } from '@/data/studentDashboardData';
 import Shuffle from '@/components/Shuffle';
@@ -12,19 +12,21 @@ interface ToDoCardProps {
 const STORAGE_KEY = 'academy_student_quests';
 
 export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
-  const [quests, setQuests] = useState<QuestItem[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          return JSON.parse(saved);
+  const [quests, setQuests] = useState<QuestItem[]>(initialQuests);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setQuests(parsed);
         }
-      } catch {
-        // Storage unavailable
       }
+    } catch {
+      // Storage unavailable
     }
-    return initialQuests;
-  });
+  }, []);
   const [newTitle, setNewTitle] = useState('');
   const [animatingQuestId, setAnimatingQuestId] = useState<string | null>(null);
 
@@ -114,7 +116,7 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
         {/* Counter Chip (Pastel Orange #FFB27A) */}
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#081534] border border-[#1E3A78] text-xs font-semibold text-[#FFB27A]">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>
+          <span suppressHydrationWarning>
             {completedCount}/{quests.length} Done
           </span>
         </div>
