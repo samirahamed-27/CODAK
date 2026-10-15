@@ -3,6 +3,7 @@
 import React from 'react';
 import { Lock, Scroll, Calendar, Clock } from 'lucide-react';
 import { DeadlineItem } from '@/data/studentDashboardData';
+import Shuffle from '@/components/Shuffle';
 
 interface DeadlinesCardProps {
   deadlines?: DeadlineItem[];
@@ -17,15 +18,23 @@ export function DeadlinesCard({ deadlines = [] }: DeadlinesCardProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <span className="font-pixel text-[11px] font-bold uppercase tracking-wider text-[#A9B8D6] block">
+          <span className="font-pixel text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
             COURSEWORK
           </span>
-          <h2 className="text-xl font-bold text-white font-body">
-            Summary/deadlines
-          </h2>
+          <Shuffle
+            text="Deadlines"
+            tag="h2"
+            effect="slide"
+            duration={0.35}
+            stagger={0.03}
+            triggerOnHover={true}
+            color="#FFFFFF"
+            accentColor="#7DD3FC"
+            style={{ fontSize: '1.25rem', letterSpacing: '0.04em' }}
+          />
         </div>
 
-        <div className="w-8 h-8 rounded-xl bg-[#081534] border border-[#1E3A78] flex items-center justify-center text-[#7CC4FF]">
+        <div className="w-8 h-8 rounded-xl bg-[#10131E] border border-sky-400/40 flex items-center justify-center text-sky-400">
           <Scroll className="w-4 h-4" />
         </div>
       </div>

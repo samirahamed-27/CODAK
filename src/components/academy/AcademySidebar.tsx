@@ -16,6 +16,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { levelFromXp } from '@/lib/levels';
+import Shuffle from '@/components/Shuffle';
 
 interface AcademySidebarProps {
   totalXp?: number;
@@ -54,14 +55,22 @@ export function AcademySidebar({ totalXp = 1420 }: AcademySidebarProps) {
             className="group inline-flex items-center gap-3 focus:outline-none"
             onClick={() => setMobileOpen(false)}
           >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#7CC4FF] to-[#FFB27A] flex items-center justify-center text-[#06080F] shadow-lg shadow-[#7CC4FF]/25 group-hover:scale-105 transition-transform">
-              <Gamepad2 className="w-5 h-5 text-[#06080F]" />
+            <div className="w-10 h-10 rounded-2xl bg-[#10131E] border border-sky-400/40 flex items-center justify-center text-white shadow-lg shadow-sky-500/15 group-hover:scale-105 transition-transform">
+              <Gamepad2 className="w-5 h-5 text-sky-400" />
             </div>
             <div>
-              <span className="font-pixel text-xl font-bold tracking-wider text-white group-hover:text-[#7CC4FF] transition-colors">
-                ACADEMY
-              </span>
-              <div className="h-[2px] w-full bg-gradient-to-r from-[#7CC4FF] via-[#FFB27A] to-transparent rounded-full mt-0.5 shadow-[0_0_8px_rgba(124,196,255,0.4)]" />
+              <Shuffle
+                text="ACADEMY"
+                tag="span"
+                effect="slide"
+                duration={0.35}
+                stagger={0.03}
+                triggerOnHover={true}
+                color="#FFFFFF"
+                accentColor="#7DD3FC"
+                style={{ fontSize: '1.15rem', letterSpacing: '0.08em' }}
+              />
+              <div className="h-[2px] w-full bg-gradient-to-r from-sky-400 via-white to-transparent rounded-full mt-0.5 shadow-[0_0_8px_rgba(125,211,252,0.3)]" />
             </div>
           </Link>
         </div>

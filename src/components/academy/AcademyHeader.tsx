@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Flame, Sparkles, Mail, Check, BellRing } from 'lucide-react';
 import { AnimatedCounter } from './AnimatedCounter';
 import { StudentProfile } from '@/data/studentDashboardData';
+import Shuffle from '@/components/Shuffle';
 
 interface AcademyHeaderProps {
   profile: StudentProfile;
@@ -20,23 +21,31 @@ export function AcademyHeader({ profile }: AcademyHeaderProps) {
   };
 
   return (
-    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 pt-2 border-b border-[#1E3A78]/70">
+    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 pt-2 border-b border-[#1D2233]">
       {/* Left: Student Name, Title Tag & Streak/XP Pill */}
       <div className="flex flex-wrap items-center gap-4 sm:gap-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight font-body">
-              {profile.name}
-            </h1>
+            <Shuffle
+              text={profile.name}
+              tag="h1"
+              effect="slide"
+              duration={0.35}
+              stagger={0.03}
+              triggerOnHover={true}
+              color="#FFFFFF"
+              accentColor="#7DD3FC"
+              style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', letterSpacing: '0.04em' }}
+            />
 
             {/* Game Title Tag Badge */}
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#0B1A3D] border border-[#7CC4FF]/40 text-[#7CC4FF] shadow-[0_0_12px_rgba(124,196,255,0.2)]">
-              <Sparkles className="w-3.5 h-3.5 text-[#FFB27A]" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#10131E] border border-sky-400/40 text-sky-300 shadow-[0_0_12px_rgba(125,211,252,0.18)]">
+              <Sparkles className="w-3.5 h-3.5 text-sky-400" />
               {profile.titleTag}
             </span>
           </div>
 
-          <p className="text-xs sm:text-sm text-[#A9B8D6] mt-1 font-body">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1 font-body">
             Welcome back to the arena. Your daily quests and academic duels await!
           </p>
         </div>

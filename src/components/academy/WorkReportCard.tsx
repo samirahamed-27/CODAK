@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Zap, Flame } from 'lucide-react';
 import { getHeatmapColorLevel, mockActivityCalendar } from '@/data/studentDashboardData';
 import { AnimatedCounter } from './AnimatedCounter';
+import Shuffle from '@/components/Shuffle';
 
 interface WorkReportCardProps {
   activityData?: Record<string, number>;
@@ -117,10 +118,20 @@ export function WorkReportCard({ activityData = mockActivityCalendar }: WorkRepo
       {/* Header: Title and Month Chip with Prev/Next Controls */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div>
-          <span className="font-pixel text-[11px] font-bold uppercase tracking-wider text-[#A9B8D6] block">
+          <span className="font-pixel text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
             ACTIVITY HEATMAP
           </span>
-          <h2 className="text-xl font-bold text-white font-body">Work Report</h2>
+          <Shuffle
+            text="Work Report"
+            tag="h2"
+            effect="slide"
+            duration={0.35}
+            stagger={0.03}
+            triggerOnHover={true}
+            color="#FFFFFF"
+            accentColor="#7DD3FC"
+            style={{ fontSize: '1.25rem', letterSpacing: '0.04em' }}
+          />
         </div>
 
         {/* Month Selector Chip */}

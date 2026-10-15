@@ -3,48 +3,52 @@
 
 :root {
   /* ==========================================================================
-     NEW COLOR PALETTE DESIGN TOKENS
-     (Black, Navy Blue, Light Blue, Pastel Orange)
+     B&W & DUSKY THEME WITH HINTS OF LIGHT BLUE
+     (Dusky Charcoal, Monochrome Grayscale, Icy Sky Blue Accents)
      ========================================================================== */
-  --bg-page: #06080F;
-  --bg-pattern: #0B1530;
-  --bg-sidebar: #0B1A3D;
-  --bg-card: #0F2350;
-  --bg-card-dark: #0A1738;
-  --border-card: #1E3A78;
-  --border-card-subtle: #172B57;
-  --shadow-card-3d: 0 6px 0 #050B1E;
-  --shadow-card-hover: 0 10px 0 #050B1E, 0 0 24px rgba(124, 196, 255, 0.25);
+  --bg-page: #07080B;
+  --bg-pattern: #0B0D14;
+  --bg-sidebar: #0C0F17;
+  --bg-card: #10131E;
+  --bg-card-dark: #090B12;
+  --border-card: #1D2233;
+  --border-card-subtle: #131724;
+  --shadow-card-3d: 0 6px 0 #030406;
+  --shadow-card-hover: 0 8px 0 #030406, 0 0 24px rgba(125, 211, 252, 0.2);
 
-  /* Primary Accent: Light Blue */
-  --accent-primary: #7CC4FF;
-  --accent-primary-hover: #96D2FF;
-  --accent-primary-dark: #4A97D6;
-  --accent-primary-glow: rgba(124, 196, 255, 0.35);
+  /* Primary Accent: Crisp Light Blue */
+  --accent-primary: #7DD3FC;
+  --accent-primary-hover: #BAE6FD;
+  --accent-primary-dark: #0284C7;
+  --accent-primary-glow: rgba(125, 211, 252, 0.3);
 
-  /* Highlight Accent: Pastel Orange */
-  --accent-highlight: #FFB27A;
-  --accent-highlight-hover: #FFC496;
-  --accent-highlight-dark: #E8935A;
-  --accent-highlight-glow: rgba(255, 178, 122, 0.4);
+  /* Highlight Accent: Monochrome Dusky Silver / White */
+  --accent-highlight: #F1F5F9;
+  --accent-highlight-hover: #FFFFFF;
+  --accent-highlight-dark: #64748B;
+  --accent-highlight-glow: rgba(241, 245, 249, 0.35);
 
-  /* Chart Colors */
-  --chart-average: #3A5A99;
-  --chart-average-hover: #4B6FA8;
-  --chart-gridlines: #2A3F73;
+  /* Light Blue Hint Tint */
+  --accent-ice: #38BDF8;
+  --accent-ice-glow: rgba(56, 189, 248, 0.25);
+
+  /* Chart Colors (Dusky Grayscale with Light Blue Peak) */
+  --chart-average: #334155;
+  --chart-average-hover: #475569;
+  --chart-gridlines: #1E293B;
 
   /* Typography Colors */
   --text-white: #FFFFFF;
-  --text-muted: #A9B8D6;
-  --text-dim: #6C7FAD;
-  --text-contrast-dark: #06080F;
+  --text-muted: #94A3B8;
+  --text-dim: #64748B;
+  --text-contrast-dark: #07080B;
 
-  /* Heatmap 5-level palette */
-  --heatmap-lvl0: #14214A;
-  --heatmap-lvl1: #1F4E8C;
-  --heatmap-lvl2: #4A97D6;
-  --heatmap-lvl3: #8FD0FF;
-  --heatmap-lvl4: #FFB27A;
+  /* Heatmap 5-level palette: Dusky Charcoal -> Muted Slate -> Light Blue */
+  --heatmap-lvl0: #0E111B;
+  --heatmap-lvl1: #1E2638;
+  --heatmap-lvl2: #334155;
+  --heatmap-lvl3: #475569;
+  --heatmap-lvl4: #7DD3FC;
 
   /* Fonts */
   --font-pixel: 'Pixelify Sans', 'Press Start 2P', monospace, sans-serif;
@@ -55,12 +59,15 @@
   --radius-btn: 14px;
 }
 
+html,
 body {
-  background-color: var(--bg-page);
+  background-color: #06070a !important;
   color: var(--text-white);
   font-family: var(--font-body);
   margin: 0;
   padding: 0;
+  width: 100%;
+  min-height: 100%;
   overflow-x: hidden;
 }
 
@@ -69,14 +76,9 @@ body {
   color: var(--text-contrast-dark);
 }
 
-/* Subtle arcade starfield / pixel grid background pattern in faint navy (#0B1530) */
+/* Smooth canvas without distracting dots to let Aurora shine smoothly */
 .game-bg-grid {
-  background-color: var(--bg-page);
-  background-image: 
-    radial-gradient(rgba(11, 21, 48, 0.8) 1.5px, transparent 1.5px),
-    radial-gradient(rgba(124, 196, 255, 0.08) 1px, transparent 1px);
-  background-size: 28px 28px, 56px 56px;
-  background-position: 0 0, 14px 14px;
+  background-color: transparent;
 }
 
 /* Game Font Utilities */
@@ -101,7 +103,7 @@ body {
 .game-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-card-hover);
-  border-color: rgba(124, 196, 255, 0.5);
+  border-color: rgba(125, 211, 252, 0.45);
 }
 
 /* Chunky Arcade Game Buttons */
@@ -109,7 +111,7 @@ body {
   background-color: var(--accent-primary);
   color: var(--text-contrast-dark);
   border-radius: var(--radius-btn);
-  border: 1px solid #B0DDFF;
+  border: 1px solid #BAE6FD;
   box-shadow: 0 4px 0 var(--accent-primary-dark);
   font-weight: 700;
   transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.15s ease;
@@ -128,7 +130,7 @@ body {
   background-color: var(--accent-highlight);
   color: var(--text-contrast-dark);
   border-radius: var(--radius-btn);
-  border: 1px solid #FFCCA3;
+  border: 1px solid #FFFFFF;
   box-shadow: 0 4px 0 var(--accent-highlight-dark);
   font-weight: 800;
   transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.15s ease;
@@ -144,7 +146,7 @@ body {
 }
 
 .btn-arcade-ghost {
-  background-color: rgba(15, 35, 80, 0.8);
+  background-color: rgba(16, 19, 30, 0.85);
   color: var(--text-muted);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-btn);
@@ -154,8 +156,8 @@ body {
 
 .btn-arcade-ghost:hover {
   color: var(--text-white);
-  border-color: var(--accent-primary);
-  background-color: rgba(124, 196, 255, 0.12);
+  border-color: rgba(125, 211, 252, 0.5);
+  background-color: rgba(125, 211, 252, 0.08);
 }
 
 .btn-arcade-ghost:active {
@@ -204,10 +206,10 @@ body {
 
 @keyframes neonPulse {
   0%, 100% {
-    box-shadow: 0 0 12px rgba(255, 178, 122, 0.35);
+    box-shadow: 0 0 12px rgba(125, 211, 252, 0.3);
   }
   50% {
-    box-shadow: 0 0 20px rgba(255, 178, 122, 0.65);
+    box-shadow: 0 0 22px rgba(125, 211, 252, 0.6);
   }
 }
 
@@ -215,14 +217,14 @@ body {
   animation: neonPulse 2s infinite ease-in-out;
 }
 
-/* Custom Scrollbar for Navy/Black Theme */
+/* Custom Scrollbar for Dusky/Black Theme with Light Blue */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #050B1E;
+  background: #07080B;
 }
 
 ::-webkit-scrollbar-thumb {

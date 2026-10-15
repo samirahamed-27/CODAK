@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Trash2, Shield, AlertTriangle } from 'lucide-react';
 import { StudentProfile } from '@/data/studentDashboardData';
+import Shuffle from '@/components/Shuffle';
 
 interface ProfileCardProps {
   profile: StudentProfile;
@@ -139,10 +140,18 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
 
       {/* Name and Rank */}
       <div className="mt-4 mb-5">
-        <h2 className="font-extrabold text-lg sm:text-xl text-white font-body leading-tight">
-          {profile.name}
-        </h2>
-        <div className="mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#081534] border border-[#1E3A78] text-xs font-semibold text-[#FFB27A]">
+        <Shuffle
+          text={profile.name}
+          tag="h2"
+          effect="slide"
+          duration={0.35}
+          stagger={0.03}
+          triggerOnHover={true}
+          color="#FFFFFF"
+          accentColor="#7DD3FC"
+          style={{ fontSize: '1.25rem', letterSpacing: '0.04em' }}
+        />
+        <div className="mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#10131E] border border-sky-400/30 text-xs font-semibold text-sky-300">
           <span>🏆 {profile.rank}</span>
         </div>
       </div>

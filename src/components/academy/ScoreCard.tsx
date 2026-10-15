@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Star, BarChart3 } from 'lucide-react';
 import { SubjectScore, initialSubjectScores } from '@/data/studentDashboardData';
+import Shuffle from '@/components/Shuffle';
 
 interface ScoreCardProps {
   scores?: SubjectScore[];
@@ -35,12 +36,22 @@ export function ScoreCard({ scores = initialSubjectScores }: ScoreCardProps) {
       {/* Header: Title & Legend */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
-          <span className="font-pixel text-[11px] font-bold uppercase tracking-wider text-[#A9B8D6] block">
+          <span className="font-pixel text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
             ACADEMIC PERFORMANCE
           </span>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-white font-body">Score</h2>
-            <BarChart3 className="w-5 h-5 text-[#7CC4FF]" />
+            <Shuffle
+              text="Score"
+              tag="h2"
+              effect="slide"
+              duration={0.35}
+              stagger={0.03}
+              triggerOnHover={true}
+              color="#FFFFFF"
+              accentColor="#7DD3FC"
+              style={{ fontSize: '1.25rem', letterSpacing: '0.04em' }}
+            />
+            <BarChart3 className="w-5 h-5 text-sky-400" />
           </div>
         </div>
 

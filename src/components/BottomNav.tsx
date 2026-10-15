@@ -17,7 +17,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800 backdrop-blur-lg">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#07080B]/95 border-t border-[#1D2233] backdrop-blur-lg">
       <div className="max-w-md mx-auto px-4 h-16 flex items-center justify-around">
         {navItems.map((item) => {
           const isActive = item.exact
@@ -31,7 +31,7 @@ export function BottomNav() {
               href={item.href}
               className={`flex flex-col items-center justify-center gap-1 w-14 py-1 transition-all ${
                 isActive
-                  ? 'text-indigo-400 font-semibold scale-105'
+                  ? 'text-sky-400 font-semibold scale-105'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
