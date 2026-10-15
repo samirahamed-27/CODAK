@@ -42,6 +42,9 @@ export function addDaysToDate(dateStr: string, days: number): string {
  * Returns the current date in Asia/Kolkata formatted as YYYY-MM-DD.
  */
 export function getKolkataDate(date: Date = new Date()): string {
+  if (process.env.TEST_SIMULATED_DATE) {
+    return process.env.TEST_SIMULATED_DATE;
+  }
   const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Kolkata',
     year: 'numeric',

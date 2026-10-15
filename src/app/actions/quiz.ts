@@ -295,6 +295,21 @@ export async function submitQuizAnswerAction(input: {
     return { success: false, error: 'Quiz is already completed or inactive.' };
   }
 
+  // Daily attempts expire at midnight (Asia/Kolkata)
+  if (attempt.mode === 'daily') {
+    const todayDate = getKolkataDate();
+    if (attempt.quiz_date < todayDate) {
+      await adminClient
+        .from('quiz_attempts')
+        .update({ status: 'expired' })
+        .eq('id', attempt.id);
+      return {
+        success: false,
+        error: 'This daily quiz session expired at midnight (Asia/Kolkata) and can no longer be answered.',
+      };
+    }
+  }
+
   if (!attempt.question_ids.includes(input.questionId)) {
     return { success: false, error: 'Question does not belong to this quiz attempt.' };
   }
@@ -392,6 +407,30 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
       xpAwarded: attempt.xp_awarded,
       currentStreak: streakRow?.current_streak ?? 0,
       longestStreak: streakRow?.longest_streak ?? 0,
+    };
+  }
+
+  // Daily attempts expire at midnight (Asia/Kolkata)
+  if (attempt.mode === 'daily') {
+    const todayDate = getKolkataDate();
+    if (attempt.quiz_date < todayDate) {
+      if (attempt.status !== 'expired') {
+        await adminClient
+          .from('quiz_attempts')
+          .update({ status: 'expired' })
+          .eq('id', attempt.id);
+      }
+      return {
+        success: false,
+        error: 'This daily quiz session expired at midnight (Asia/Kolkata) and cannot be completed.',
+      };
+    }
+  }
+
+  if (attempt.status !== 'in_progress') {
+    return {
+      success: false,
+      error: 'Quiz session is inactive or expired.',
     };
   }
 

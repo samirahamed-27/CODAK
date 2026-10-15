@@ -261,6 +261,7 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
   const studentB = 'student-uuid-bbb-222';
 
   beforeEach(() => {
+    delete process.env.TEST_SIMULATED_DATE;
     mockCurrentUser = { id: studentA, email: 'studenta@dev.local' };
     mockDbAttempts = [];
     mockDbAnswers = [];
@@ -537,6 +538,7 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
 
     it('7-day streak bonus: ledger reference includes streak start date so every new streak earns it once', async () => {
       // 1. First streak: starts Oct 01, reaches day 7 on Oct 07
+      process.env.TEST_SIMULATED_DATE = '2026-10-07';
       mockDbStreaks.push({
         student_id: studentA,
         current_streak: 6,
@@ -573,6 +575,7 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
       expect(bonusesAfterReplay.length).toBe(1);
 
       // Day 14 pays nothing: reach day 14 on Oct 14
+      process.env.TEST_SIMULATED_DATE = '2026-10-14';
       const streakRowFor14 = mockDbStreaks.find((s) => s.student_id === studentA);
       streakRowFor14.current_streak = 13;
       streakRowFor14.last_quiz_date = '2026-10-13';
@@ -593,6 +596,7 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
       expect(bonusesAt14.length).toBe(1); // Day 14 pays nothing!
 
       // 2. Streak resets: student missed 5 days, starts a brand new streak on Oct 15
+      process.env.TEST_SIMULATED_DATE = '2026-10-21';
       const streakRow = mockDbStreaks.find((s) => s.student_id === studentA);
       streakRow.current_streak = 6;
       streakRow.last_quiz_date = '2026-10-20';
@@ -618,6 +622,7 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
     });
 
     it('Logs a streak_freeze event per frozen day when student misses days within freeze quota', async () => {
+      process.env.TEST_SIMULATED_DATE = '2026-10-04';
       // Student has streak of 3, last completed Oct 01, 0 freezes used
       mockDbStreaks.push({
         student_id: studentA,
@@ -679,23 +684,45 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
       mockDbQuestions.forEach((q) => { q.status = 'approved'; });
     });
 
-    it('4(b). Quiz started before midnight and finished after midnight credits the start date', async () => {
-      // Start quiz on Day 1 (e.g. 2026-10-14)
-      const session = await getDailyQuizSessionAction();
-      const attemptId = session.attemptId!;
-      const attempt = mockDbAttempts.find((a) => a.id === attemptId);
-      attempt.quiz_date = '2026-10-14';
+    it('4(b). Unfinished daily quiz attempts expire at midnight IST, award no XP, and do NOT block next day quiz', async () => {
+      // 1. Student starts quiz on yesterday (e.g. 2026-10-14)
+      const sessionDay1 = await getDailyQuizSessionAction();
+      const attemptIdDay1 = sessionDay1.attemptId!;
+      const attemptDay1 = mockDbAttempts.find((a) => a.id === attemptIdDay1);
+      attemptDay1.quiz_date = '2026-10-14';
 
-      for (const q of session.questions!) {
-        await submitQuizAnswerAction({ attemptId, questionId: q.id, selectedOption: 'B' });
+      // 2. Midnight passes: today is 2026-10-15. Student attempts to answer or finalize yesterday's quiz
+      const answerRes = await submitQuizAnswerAction({
+        attemptId: attemptIdDay1,
+        questionId: sessionDay1.questions![0].id,
+        selectedOption: 'B',
+      });
+      expect(answerRes.success).toBe(false);
+      expect(answerRes.error).toMatch(/expired at midnight/i);
+
+      const finalizeRes = await finalizeQuizAction({ attemptId: attemptIdDay1 });
+      expect(finalizeRes.success).toBe(false);
+      expect(finalizeRes.error).toMatch(/expired at midnight/i);
+      expect(attemptDay1.status).toBe('expired');
+
+      // Verify no XP was awarded for expired quiz
+      expect(mockAwardXpCalls.length).toBe(0);
+
+      // 3. Next day (2026-10-15) is completely unblocked: student starts today's quiz
+      const sessionDay2 = await getDailyQuizSessionAction();
+      expect(sessionDay2.status).toBe('active');
+      expect(sessionDay2.attemptId).not.toBe(attemptIdDay1);
+
+      // Student completes today's quiz
+      for (const q of sessionDay2.questions!) {
+        await submitQuizAnswerAction({ attemptId: sessionDay2.attemptId!, questionId: q.id, selectedOption: 'B' });
       }
 
-      // Midnight has passed in real world, but finalization evaluates against attempt.quiz_date
-      const finalizeRes = await finalizeQuizAction({ attemptId });
-      expect(finalizeRes.success).toBe(true);
-
-      const streak = mockDbStreaks.find((s) => s.student_id === studentA);
-      expect(streak.last_quiz_date).toBe('2026-10-14');
+      const finalizeDay2 = await finalizeQuizAction({ attemptId: sessionDay2.attemptId! });
+      expect(finalizeDay2.success).toBe(true);
+      expect(finalizeDay2.xpAwarded).toBe(40);
+      expect(mockAwardXpCalls.length).toBe(1);
+      expect(mockAwardXpCalls[0].p_action_type).toBe('DAILY_QUIZ');
     });
 
     it('4(c). Student reaching quiz page twice at the same moment returns the exact same session', async () => {
