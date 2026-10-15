@@ -82,7 +82,7 @@ describe('Streak & Freeze Days Calculation Engine', () => {
       expect(res.bonus_milestone).toBe(7);
     });
 
-    it('4. Uses 1 freeze day to cover a single missed day (e.g. Oct 1 -> Oct 3, missed Oct 2)', () => {
+    it('4. Uses 1 freeze day to cover 1 missed day with 2 freezes available', () => {
       const day1: StudentStreakData = {
         current_streak: 3,
         longest_streak: 3,
@@ -91,15 +91,16 @@ describe('Streak & Freeze Days Calculation Engine', () => {
         freeze_days_month: '2026-10',
       };
 
-      // Student skips Oct 02, completes on Oct 03
+      // Student skips Oct 02, completes on Oct 03 (1 missed day)
       const res = evaluateStreakCompletion(day1, '2026-10-03');
-      expect(res.current_streak).toBe(4); // Preserved streak 3, + 1 for Oct 3 = 4
+      expect(res.current_streak).toBe(4); // Preserved streak 3, + 1 for today = 4
       expect(res.freeze_days_used_this_month).toBe(1);
       expect(res.freezes_consumed).toBe(1);
+      expect(res.frozen_dates).toEqual(['2026-10-02']);
       expect(res.event_type).toBe('streak_freeze');
     });
 
-    it('5. Uses 2 freeze days to cover two missed days (e.g. Oct 1 -> Oct 4, missed Oct 2 & 3)', () => {
+    it('5. Uses 2 freeze days to cover 2 missed days with 2 freezes available', () => {
       const day1: StudentStreakData = {
         current_streak: 5,
         longest_streak: 5,
@@ -108,62 +109,88 @@ describe('Streak & Freeze Days Calculation Engine', () => {
         freeze_days_month: '2026-10',
       };
 
-      // Student skips Oct 02 & Oct 03, completes on Oct 04
+      // Student skips Oct 02 & Oct 03, completes on Oct 04 (2 missed days)
       const res = evaluateStreakCompletion(day1, '2026-10-04');
-      expect(res.current_streak).toBe(6);
+      expect(res.current_streak).toBe(6); // Preserved streak 5, + 1 for today = 6 (frozen days do not add to count)
       expect(res.freeze_days_used_this_month).toBe(2);
       expect(res.freezes_consumed).toBe(2);
+      expect(res.frozen_dates).toEqual(['2026-10-02', '2026-10-03']);
       expect(res.event_type).toBe('streak_freeze');
     });
 
-    it('6. Resets streak to 1 when missed days exceed available monthly freezes', () => {
+    it('6. 3 missed days with 2 freezes resets streak to 1 and consumes NO freezes', () => {
       const current: StudentStreakData = {
         current_streak: 5,
         longest_streak: 5,
         last_quiz_date: '2026-10-01',
-        freeze_days_used_this_month: 1, // Only 1 freeze remaining out of 2
+        freeze_days_used_this_month: 0, // 2 freezes available
         freeze_days_month: '2026-10',
       };
 
-      // Student misses 2 days (Oct 02, Oct 03) but only has 1 freeze left
-      const res = evaluateStreakCompletion(current, '2026-10-04');
+      // Student misses 3 days (Oct 02, Oct 03, Oct 04) and completes Oct 05
+      const res = evaluateStreakCompletion(current, '2026-10-05');
       expect(res.current_streak).toBe(1); // Streak resets to 1
-      expect(res.longest_streak).toBe(5); // Longest streak preserved
-      expect(res.freeze_days_used_this_month).toBe(1); // Did not waste the last freeze
+      expect(res.longest_streak).toBe(5); // Longest preserved
+      expect(res.freeze_days_used_this_month).toBe(0); // NO freezes consumed!
+      expect(res.freezes_consumed).toBe(0);
+      expect(res.frozen_dates).toEqual([]);
       expect(res.event_type).toBe('streak_reset');
     });
 
-    it('7. Resets streak to 1 when 0 freezes are remaining', () => {
-      const current: StudentStreakData = {
-        current_streak: 10,
-        longest_streak: 10,
-        last_quiz_date: '2026-10-10',
-        freeze_days_used_this_month: 2, // 2 out of 2 used
-        freeze_days_month: '2026-10',
-      };
-
-      // Misses 1 day (Oct 11)
-      const res = evaluateStreakCompletion(current, '2026-10-12');
-      expect(res.current_streak).toBe(1);
-      expect(res.event_type).toBe('streak_reset');
-    });
-
-    it('8. Automatically resets monthly freeze quota on month boundary (e.g. Oct -> Nov)', () => {
+    it('7. Gap across a month boundary: evaluates freeze availability in each month separately', () => {
+      // Scenario A: Last quiz Oct 30. Completes Nov 02. Missed Oct 31 (Oct) and Nov 01 (Nov).
+      // Both months have 2 freezes available.
       const current: StudentStreakData = {
         current_streak: 4,
         longest_streak: 4,
-        last_quiz_date: '2026-10-31',
-        freeze_days_used_this_month: 2, // Used 2 freezes in October
+        last_quiz_date: '2026-10-30',
+        freeze_days_used_this_month: 0,
         freeze_days_month: '2026-10',
       };
 
-      // In November, student misses Nov 01, takes quiz on Nov 02 (1 missed day)
-      // In November, quota is fresh (0 used)!
-      const res = evaluateStreakCompletion(current, '2026-11-02');
-      expect(res.freeze_days_month).toBe('2026-11');
-      expect(res.freeze_days_used_this_month).toBe(1); // 1 used from fresh November quota
-      expect(res.current_streak).toBe(5); // Preserved!
-      expect(res.event_type).toBe('streak_freeze');
+      const resCovered = evaluateStreakCompletion(current, '2026-11-02');
+      expect(resCovered.current_streak).toBe(5); // 4 + 1 for Nov 02
+      expect(resCovered.freeze_days_month).toBe('2026-11');
+      expect(resCovered.freeze_days_used_this_month).toBe(1); // 1 used from November quota (for Nov 01)
+      expect(resCovered.freezes_consumed).toBe(2); // Oct 31 + Nov 01
+      expect(resCovered.frozen_dates).toEqual(['2026-10-31', '2026-11-01']);
+      expect(resCovered.event_type).toBe('streak_freeze');
+
+      // Scenario B: October had ALREADY used 2 freezes earlier in October.
+      // Gap crosses boundary: Oct 31 needs 1 freeze, but October has 0 left!
+      const currentExhaustedOct: StudentStreakData = {
+        current_streak: 4,
+        longest_streak: 4,
+        last_quiz_date: '2026-10-30',
+        freeze_days_used_this_month: 2, // October exhausted!
+        freeze_days_month: '2026-10',
+      };
+
+      const resFailed = evaluateStreakCompletion(currentExhaustedOct, '2026-11-02');
+      expect(resFailed.current_streak).toBe(1); // Cannot cover Oct 31 -> Resets!
+      expect(resFailed.freeze_days_month).toBe('2026-11');
+      expect(resFailed.freeze_days_used_this_month).toBe(0); // Consumes NONE in November!
+      expect(resFailed.freezes_consumed).toBe(0);
+      expect(resFailed.frozen_dates).toEqual([]);
+      expect(resFailed.event_type).toBe('streak_reset');
+    });
+
+    it('8. Freezes already used earlier in the month: resets and consumes none if gap exceeds remainder', () => {
+      const current: StudentStreakData = {
+        current_streak: 8,
+        longest_streak: 8,
+        last_quiz_date: '2026-10-10',
+        freeze_days_used_this_month: 1, // 1 used earlier, only 1 left
+        freeze_days_month: '2026-10',
+      };
+
+      // Misses 2 days (Oct 11, Oct 12), completes Oct 13
+      const res = evaluateStreakCompletion(current, '2026-10-13');
+      expect(res.current_streak).toBe(1); // Resets to 1
+      expect(res.freeze_days_used_this_month).toBe(1); // Remains 1, NO new freeze consumed!
+      expect(res.freezes_consumed).toBe(0);
+      expect(res.frozen_dates).toEqual([]);
+      expect(res.event_type).toBe('streak_reset');
     });
 
     it('9. Idempotency: re-evaluating the same date returns event_type none and does not mutate streak', () => {

@@ -617,6 +617,40 @@ describe('Daily Quiz Engine & Streaks Security Suite', () => {
       expect(bonuses[1].p_reference_id).toBe(`streak_7_bonus_${studentA}_2026-10-15`);
     });
 
+    it('Logs a streak_freeze event per frozen day when student misses days within freeze quota', async () => {
+      // Student has streak of 3, last completed Oct 01, 0 freezes used
+      mockDbStreaks.push({
+        student_id: studentA,
+        current_streak: 3,
+        longest_streak: 3,
+        last_quiz_date: '2026-10-01',
+        freeze_days_used_this_month: 0,
+        freeze_days_month: '2026-10',
+        streak_start_date: '2026-09-29',
+      });
+
+      mockDbAttempts = [];
+      const session = await getDailyQuizSessionAction();
+      const att = mockDbAttempts.find((a) => a.id === session.attemptId);
+      // Student missed Oct 02 & Oct 03, completes on Oct 04 (2 missed days)
+      att.quiz_date = '2026-10-04';
+
+      for (const q of session.questions!) {
+        await submitQuizAnswerAction({ attemptId: session.attemptId!, questionId: q.id, selectedOption: 'B' });
+      }
+
+      const res = await finalizeQuizAction({ attemptId: session.attemptId! });
+      expect(res.success).toBe(true);
+      expect(res.currentStreak).toBe(4); // Preserved streak 3, + 1 for today = 4
+
+      // Verify streak_events has individual streak_freeze events for each frozen day
+      const freezeEvents = mockDbStreakEvents.filter((e) => e.event_type === 'streak_freeze');
+      expect(freezeEvents.length).toBe(2);
+      expect(freezeEvents.map((e) => e.quiz_date)).toEqual(['2026-10-02', '2026-10-03']);
+      expect(freezeEvents[0].streak_before).toBe(3);
+      expect(freezeEvents[0].streak_after).toBe(3); // frozen days do not add to count
+    });
+
     it('4(a). No approved questions today does NOT break or mutate student streak', async () => {
       mockDbStreaks.push({
         student_id: studentA,

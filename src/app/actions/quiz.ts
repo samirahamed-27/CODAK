@@ -494,8 +494,30 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
     updated_at: new Date().toISOString(),
   });
 
-  // Record streak audit event
-  if (streakEval.event_type !== 'none') {
+  // Record streak audit events
+  if (streakEval.event_type === 'streak_freeze') {
+    // Log a streak_freeze event per frozen day
+    for (const fDate of streakEval.frozen_dates) {
+      await adminClient.from('streak_events').insert({
+        student_id: user.id,
+        event_type: 'streak_freeze',
+        quiz_date: fDate,
+        streak_before: streakData.current_streak,
+        streak_after: streakData.current_streak, // frozen days do not add to count
+        notes: `Streak freeze applied for missed day ${fDate}.`,
+      });
+    }
+
+    // Also record today's quiz completion event extending the streak
+    await adminClient.from('streak_events').insert({
+      student_id: user.id,
+      event_type: 'streak_increment',
+      quiz_date: attempt.quiz_date,
+      streak_before: streakData.current_streak,
+      streak_after: streakEval.current_streak,
+      notes: streakEval.notes,
+    });
+  } else if (streakEval.event_type !== 'none') {
     await adminClient.from('streak_events').insert({
       student_id: user.id,
       event_type: streakEval.event_type,

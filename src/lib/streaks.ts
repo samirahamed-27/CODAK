@@ -23,9 +23,10 @@ export interface StreakEvaluationResult {
   streak_start_date: string;
   event_type: 'streak_increment' | 'streak_freeze' | 'streak_reset' | 'none';
   freezes_consumed: number;
+  frozen_dates: string[];
   notes: string;
   eligible_for_7_day_bonus: boolean;
-  bonus_milestone: number | null; // e.g. 7, 14, 21...
+  bonus_milestone: number | null; // e.g. 7
 }
 
 /**
@@ -98,6 +99,7 @@ export function evaluateStreakCompletion(
       streak_start_date: streak.streak_start_date || quizDate,
       event_type: 'none',
       freezes_consumed: 0,
+      frozen_dates: [],
       notes: 'Quiz already counted for this date.',
       eligible_for_7_day_bonus: false,
       bonus_milestone: null,
@@ -115,6 +117,7 @@ export function evaluateStreakCompletion(
       streak_start_date: quizDate,
       event_type: 'streak_increment',
       freezes_consumed: 0,
+      frozen_dates: [],
       notes: 'Initial daily quiz completed. Streak started.',
       eligible_for_7_day_bonus: false,
       bonus_milestone: null,
@@ -135,6 +138,7 @@ export function evaluateStreakCompletion(
       streak_start_date: streak.streak_start_date || streak.last_quiz_date,
       event_type: 'none',
       freezes_consumed: 0,
+      frozen_dates: [],
       notes: 'Historical quiz date cannot override newer streak date.',
       eligible_for_7_day_bonus: false,
       bonus_milestone: null,
@@ -156,6 +160,7 @@ export function evaluateStreakCompletion(
       streak_start_date: startDate,
       event_type: 'streak_increment',
       freezes_consumed: 0,
+      frozen_dates: [],
       notes: `Consecutive daily quiz completed. Streak extended to ${newStreak}.`,
       eligible_for_7_day_bonus: isBonusMilestone,
       bonus_milestone: isBonusMilestone ? 7 : null,
@@ -163,15 +168,41 @@ export function evaluateStreakCompletion(
   }
 
   // 6. Case: Gap of 1 or more missed days (diffDays >= 2)
-  const missedDays = diffDays - 1;
-  const availableFreezes = Math.max(0, maxFreezeDaysPerMonth - freezeUsedThisMonth);
+  const missedDates: string[] = [];
+  for (let i = 1; i < diffDays; i++) {
+    missedDates.push(addDaysToDate(streak.last_quiz_date, i));
+  }
 
-  if (missedDays <= availableFreezes) {
-    // Freeze days cover the gap!
-    const newFreezeUsed = freezeUsedThisMonth + missedDays;
-    const newStreak = streak.current_streak + 1; // Preserved across freeze, then incremented by today
+  // Group missed days by calendar month (Asia/Kolkata)
+  const missedByMonth: Record<string, string[]> = {};
+  for (const d of missedDates) {
+    const m = getKolkataMonth(d);
+    if (!missedByMonth[m]) missedByMonth[m] = [];
+    missedByMonth[m].push(d);
+  }
+
+  // Check if every month has enough freezes available
+  let canCoverAll = true;
+  for (const m of Object.keys(missedByMonth)) {
+    const needed = missedByMonth[m].length;
+    const used = streak.freeze_days_month === m ? streak.freeze_days_used_this_month : 0;
+    const available = Math.max(0, maxFreezeDaysPerMonth - used);
+    if (needed > available) {
+      canCoverAll = false;
+      break;
+    }
+  }
+
+  if (canCoverAll) {
+    // All missed days are covered by freezes!
+    const newStreak = streak.current_streak + 1; // Frozen days do NOT add to count; +1 for today only
     const isBonusMilestone = newStreak === 7;
     const startDate = streak.streak_start_date || addDaysToDate(quizDate, -(newStreak - 1));
+
+    // Update freeze_days_used_this_month for today's month
+    const usedPriorThisMonth = streak.freeze_days_month === currentMonth ? streak.freeze_days_used_this_month : 0;
+    const consumedInCurrentMonth = missedByMonth[currentMonth]?.length || 0;
+    const newFreezeUsed = usedPriorThisMonth + consumedInCurrentMonth;
 
     return {
       current_streak: newStreak,
@@ -181,23 +212,27 @@ export function evaluateStreakCompletion(
       freeze_days_month: currentMonth,
       streak_start_date: startDate,
       event_type: 'streak_freeze',
-      freezes_consumed: missedDays,
-      notes: `Streak preserved using ${missedDays} freeze day(s). Streak extended to ${newStreak}.`,
+      freezes_consumed: missedDates.length,
+      frozen_dates: missedDates,
+      notes: `Streak preserved using ${missedDates.length} freeze day(s). Streak extended to ${newStreak}.`,
       eligible_for_7_day_bonus: isBonusMilestone,
       bonus_milestone: isBonusMilestone ? 7 : null,
     };
   } else {
-    // Missed days exceed available freezes -> Streak resets
+    // Insufficient freezes in at least one month -> Streak resets to 1 and NO freezes are consumed
+    const usedThisMonth = streak.freeze_days_month === currentMonth ? streak.freeze_days_used_this_month : 0;
+
     return {
       current_streak: 1,
       longest_streak: streak.longest_streak,
       last_quiz_date: quizDate,
-      freeze_days_used_this_month: freezeUsedThisMonth,
+      freeze_days_used_this_month: usedThisMonth, // NO freezes consumed!
       freeze_days_month: currentMonth,
       streak_start_date: quizDate,
       event_type: 'streak_reset',
       freezes_consumed: 0,
-      notes: `Missed ${missedDays} day(s) but only had ${availableFreezes} freeze(s) left. Streak reset to 1.`,
+      frozen_dates: [],
+      notes: `Missed ${missedDates.length} day(s) but insufficient freezes available. Streak reset to 1 without consuming freezes.`,
       eligible_for_7_day_bonus: false,
       bonus_milestone: null,
     };
