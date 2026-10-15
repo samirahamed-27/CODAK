@@ -29,7 +29,18 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark bg-[#07080b]`}
     >
-      <body className="min-h-screen w-full flex flex-col bg-[#07080b] text-slate-100 selection:bg-sky-400 selection:text-[#07080b] relative overflow-x-hidden">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&family=Poppins:wght@300;400;500;600;700;800&family=Press+Start+2P&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body
+        suppressHydrationWarning
+        className="min-h-screen w-full flex flex-col bg-[#07080b] text-slate-100 selection:bg-sky-400 selection:text-[#07080b] relative overflow-x-hidden"
+      >
         {/* Ambient WebGL Aurora Background */}
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-[#06070a]">
           <Aurora
