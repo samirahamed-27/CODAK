@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="64" height="64" shape-rendering="crispEdges">
+  <!-- Pyrawr Front Sprite: Python Yellow/Blue Pixel Dragon Square -->
+  <!-- Horns / Crest -->
+  <rect x="3" y="1" width="2" height="3" fill="#f4b41b" />
+  <rect x="11" y="1" width="2" height="3" fill="#38bdf8" />
+  <!-- Head -->
+  <rect x="4" y="3" width="8" height="6" fill="#f4b41b" />
+  <rect x="5" y="4" width="2" height="2" fill="#0c1015" />
+  <rect x="9" y="4" width="2" height="2" fill="#0c1015" />
+  <!-- Eye glints -->
+  <rect x="5" y="4" width="1" height="1" fill="#eef5fc" />
+  <rect x="9" y="4" width="1" height="1" fill="#eef5fc" />
+  <!-- Snout / Smile -->
+  <rect x="7" y="7" width="2" height="1" fill="#0c1015" />
+  <!-- Body -->
+  <rect x="3" y="9" width="10" height="5" fill="#38bdf8" />
+  <rect x="5" y="10" width="6" height="4" fill="#f4b41b" />
+  <!-- Feet -->
+  <rect x="3" y="14" width="3" height="2" fill="#f4b41b" />
+  <rect x="10" y="14" width="3" height="2" fill="#38bdf8" />
+  <!-- Python tail spark -->
+  <rect x="13" y="11" width="2" height="2" fill="#f4b41b" />
+</svg>

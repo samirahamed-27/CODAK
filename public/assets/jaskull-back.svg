@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="64" height="64" shape-rendering="crispEdges">
+  <!-- Jaskull Back Sprite -->
+  <rect x="2" y="1" width="2" height="2" fill="#f4b41b" />
+  <rect x="4" y="2" width="2" height="2" fill="#f4b41b" />
+  <rect x="12" y="1" width="2" height="2" fill="#f4b41b" />
+  <rect x="10" y="2" width="2" height="2" fill="#f4b41b" />
+  <!-- Skull Head Back -->
+  <rect x="3" y="4" width="10" height="7" fill="#eef5fc" />
+  <rect x="4" y="3" width="8" height="1" fill="#eef5fc" />
+  <!-- Skull Back Ridge -->
+  <rect x="7" y="5" width="2" height="5" fill="#526f8a" />
+  <!-- Ghostly Flame Tail -->
+  <rect x="4" y="12" width="8" height="3" fill="#f4b41b" />
+  <rect x="6" y="14" width="4" height="2" fill="#f4b41b" />
+</svg>

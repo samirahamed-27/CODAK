@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <radialGradient id="steelGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#93C5FD" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="shellGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="50" fill="url(#steelGlow)" />
+  <!-- Shell Body -->
+  <circle cx="60" cy="60" r="32" fill="url(#shellGrad)" stroke="#1E3A8A" stroke-width="3" />
+  <!-- Shell Armor Plates -->
+  <polygon points="60,34 76,46 76,64 60,76 44,64 44,46" fill="#60A5FA" stroke="#1E3A8A" stroke-width="2" />
+  <!-- Turtle Head -->
+  <circle cx="60" cy="30" r="14" fill="#38BDF8" stroke="#1E3A8A" stroke-width="2.5" />
+  <!-- Visor Eyes -->
+  <rect x="52" y="26" width="16" height="5" rx="2" fill="#FEF08A" stroke="#1E3A8A" stroke-width="1.5" />
+  <!-- Flippers -->
+  <ellipse cx="26" cy="50" rx="10" ry="6" transform="rotate(-30 26 50)" fill="#38BDF8" stroke="#1E3A8A" stroke-width="2" />
+  <ellipse cx="94" cy="50" rx="10" ry="6" transform="rotate(30 94 50)" fill="#38BDF8" stroke="#1E3A8A" stroke-width="2" />
+  <ellipse cx="32" cy="78" rx="8" ry="5" transform="rotate(25 32 78)" fill="#38BDF8" stroke="#1E3A8A" stroke-width="2" />
+  <ellipse cx="88" cy="78" rx="8" ry="5" transform="rotate(-25 88 78)" fill="#38BDF8" stroke="#1E3A8A" stroke-width="2" />
+  <!-- C++ Core Rune -->
+  <text x="60" y="58" font-size="12" font-family="'Courier New', monospace" font-weight="900" fill="#FFFFFF" text-anchor="middle">C++</text>
+</svg>

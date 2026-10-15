@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <radialGradient id="darkGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#E11D48" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#881337" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ghostGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4C1D95"/>
+      <stop offset="100%" stop-color="#1E1B4B"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="50" fill="url(#darkGlow)" />
+  <!-- Ghost Bug Body -->
+  <path d="M 35 70 C 35 40 45 28 60 28 C 75 28 85 40 85 70 C 85 86 78 92 73 84 C 68 78 64 88 60 84 C 56 88 52 78 47 84 C 42 92 35 86 35 70 Z" fill="url(#ghostGrad)" stroke="#BE123C" stroke-width="3" />
+  <!-- Antennas / Bug Horns -->
+  <path d="M 46 32 Q 36 16 28 20" stroke="#F43F5E" stroke-width="3" fill="none" stroke-linecap="round" />
+  <circle cx="27" cy="20" r="3" fill="#FB7185" />
+  <path d="M 74 32 Q 84 16 92 20" stroke="#F43F5E" stroke-width="3" fill="none" stroke-linecap="round" />
+  <circle cx="93" cy="20" r="3" fill="#FB7185" />
+  <!-- Glowing Red Eyes -->
+  <polygon points="45,46 55,50 47,56" fill="#F43F5E" />
+  <polygon points="75,46 65,50 73,56" fill="#F43F5E" />
+  <!-- Glitch Mouth -->
+  <rect x="52" y="66" width="16" height="3" fill="#F43F5E" />
+  <text x="60" y="78" font-size="9" font-family="monospace" font-weight="bold" fill="#FDA4AF" text-anchor="middle">NULL</text>
+</svg>
