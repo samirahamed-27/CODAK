@@ -1,8 +1,9 @@
 import React from 'react';
+import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { BottomNav } from '@/components/BottomNav';
 import { PlaceholderCard } from '@/components/PlaceholderCard';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Gamepad2, ArrowRight, Sparkles, Swords } from 'lucide-react';
 import Shuffle from '@/components/Shuffle';
 
 export default function StudentLearnPage() {
@@ -22,10 +23,82 @@ export default function StudentLearnPage() {
           accentColor="#7DD3FC"
           style={{ fontSize: '1.25rem', letterSpacing: '0.05em' }}
         />
-        <p className="text-xs text-slate-400 -mt-2 mb-2">
+        <p className="text-xs text-slate-400 -mt-2 mb-1">
           Daily curriculum, concept quizzes, and verifiable academic quests.
         </p>
 
+        {/* ================================================================
+            FEATURED: CODEMONS RETRO ARCADE LOUNGE (play.html)
+            ================================================================ */}
+        <div className="relative group overflow-hidden rounded-2xl border border-sky-500/40 bg-gradient-to-b from-[#0e1726] via-[#0a0f1d] to-[#07080b] p-5 shadow-xl shadow-sky-950/50 hover:border-sky-400/80 transition-all duration-300">
+          {/* Subtle Ambient Glow */}
+          <div className="absolute top-0 right-0 w-36 h-36 bg-sky-500/15 rounded-full blur-3xl pointer-events-none group-hover:bg-sky-500/25 transition-all duration-500" />
+          <div className="absolute -bottom-10 -left-10 w-28 h-28 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+          {/* Header Row */}
+          <div className="flex items-start justify-between gap-3 mb-3 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-sky-500/15 border border-sky-400/40 flex items-center justify-center text-sky-300 shadow-inner group-hover:scale-105 group-hover:bg-sky-500/25 transition-all">
+                <Gamepad2 className="w-6 h-6 stroke-[2.2]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 bg-amber-400/10 border border-amber-400/30 px-2 py-0.5 rounded">
+                    ARCADE GAME
+                  </span>
+                  <span className="text-[10px] font-mono font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/30 px-2 py-0.5 rounded flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    READY TO PLAY
+                  </span>
+                </div>
+                <h2 className="text-base font-bold text-white tracking-wide mt-1 flex items-center gap-1.5">
+                  Codemons: Retro Cyber Arena
+                </h2>
+              </div>
+            </div>
+          </div>
+
+          {/* Description */}
+          <p className="text-xs text-slate-300 leading-relaxed mb-3.5 relative z-10">
+            Battle bugs. Learn to code. Pick your starter (<span className="text-amber-300 font-mono font-semibold">Pyrawr</span>, <span className="text-sky-300 font-mono font-semibold">Jaskull</span>, or <span className="text-emerald-300 font-mono font-semibold">Cplusaur</span>) and solve algorithmic CS questions to power your attacks!
+          </p>
+
+          {/* Feature Badges */}
+          <div className="flex flex-wrap items-center gap-1.5 mb-4 text-[11px] font-mono text-slate-400 relative z-10">
+            <span className="bg-[#121929] border border-slate-700/70 px-2.5 py-1 rounded text-slate-300">
+              🕹️ 8-Bit Pixel Game
+            </span>
+            <span className="bg-[#121929] border border-slate-700/70 px-2.5 py-1 rounded text-slate-300">
+              🐍 Python / JS / C++
+            </span>
+            <span className="bg-amber-400/10 border border-amber-400/30 px-2.5 py-1 rounded text-amber-300 font-bold">
+              +50 XP / Match
+            </span>
+          </div>
+
+          {/* Action Link Buttons */}
+          <div className="flex items-center gap-2.5 relative z-10">
+            <a
+              href="/play.html"
+              id="link-arcade-play-html"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-300 hover:to-sky-400 text-slate-950 font-bold text-xs tracking-wider uppercase transition-all shadow-lg shadow-sky-500/25 active:scale-[0.98]"
+            >
+              <Gamepad2 className="w-4 h-4" />
+              <span>Launch Play Lounge (play.html)</span>
+              <ArrowRight className="w-4 h-4 ml-0.5" />
+            </a>
+            <a
+              href="/index.html"
+              id="link-instant-codemons"
+              className="flex items-center justify-center px-3.5 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-slate-200 text-xs font-mono font-medium transition-all"
+              title="Jump directly to Codemons Game Arena"
+            >
+              <Swords className="w-4 h-4 text-amber-400" />
+            </a>
+          </div>
+        </div>
+
+        {/* Existing PlaceholderCard */}
         <PlaceholderCard
           title="Learn Hub & Practice Engine"
           description="A dedicated space to master concepts with instant step-by-step explanations, daily question banks, and progress milestones."
