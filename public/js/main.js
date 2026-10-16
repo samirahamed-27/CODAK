@@ -79,7 +79,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Battle & Turn State
   let battleActive = false;
   let currentPoints = 0;
-  const targetPoints = (typeof window !== 'undefined' && window.BATTLE_CONFIG && window.BATTLE_CONFIG.minPoints) || 120;
+  function getMinPoints() {
+    return (typeof window !== 'undefined' && window.BATTLE_CONFIG && window.BATTLE_CONFIG.minPoints) || 120;
+  }
+  const targetPoints = getMinPoints();
   let turnsLeft = (typeof window !== 'undefined' && window.BATTLE_CONFIG && window.BATTLE_CONFIG.turnLimit) || 8;
   const battleUsedChallenges = new Set();
   let currentTurnCards = [];
@@ -830,7 +833,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.updateHud) {
           window.updateHud(newPts, curTurns);
         }
-        appendConsoleLine(`> HINT UNLOCKED (-5 PTS). Current score: ${newPts} / ${targetPoints}.`, 'console-warn');
+        appendConsoleLine(`> HINT UNLOCKED (-5 PTS). Current score: ${newPts} / ${getMinPoints()}.`, 'console-warn');
       }
 
       if (challengeHintBox && challengeHintText) {
@@ -1065,19 +1068,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     appendConsoleLine(`> Attack hit! +${earnedPoints} Points. Bugmon took ${finalDmg} DMG.`, 'console-info');
 
-    // Win check
-    if (newEnemyHp <= 0 || currentPoints >= targetPoints) {
-      setTimeout(() => {
-        handleBattleOutcome('victory');
-      }, 1400);
-      return;
-    }
-
-    // Turns exhausted check
-    if (turnsLeft <= 0) {
-      setTimeout(() => {
-        handleBattleOutcome('defeat');
-      }, 1400);
+    // End-of-battle check if enemy HP <= 0:
+    const minPts = (window.BATTLE_CONFIG && window.BATTLE_CONFIG.minPoints) || 120;
+    if (newEnemyHp <= 0) {
+      if (currentPoints >= minPts) {
+        setTimeout(() => {
+          handleBattleOutcome('victory');
+        }, 1400);
+      } else {
+        setTimeout(async () => {
+          if (window.typeText) {
+            window.typeText('The enemy is still glitching...', 20);
+          }
+          if (window.triggerBugmonTransformation) {
+            await window.triggerBugmonTransformation();
+          } else {
+            handleBattleOutcome('transformation');
+          }
+        }, 1400);
+      }
       return;
     }
 
@@ -1148,10 +1157,36 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       appendConsoleLine(`> ${enemy.name} struck player for ${enemyDmg} DMG!`, 'console-fail');
 
-      // Defeat check
-      if (newPlayerHp <= 0 || turnsLeft <= 0) {
+      // End of full round: update turnsLeft
+      const minPts = (window.BATTLE_CONFIG && window.BATTLE_CONFIG.minPoints) || 120;
+      turnsLeft = Math.max(0, turnsLeft - 1);
+      if (window.updateHud) {
+        window.updateHud(currentPoints, turnsLeft);
+      }
+      if (window.gameState) {
+        window.gameState.turnsLeft = turnsLeft;
+      }
+
+      // 4. If player HP <= 0: lose.
+      if (newPlayerHp <= 0) {
         setTimeout(() => {
           handleBattleOutcome('defeat');
+        }, 1200);
+        return;
+      }
+
+      // 3. If turns run out and points < minPoints: trigger Bugmon transformation.
+      if (turnsLeft <= 0) {
+        setTimeout(async () => {
+          if (currentPoints < minPts) {
+            if (window.triggerBugmonTransformation) {
+              await window.triggerBugmonTransformation();
+            } else {
+              handleBattleOutcome('transformation');
+            }
+          } else {
+            handleBattleOutcome('defeat');
+          }
         }, 1200);
         return;
       }
@@ -1362,7 +1397,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     clearConsole();
     appendConsoleLine('> Codemons Sandbox Kernel v2.4 initialized.', 'console-info');
-    appendConsoleLine(`> Target: ${targetPoints} Points within ${turnsLeft} Turns.`, 'console-info');
+    appendConsoleLine(`> Target: ${getMinPoints()} Points within ${turnsLeft} Turns.`, 'console-info');
     appendConsoleLine('> Web Worker secure test runner mounted.', 'console-info');
     appendConsoleLine('> Select an attack challenge card above to begin your turn.', 'console-warn');
 

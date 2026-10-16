@@ -1061,9 +1061,13 @@ async function startEnemyTurn(isBonusDamage = false) {
   // 3. If turns run out and points < minPoints: trigger the Bugmon transformation.
   // 4. If player HP <= 0: lose.
   // =========================================================================
+  const currentEnemyHp = (window.gameState && window.gameState.enemy && typeof window.gameState.enemy.hp === 'number')
+    ? window.gameState.enemy.hp
+    : battleVisualState.hp.enemy.current;
+
   const roundEval = evaluateBattleConditions(
     newPlayerHp,
-    battleVisualState.hp.enemy.current,
+    currentEnemyHp,
     battleVisualState.points,
     battleVisualState.turnsLeft
   );
