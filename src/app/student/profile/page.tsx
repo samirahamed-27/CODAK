@@ -10,6 +10,7 @@ import { ShieldCheck, EyeOff, Award, Sparkles, TrendingUp, History, Clock } from
 import Aurora from '@/components/Aurora';
 import { BadgeTile } from '@/components/ui/game-elements';
 import { getStudentBadgesAction, StudentBadgeDisplay } from '@/app/actions/badges';
+import { updateAnonymousPreferenceAction } from '@/app/actions/leaderboard';
 
 export default function StudentProfilePage() {
   const supabase = createClient();
@@ -117,6 +118,17 @@ export default function StudentProfilePage() {
 
     fetchStudentData();
   }, []);
+
+  const handleToggleAnonymous = async () => {
+    const nextVal = !isAnonymous;
+    setIsAnonymous(nextVal);
+    try {
+      await updateAnonymousPreferenceAction(nextVal);
+    } catch (e) {
+      console.error('Failed to update anonymous preference:', e);
+      setIsAnonymous(!nextVal);
+    }
+  };
 
   const formatActionName = (action: string) => {
     return action
@@ -349,7 +361,7 @@ export default function StudentProfilePage() {
 
             <button
               type="button"
-              onClick={() => setIsAnonymous(!isAnonymous)}
+              onClick={handleToggleAnonymous}
               className={`w-12 h-6 rounded-full p-1 transition-colors ${
                 isAnonymous ? 'bg-indigo-600' : 'bg-slate-800'
               }`}

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { BottomNav } from '@/components/BottomNav';
 import { getStudentLeagueAction, StudentLeagueData } from '@/app/actions/leagues';
+import { getLeaderboardAction } from '@/app/actions/leaderboard';
+import { LeaderboardEntry } from '@/lib/leaderboards';
 import { XpChip } from '@/components/ui/game-elements';
 import {
   Trophy,
@@ -29,6 +31,11 @@ export default function StudentCompetePage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const [lbScope, setLbScope] = useState<'campus' | 'batch'>('campus');
+  const [lbTimeframe, setLbTimeframe] = useState<'weekly' | 'all-time'>('weekly');
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [lbLoading, setLbLoading] = useState(false);
+
   const fetchLeague = async () => {
     try {
       const res = await getStudentLeagueAction();
@@ -43,13 +50,37 @@ export default function StudentCompetePage() {
     }
   };
 
+  const fetchLeaderboard = async (scope = lbScope, timeframe = lbTimeframe) => {
+    setLbLoading(true);
+    try {
+      const res = await getLeaderboardAction({ scope, timeframe });
+      if (res.success) {
+        setLeaderboard(res.leaderboard);
+      }
+    } catch (e) {
+      console.error('Error fetching leaderboard:', e);
+    } finally {
+      setLbLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchLeague();
   }, []);
 
+  useEffect(() => {
+    if (activeTab === 'leaderboard') {
+      fetchLeaderboard(lbScope, lbTimeframe);
+    }
+  }, [activeTab, lbScope, lbTimeframe]);
+
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchLeague();
+    if (activeTab === 'league') {
+      fetchLeague();
+    } else if (activeTab === 'leaderboard') {
+      fetchLeaderboard(lbScope, lbTimeframe);
+    }
   };
 
   const getTierColor = (tierId: string) => {
@@ -322,10 +353,171 @@ export default function StudentCompetePage() {
             </div>
           )}
 
-          {/* TAB 2: LEADERBOARD PLACEHOLDER */}
+          {/* TAB 2: LEADERBOARDS (Campus & Batch, Weekly & All-Time, Anonymous Mode) */}
           {activeTab === 'leaderboard' && (
-            <div className="p-8 text-center text-xs text-slate-400 border border-dashed border-slate-800 rounded-3xl">
-              Loading Leaderboards (Campus & Batch)...
+            <div className="flex flex-col gap-4">
+              {/* Filter Controls Card */}
+              <div className="p-4 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-xl flex flex-col gap-3">
+                {/* Scope Selection */}
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold block mb-1.5">
+                    Leaderboard Scope
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setLbScope('campus')}
+                      className={clsx(
+                        'flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all',
+                        lbScope === 'campus'
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-white'
+                      )}
+                    >
+                      Campus Wide
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLbScope('batch')}
+                      className={clsx(
+                        'flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all',
+                        lbScope === 'batch'
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-white'
+                      )}
+                    >
+                      My Batch / Department
+                    </button>
+                  </div>
+                </div>
+
+                {/* Timeframe Selection */}
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 font-semibold block mb-1.5">
+                    Timeframe
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setLbTimeframe('weekly')}
+                      className={clsx(
+                        'flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all',
+                        lbTimeframe === 'weekly'
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md'
+                          : 'bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-white'
+                      )}
+                    >
+                      This Week (IST)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLbTimeframe('all-time')}
+                      className={clsx(
+                        'flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all',
+                        lbTimeframe === 'all-time'
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md'
+                          : 'bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-white'
+                      )}
+                    >
+                      All-Time Ledger
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Leaderboard List Section */}
+              <section className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-xl space-y-2">
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-amber-400" />
+                    <h2 className="text-sm font-bold text-white">
+                      {lbScope === 'campus' ? 'Campus Standing' : 'Batch Standing'} •{' '}
+                      {lbTimeframe === 'weekly' ? 'Weekly' : 'All-Time'}
+                    </h2>
+                  </div>
+
+                  <button
+                    onClick={handleRefresh}
+                    disabled={refreshing || lbLoading}
+                    className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+                  >
+                    <RefreshCw className={clsx('w-3.5 h-3.5', (refreshing || lbLoading) && 'animate-spin')} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+
+                {lbLoading ? (
+                  <p className="text-xs text-slate-500 text-center py-6">Aggregating ledger XP...</p>
+                ) : leaderboard.length === 0 ? (
+                  <p className="text-xs text-slate-500 text-center py-6">No leaderboard records found.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {leaderboard.map((student) => (
+                      <div
+                        key={student.studentId}
+                        className={clsx(
+                          'p-3 rounded-2xl border transition-all duration-200 flex items-center justify-between gap-3 text-xs',
+                          student.isMe
+                            ? 'bg-indigo-950/40 border-indigo-500/60 shadow-lg shadow-indigo-500/10'
+                            : student.rank <= 3
+                            ? 'bg-amber-950/15 border-amber-500/30 text-slate-200'
+                            : 'bg-slate-950/40 border-slate-800/60 text-slate-300'
+                        )}
+                      >
+                        {/* Rank & Profile */}
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={clsx(
+                              'w-6 text-center font-mono font-bold text-xs',
+                              student.rank === 1
+                                ? 'text-amber-400 font-black flex items-center justify-center'
+                                : student.rank === 2
+                                ? 'text-slate-300 font-bold flex items-center justify-center'
+                                : student.rank === 3
+                                ? 'text-amber-600 font-bold flex items-center justify-center'
+                                : 'text-slate-500'
+                            )}
+                          >
+                            {student.rank === 1 ? '🥇' : student.rank === 2 ? '🥈' : student.rank === 3 ? '🥉' : `#${student.rank}`}
+                          </span>
+
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className={clsx('font-bold', student.isMe ? 'text-white' : 'text-slate-200')}>
+                                {student.name}
+                              </span>
+                              {student.isMe && (
+                                <span className="text-[9px] font-mono font-bold bg-indigo-500 text-white px-1.5 py-0.2 rounded">
+                                  YOU
+                                </span>
+                              )}
+                              {student.isAnonymous && !student.isMe && (
+                                <span title="Anonymous Student">
+                                  <EyeOff className="w-3 h-3 text-slate-500" />
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono mt-0.5">
+                              {student.rollNo && <span>{student.rollNo}</span>}
+                              {student.department && <span>• {student.department}</span>}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* XP Amount */}
+                        <div className="shrink-0">
+                          <XpChip
+                            amount={student.totalXp}
+                            label="XP"
+                            size="sm"
+                            variant={student.isMe ? 'indigo' : student.rank <= 3 ? 'amber' : 'emerald'}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
             </div>
           )}
 
