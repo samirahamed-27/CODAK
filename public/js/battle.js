@@ -919,7 +919,7 @@ async function handlePlayerCodeSuccess(challenge, outcome) {
       // 2. If enemy HP <= 0 but points < minPoints: not a true win. Show
       // "The enemy is still glitching..." and trigger the Bugmon transformation (Piece 7).
       await triggerMsg('The enemy is still glitching...');
-      await triggerBugmonTransformation();
+      await (window.triggerBugmonTransformation || triggerBugmonTransformation)();
       return { outcome: 'transformation', reason: 'enemy_glitching', damage, points: pts };
     }
   }
@@ -1091,7 +1091,7 @@ async function startEnemyTurn(isBonusDamage = false) {
       if (roundEval.reason === 'enemy_glitching') {
         await triggerMsg('The enemy is still glitching...');
       }
-      await triggerBugmonTransformation();
+      await (window.triggerBugmonTransformation || triggerBugmonTransformation)();
       return roundEval;
     }
   }
