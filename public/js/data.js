@@ -18,6 +18,17 @@ const CODEMONS = [
     spriteBack: 'assets/pyrawr-back.svg',
     description: 'Balanced Python striker with clean indentation and steady algorithmic execution.',
     typeColor: 'var(--pixel-yellow)',
+    bugmonVariant: {
+      name: 'Bug-Pyrawr',
+      sprite: 'assets/bug-pyrawr.svg',
+      maxHp: 150, // 1.5x normal (100 * 1.5)
+      palette: {
+        primary: '#e03c3c',
+        secondary: '#9b51e0',
+        dark: '#35084a',
+        glow: '#ff1744'
+      }
+    },
     moves: [
       { name: 'Indent Zap', power: 25, type: 'Python', accuracy: 0.95 },
       { name: 'List Slicing', power: 30, type: 'Python', accuracy: 0.90 },
@@ -36,6 +47,17 @@ const CODEMONS = [
     spriteBack: 'assets/jaskull-back.svg',
     description: 'Glass cannon JavaScript speedster with high attack bursts and event-driven strikes.',
     typeColor: 'var(--pixel-yellow)',
+    bugmonVariant: {
+      name: 'Bug-Jaskull',
+      sprite: 'assets/bug-jaskull.svg',
+      maxHp: 135, // 1.5x normal (90 * 1.5)
+      palette: {
+        primary: '#d50000',
+        secondary: '#8a2be2',
+        dark: '#260033',
+        glow: '#ea80fc'
+      }
+    },
     moves: [
       { name: 'Promise Surge', power: 28, type: 'JavaScript', accuracy: 0.95 },
       { name: 'Event Loop', power: 34, type: 'JavaScript', accuracy: 0.85 },
@@ -54,6 +76,17 @@ const CODEMONS = [
     spriteBack: 'assets/cplusaur-back.svg',
     description: 'Tanky C++ heavyweight armored in raw memory pointers with zero abstraction overhead.',
     typeColor: 'var(--pixel-blue)',
+    bugmonVariant: {
+      name: 'Bug-Cplusaur',
+      sprite: 'assets/bug-cplusaur.svg',
+      maxHp: 180, // 1.5x normal (120 * 1.5)
+      palette: {
+        primary: '#c62828',
+        secondary: '#6a1b9a',
+        dark: '#1a0033',
+        glow: '#ff5252'
+      }
+    },
     moves: [
       { name: 'Pointer Jab', power: 22, type: 'C++', accuracy: 0.95 },
       { name: 'Vector Smash', power: 30, type: 'C++', accuracy: 0.85 },
@@ -77,6 +110,17 @@ const ENEMY_BUGMON = {
   spriteBack: 'assets/nullpointer.svg',
   description: 'A shadowy rogue syntax glitch that lurks uninitialized in unallocated memory.',
   typeColor: 'var(--pixel-red)',
+  bugmonVariant: {
+    name: 'Bug-Bugmon',
+    sprite: 'assets/nullpointer.svg',
+    maxHp: 195, // 1.5x normal (130 * 1.5)
+    palette: {
+      primary: '#e03c3c',
+      secondary: '#9c27b0',
+      dark: '#1f002b',
+      glow: '#ff0055'
+    }
+  },
   moves: [
     { name: 'Segfault Slam', power: 26, type: 'Dark' },
     { name: 'Memory Leak', power: 32, type: 'Dark' },

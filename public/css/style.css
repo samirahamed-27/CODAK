@@ -1676,3 +1676,193 @@ html, body {
   flex-wrap: wrap;
   gap: 12px;
 }
+
+/* ==========================================================================
+   PIECE 7: BUGMON GLITCH TRANSFORMATION & BATTLE STYLES
+   ========================================================================== */
+
+/* Glitch Animation for Bugmon Transformation */
+@keyframes spriteFlicker {
+  0% { opacity: 1; filter: none; }
+  15% { opacity: 0.2; filter: hue-rotate(90deg) invert(1); }
+  30% { opacity: 1; filter: drop-shadow(-3px 0 var(--gb-red)) drop-shadow(3px 0 #9b51e0); }
+  45% { opacity: 0.4; filter: contrast(200%); }
+  60% { opacity: 0.95; filter: drop-shadow(4px -2px #ff0055) drop-shadow(-4px 2px #7b1fa2); }
+  75% { opacity: 0.25; filter: hue-rotate(180deg); }
+  90% { opacity: 1; filter: invert(0.6); }
+  100% { opacity: 1; filter: none; }
+}
+
+@keyframes horizontalSlice {
+  0% {
+    clip-path: inset(0 0 0 0);
+    transform: translate(0);
+  }
+  20% {
+    clip-path: inset(20% 0 50% 0);
+    transform: translate(-6px, 2px);
+  }
+  40% {
+    clip-path: inset(60% 0 10% 0);
+    transform: translate(6px, -2px);
+  }
+  60% {
+    clip-path: inset(10% 0 70% 0);
+    transform: translate(-4px, 4px);
+  }
+  80% {
+    clip-path: inset(40% 0 30% 0);
+    transform: translate(5px, -3px);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    transform: translate(0);
+  }
+}
+
+@keyframes glitchScreenShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-4px, 3px) rotate(-1deg); }
+  25% { transform: translate(5px, -4px) rotate(1deg); }
+  40% { transform: translate(-6px, 2px) rotate(0deg); }
+  55% { transform: translate(4px, -3px) rotate(-1deg); }
+  70% { transform: translate(-3px, 4px) rotate(1deg); }
+  85% { transform: translate(2px, -2px) rotate(0deg); }
+}
+
+.screen-glitch-active {
+  animation: glitchScreenShake 0.4s infinite linear, horizontalSlice 0.35s infinite steps(2), spriteFlicker 0.6s infinite ease-in-out;
+  filter: drop-shadow(-4px 0 #ff0055) drop-shadow(4px 0 #7b1fa2);
+}
+
+.bugmon-glitch-active {
+  animation: glitchScreenShake 0.4s infinite linear;
+}
+
+/* Dark red battle tint */
+.bugmon-battle-tint {
+  background-color: #1a0408 !important;
+  box-shadow: inset 0 0 70px rgba(224, 60, 60, 0.45) !important;
+}
+
+.bugmon-battle-tint #canvas-frame {
+  box-shadow: 0 0 0 4px var(--pixel-black), 0 0 24px rgba(224, 60, 60, 0.6) !important;
+  border-color: #e03c3c !important;
+}
+
+.bugmon-battle-tint .battle-hud-strip {
+  background-color: #24050d !important;
+  border-color: #941e1e !important;
+}
+
+/* Disabled/Locked card in Bugmon battle */
+.picker-card.card-disabled,
+.picker-card.card-disabled:hover {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+  border-color: var(--gb-red) !important;
+  background-color: #1a080c !important;
+  filter: grayscale(0.6);
+}
+
+.pixel-btn-red {
+  background-color: var(--gb-red);
+  color: var(--gb-lightest);
+}
+
+.pixel-btn-red:hover {
+  background-color: #ff4d4d;
+  color: var(--gb-lightest);
+}
+
+/* Bugmon Encounter Decision Modal ("FIGHT" or "RUN") */
+.bugmon-decision-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(12, 16, 21, 0.94);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: decisionFadeIn 0.3s ease-out;
+}
+
+@keyframes decisionFadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.decision-modal-box {
+  background-color: #1a050b;
+  border: 4px solid var(--pixel-black);
+  box-shadow: 0 0 0 4px #e03c3c, 0 12px 32px rgba(0, 0, 0, 0.9);
+  padding: 32px 28px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
+
+.decision-badge {
+  display: inline-block;
+  background-color: var(--gb-red);
+  color: var(--gb-lightest);
+  font-size: 11px;
+  padding: 6px 14px;
+  margin-bottom: 14px;
+  letter-spacing: 0.08em;
+  box-shadow: var(--pixel-border-sm);
+}
+
+.decision-sprite {
+  image-rendering: pixelated;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 12px;
+  display: block;
+  filter: drop-shadow(0 0 16px rgba(224, 60, 60, 0.7));
+  animation: spriteFlicker 3s infinite ease-in-out;
+}
+
+.decision-title {
+  font-size: 20px;
+  color: var(--gb-lightest);
+  margin-bottom: 12px;
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 0 var(--gb-darkest);
+}
+
+.decision-subtitle {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--gb-lightest);
+  margin-bottom: 20px;
+}
+
+.decision-stats {
+  background-color: #0c1015;
+  border: 2px solid #540d1a;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.decision-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.decision-row:last-child {
+  margin-bottom: 0;
+}
+
+.decision-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}

@@ -212,6 +212,42 @@
               </div>
             </div>
           </div>
+
+          <!-- Bugmon Encounter Decision Overlay ("FIGHT" or "RUN") -->
+          <div id="bugmon-decision-overlay" class="bugmon-decision-overlay font-pixel" style="display: none;" role="dialog" aria-modal="true" aria-label="Bugmon Encounter Decision">
+            <div class="decision-modal-box">
+              <div class="decision-badge font-pixel">⚠ BUGMON AWAKENED ⚠</div>
+              <img id="decision-bugmon-sprite" src="assets/bug-pyrawr.svg" alt="Bugmon Sprite" class="decision-sprite" width="96" height="96" />
+              <h2 class="decision-title font-pixel" id="decision-enemy-title">BUG-PYRAWR APPEARED!</h2>
+              <p class="decision-subtitle font-code">
+                The glitch evolved into a dangerous Bugmon! Medium &amp; Hard challenges only. Will you fight or run?
+              </p>
+              
+              <div class="decision-stats font-code">
+                <div class="decision-row">
+                  <span>TURN LIMIT:</span>
+                  <span class="text-yellow">6 TURNS</span>
+                </div>
+                <div class="decision-row">
+                  <span>MINIMUM TARGET:</span>
+                  <span class="text-green">150 PTS</span>
+                </div>
+                <div class="decision-row">
+                  <span>ATTACK POWER:</span>
+                  <span class="text-red">12 - 20 DMG</span>
+                </div>
+              </div>
+
+              <div class="decision-actions">
+                <button type="button" id="btn-bugmon-fight" class="pixel-btn pixel-btn-red font-pixel">
+                  ⚔ FIGHT
+                </button>
+                <button type="button" id="btn-bugmon-run" class="pixel-btn pixel-btn-dark font-pixel">
+                  🏃 RUN (-15 XP)
+                </button>
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </main>

@@ -154,6 +154,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
         osc.start(now);
         osc.stop(now + 0.18);
+      } else if (type === 'static' || type === 'glitch') {
+        // Short static noise sound using procedural audio buffer
+        try {
+          const bufferSize = Math.floor(ctx.sampleRate * 0.28);
+          const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+          }
+          const noise = ctx.createBufferSource();
+          noise.buffer = buffer;
+          const filter = ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.value = 1400;
+          const noiseGain = ctx.createGain();
+          noiseGain.gain.setValueAtTime(0.25, now);
+          noiseGain.gain.linearRampToValueAtTime(0.01, now + 0.26);
+          noise.connect(filter);
+          filter.connect(noiseGain);
+          noiseGain.connect(ctx.destination);
+          noise.start(now);
+          noise.stop(now + 0.28);
+        } catch {
+          // Fallback to rapid frequency modulation
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(80, now);
+          osc.frequency.linearRampToValueAtTime(1200, now + 0.1);
+          osc.frequency.linearRampToValueAtTime(60, now + 0.2);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        }
       }
     } catch {
       // Audio playback blocked or unsupported
@@ -470,19 +503,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentHp: chosen.maxHp
     };
 
-    // Store enemy in gameState
-    window.gameState.enemy = window.gameState.enemy || {
-      ...(window.ENEMY_BUGMON || (window.CodemonData ? window.CodemonData.ENEMY_BUGMON : {
-        id: 'bugmon',
-        name: 'Bugmon',
-        language: 'Bug/Glitch',
-        maxHp: 130,
-        hp: 130,
-        attackPower: 1.0,
-        spriteFront: 'assets/nullpointer.svg',
-        spriteBack: 'assets/nullpointer.svg'
-      }))
-    };
+    // Store enemy in gameState (pick rival starter if not already set)
+    if (!window.gameState.enemy) {
+      const rivals = codemonsList.filter(c => c.id !== chosen.id);
+      const rivalChoice = rivals.length > 0 ? rivals[0] : (window.ENEMY_BUGMON || codemonsList[0]);
+      window.gameState.enemy = { ...rivalChoice };
+    }
 
     playSound('battle');
     initBattle();
@@ -651,8 +677,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     hintUsedThisTurn = false;
     stopTurnTimer();
 
-    // 3 challenge cards: 1 Easy (10 dmg), 1 Medium (20 dmg), 1 Hard (35 dmg)
-    const easyCard = pickRandomChallenge('easy');
+    // Check if Bugmon battle is active
+    const isBugmon = (window.gameState && window.gameState.isBugmonBattle) ||
+                     (window.BattleEngine && window.BattleEngine.visualState && window.BattleEngine.visualState.isBugmon);
+
+    // 3 challenge cards: Easy (LOCKED in Bugmon battle), Medium (20 dmg), Hard (35 dmg)
+    let easyCard = null;
+    if (isBugmon) {
+      easyCard = {
+        id: 'locked-easy',
+        title: 'LOCKED',
+        difficulty: 'easy',
+        description: 'Easy challenges disabled during Bugmon encounter. Medium & Hard only.',
+        topic: 'LOCKED',
+        locked: true
+      };
+    } else {
+      easyCard = pickRandomChallenge('easy');
+    }
+
     const mediumCard = pickRandomChallenge('medium');
     const hardCard = pickRandomChallenge('hard');
 
@@ -667,7 +710,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (editorChallengeTitle) editorChallengeTitle.textContent = 'SELECT A CHALLENGE CARD ABOVE';
     if (editorChallengeTopic) editorChallengeTopic.textContent = 'TOPIC: NONE';
     if (editorChallengeDesc) {
-      editorChallengeDesc.textContent = 'Pick an attack challenge above (Easy: 10 DMG, Medium: 20 DMG, Hard: 35 DMG) to load your coding turn.';
+      editorChallengeDesc.textContent = isBugmon
+        ? 'Pick a challenge card above (Medium: 20 DMG, Hard: 35 DMG) to battle the Bugmon. Easy mode is LOCKED.'
+        : 'Pick an attack challenge above (Easy: 10 DMG, Medium: 20 DMG, Hard: 35 DMG) to load your coding turn.';
     }
     if (challengeHintBox) challengeHintBox.style.display = 'none';
 
@@ -693,12 +738,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnResetCode) btnResetCode.disabled = true;
 
     if (pickerStatusBadge) {
-      pickerStatusBadge.textContent = 'SELECT DIFFICULTY TO ATTACK';
-      pickerStatusBadge.className = 'section-badge font-code text-yellow';
+      pickerStatusBadge.textContent = isBugmon ? 'BUGMON BATTLE: MED & HARD ONLY' : 'SELECT DIFFICULTY TO ATTACK';
+      pickerStatusBadge.className = isBugmon ? 'section-badge font-code text-red' : 'section-badge font-code text-yellow';
     }
     if (consoleStatusBadge) {
-      consoleStatusBadge.textContent = 'SYS: READY';
-      consoleStatusBadge.className = 'section-badge font-code text-green';
+      consoleStatusBadge.textContent = isBugmon ? 'SYS: BUGMON COMBAT' : 'SYS: READY';
+      consoleStatusBadge.className = isBugmon ? 'section-badge font-code text-red' : 'section-badge font-code text-green';
     }
   }
 
@@ -709,13 +754,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     cards.forEach((challenge) => {
       const dmgMap = { easy: 10, medium: 20, hard: 35 };
       const dmg = dmgMap[challenge.difficulty] || 10;
+      const isLocked = challenge.locked === true;
 
       const card = document.createElement('div');
-      card.className = `picker-card ${challenge.difficulty}`;
+      card.className = `picker-card ${challenge.difficulty} ${isLocked ? 'card-disabled locked' : ''}`;
       card.id = `card-${challenge.id}`;
-      card.setAttribute('tabindex', '0');
+      card.setAttribute('tabindex', isLocked ? '-1' : '0');
       card.setAttribute('role', 'button');
-      card.setAttribute('aria-label', `${challenge.difficulty.toUpperCase()} challenge: ${challenge.title}. Deals ${dmg} damage.`);
+      card.setAttribute('aria-label', isLocked
+        ? 'Easy challenge is locked in Bugmon battle'
+        : `${challenge.difficulty.toUpperCase()} challenge: ${challenge.title}. Deals ${dmg} damage.`
+      );
+
+      if (isLocked) {
+        card.innerHTML = `
+          <div class="picker-card-header">
+            <span class="picker-badge font-pixel text-red" style="background:#540d1a;">LOCKED</span>
+            <span class="picker-card-dmg font-pixel text-red">LOCKED</span>
+          </div>
+          <div class="picker-card-title font-pixel text-red">LOCKED</div>
+          <div class="picker-card-desc font-code">${challenge.description}</div>
+          <div class="picker-card-topic font-pixel">RESTRICTED</div>
+        `;
+        pickerCardsContainer.appendChild(card);
+        return;
+      }
 
       card.innerHTML = `
         <div class="picker-card-header">
@@ -1214,7 +1277,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (typeof window.gameState.turnsLeft === 'number') turnsLeft = window.gameState.turnsLeft;
     }
 
-    const minPoints = (window.BATTLE_CONFIG && window.BATTLE_CONFIG.minPoints) || targetPoints;
+    const isBugmon = (window.gameState && window.gameState.isBugmonBattle) ||
+                     (window.BattleEngine && window.BattleEngine.visualState && window.BattleEngine.visualState.isBugmon);
+    const minPoints = (window.BATTLE_CONFIG && window.BATTLE_CONFIG.minPoints) || (isBugmon ? 150 : targetPoints);
     const player = window.gameState.player || { name: 'Codemon' };
     const enemy = window.gameState.enemy || { name: 'Bugmon' };
 
@@ -1227,14 +1292,67 @@ document.addEventListener('DOMContentLoaded', async () => {
     const resultTurnsVal = document.getElementById('result-turns-val');
     const btnResultAction = document.getElementById('btn-result-action');
 
+    // 1. Bugmon failure / run away: "The bug got away..." with small XP penalty
+    if (outcome === 'bugmon_escaped') {
+      playSound('hit');
+      if (window.gameState) {
+        const currentXp = typeof window.gameState.xp === 'number' ? window.gameState.xp : 100;
+        window.gameState.xp = Math.max(0, currentXp - 15);
+        window.gameState.isBugmonBattle = false;
+      }
+
+      if (window.typeText) {
+        window.typeText('The bug got away...', 24);
+      } else if (window.showMessage) {
+        window.showMessage('The bug got away...');
+      }
+
+      appendConsoleLine('========================================', 'console-error');
+      appendConsoleLine('✖ The bug got away... (-15 XP Penalty)', 'console-error');
+      appendConsoleLine(`XP Remaining: ${window.gameState ? window.gameState.xp : 85}. Returning to selection screen.`, 'console-warn');
+      appendConsoleLine('========================================', 'console-error');
+
+      const battleScreen = document.getElementById('screen-battle');
+      const canvasFrame = document.getElementById('canvas-frame');
+      if (battleScreen) {
+        battleScreen.classList.remove('bugmon-battle-tint', 'bugmon-glitch-active');
+      }
+      if (canvasFrame) {
+        canvasFrame.classList.remove('screen-glitch-active');
+      }
+
+      if (window.BattleEngine && window.BattleEngine.visualState) {
+        window.BattleEngine.visualState.isBugmon = false;
+        window.BattleEngine.visualState.isGlitching = false;
+      }
+
+      setTimeout(() => {
+        showScreen('select');
+      }, 1500);
+      return;
+    }
+
     if (outcome === 'victory') {
       playSound('battle');
+      if (isBugmon) {
+        // Defeating a Bugmon gives double XP and sets gameState.bugmonsDefeated += 1
+        const currentXp = typeof window.gameState.xp === 'number' ? window.gameState.xp : 100;
+        window.gameState.xp = currentXp + 100; // Double XP (+100 instead of standard +50)
+        window.gameState.bugmonsDefeated = (window.gameState.bugmonsDefeated || 0) + 1;
+      } else {
+        const currentXp = typeof window.gameState.xp === 'number' ? window.gameState.xp : 100;
+        window.gameState.xp = currentXp + 50;
+      }
+
       if (window.typeText) {
         window.typeText(`VICTORY! ${enemy.name.toUpperCase()} was debugged! You reached ${currentPoints} PTS!`, 22);
       }
       appendConsoleLine('========================================', 'console-pass');
-      appendConsoleLine('★ BATTLE VICTORY! BUG MONSTER DEFEATED ★', 'console-pass');
+      appendConsoleLine(isBugmon ? '★ BUGMON VANQUISHED! DOUBLE XP EARNED ★' : '★ BATTLE VICTORY! BUG MONSTER DEFEATED ★', 'console-pass');
       appendConsoleLine(`Final Score: ${currentPoints} / ${minPoints} Points. Turns remaining: ${turnsLeft}.`, 'console-pass');
+      if (isBugmon) {
+        appendConsoleLine(`> Bugmons Defeated Total: ${window.gameState.bugmonsDefeated} | XP: ${window.gameState.xp}`, 'console-pass');
+      }
       appendConsoleLine('========================================', 'console-pass');
 
       if (pickerStatusBadge) {
@@ -1249,10 +1367,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (resultOverlay) {
         if (resultBadge) {
           resultBadge.className = 'result-badge victory font-pixel';
-          resultBadge.textContent = '★ BATTLE VICTORY ★';
+          resultBadge.textContent = isBugmon ? '★ BUGMON VANQUISHED ★' : '★ BATTLE VICTORY ★';
         }
-        if (resultTitle) resultTitle.textContent = 'BUGMON DEBUGGED!';
-        if (resultSubtitle) resultSubtitle.textContent = `Clean code eliminated all bugs and reached ${currentPoints} PTS!`;
+        if (resultTitle) resultTitle.textContent = isBugmon ? `${enemy.name.toUpperCase()} DEFEATED!` : 'BUGMON DEBUGGED!';
+        if (resultSubtitle) {
+          resultSubtitle.textContent = isBugmon
+            ? `Epic victory! Earned DOUBLE XP (+100 XP)! Total Bugmons Defeated: ${window.gameState.bugmonsDefeated}.`
+            : `Clean code eliminated all bugs and reached ${currentPoints} PTS! (+50 XP)`;
+        }
         if (resultScoreVal) resultScoreVal.textContent = `${currentPoints} / ${minPoints} PTS`;
         if (resultTargetVal) {
           resultTargetVal.className = 'text-green';
@@ -1284,7 +1406,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (resultOverlay) {
         if (resultBadge) {
           resultBadge.className = 'result-badge transformation font-pixel';
-          resultBadge.textContent = '⚠ GLITCH MUTATION (PIECE 7) ⚠';
+          resultBadge.textContent = '⚠ GLITCH MUTATION ⚠';
         }
         if (resultTitle) resultTitle.textContent = 'THE ENEMY IS STILL GLITCHING...';
         if (resultSubtitle) resultSubtitle.textContent = `Points: ${currentPoints}/${minPoints} PTS. Easy-only play cannot defeat Bugmon without medium/hard challenges!`;
@@ -1294,7 +1416,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           resultTargetVal.textContent = `FAILED (<${minPoints} MIN)`;
         }
         if (resultTurnsVal) resultTurnsVal.textContent = `${turnsLeft} REMAINING`;
-        if (btnResultAction) btnResultAction.textContent = 'CONTINUE (PIECE 7) ▶';
+        if (btnResultAction) btnResultAction.textContent = 'CONTINUE ▶';
         resultOverlay.style.display = 'flex';
       }
     } else {
@@ -1366,17 +1488,43 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.setHp('enemy', enemy.maxHp, enemy.maxHp, true);
     }
 
-    const startingTurns = (window.BATTLE_CONFIG && window.BATTLE_CONFIG.turnLimit) || 8;
+    const startingTurns = 8;
     currentPoints = 0;
     turnsLeft = startingTurns;
+    targetPoints = 120;
     battleActive = true;
     window.gameState.battleActive = true;
+    window.gameState.isBugmonBattle = false;
+    window.gameState.xp = typeof window.gameState.xp === 'number' ? window.gameState.xp : 100;
+    window.gameState.bugmonsDefeated = typeof window.gameState.bugmonsDefeated === 'number' ? window.gameState.bugmonsDefeated : 0;
     battleUsedChallenges.clear();
+
+    if (window.BATTLE_CONFIG) {
+      window.BATTLE_CONFIG.turnLimit = 8;
+      window.BATTLE_CONFIG.minPoints = 120;
+    }
 
     if (window.BattleEngine && window.BattleEngine.visualState) {
       window.BattleEngine.visualState.isGlitching = false;
+      window.BattleEngine.visualState.isBugmon = false;
       window.BattleEngine.visualState.points = 0;
+      window.BattleEngine.visualState.maxPoints = 120;
       window.BattleEngine.visualState.turnsLeft = startingTurns;
+    }
+
+    // Reset battle tint and overlays
+    const battleScreen = document.getElementById('screen-battle');
+    const canvasFrame = document.getElementById('canvas-frame');
+    if (battleScreen) {
+      battleScreen.classList.remove('bugmon-battle-tint', 'bugmon-glitch-active');
+    }
+    if (canvasFrame) {
+      canvasFrame.classList.remove('screen-glitch-active');
+    }
+
+    const bugmonDecisionOverlay = document.getElementById('bugmon-decision-overlay');
+    if (bugmonDecisionOverlay) {
+      bugmonDecisionOverlay.style.display = 'none';
     }
 
     const resultOverlay = document.getElementById('battle-result-overlay');
@@ -1501,6 +1649,90 @@ document.addEventListener('DOMContentLoaded', async () => {
       playSound('click');
       if (resultOverlay) resultOverlay.style.display = 'none';
       showScreen('title');
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // BUGMON DECISION MODAL ("FIGHT" or "RUN")
+  // -------------------------------------------------------------------------
+  function showBugmonDecisionModal(variant) {
+    const overlay = document.getElementById('bugmon-decision-overlay');
+    const titleEl = document.getElementById('decision-enemy-title');
+    const spriteEl = document.getElementById('decision-bugmon-sprite');
+
+    if (titleEl && variant) {
+      titleEl.textContent = `${variant.name.toUpperCase()} APPEARED!`;
+    }
+    if (spriteEl && variant && variant.sprite) {
+      spriteEl.src = variant.sprite;
+      spriteEl.alt = variant.name;
+    }
+
+    if (overlay) {
+      overlay.style.display = 'flex';
+    }
+
+    if (typeof playSound === 'function') {
+      playSound('glitch');
+    }
+  }
+
+  window.showBugmonDecisionModal = showBugmonDecisionModal;
+
+  const btnBugmonFight = document.getElementById('btn-bugmon-fight');
+  const btnBugmonRun = document.getElementById('btn-bugmon-run');
+  const bugmonDecisionOverlay = document.getElementById('bugmon-decision-overlay');
+
+  if (btnBugmonFight) {
+    btnBugmonFight.addEventListener('click', () => {
+      playSound('click');
+      if (bugmonDecisionOverlay) bugmonDecisionOverlay.style.display = 'none';
+
+      // Bugmon Battle Rules Config: turnLimit 6, minPoints 150
+      if (window.BATTLE_CONFIG) {
+        window.BATTLE_CONFIG.turnLimit = 6;
+        window.BATTLE_CONFIG.minPoints = 150;
+      }
+
+      if (window.BattleEngine && window.BattleEngine.visualState) {
+        window.BattleEngine.visualState.isBugmon = true;
+        window.BattleEngine.visualState.turnsLeft = 6;
+        window.BattleEngine.visualState.points = 0;
+        window.BattleEngine.visualState.maxPoints = 150;
+      }
+
+      currentPoints = 0;
+      turnsLeft = 6;
+      targetPoints = 150;
+      battleActive = true;
+
+      if (window.gameState) {
+        window.gameState.isBugmonBattle = true;
+        window.gameState.turnsLeft = 6;
+        window.gameState.score = 0;
+        window.gameState.battleActive = true;
+      }
+
+      if (window.updateHud) {
+        window.updateHud(0, 6);
+      }
+
+      appendConsoleLine('========================================', 'console-error');
+      appendConsoleLine('⚔ BUGMON BATTLE ENGAGED! ⚔', 'console-error');
+      appendConsoleLine('> Easy difficulty is LOCKED. Medium & Hard questions only.', 'console-warn');
+      appendConsoleLine('> New Config: 6 Turns Limit | 150 Min Points Target.', 'console-warn');
+      appendConsoleLine('> Bugmon attack power increased to 12 - 20 DMG.', 'console-warn');
+      appendConsoleLine('========================================', 'console-error');
+
+      startPlayerTurn();
+    });
+  }
+
+  if (btnBugmonRun) {
+    btnBugmonRun.addEventListener('click', () => {
+      playSound('click');
+      if (bugmonDecisionOverlay) bugmonDecisionOverlay.style.display = 'none';
+      handleBattleOutcome('bugmon_escaped');
     });
   }
 

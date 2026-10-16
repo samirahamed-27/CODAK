@@ -43,6 +43,24 @@ const SPRITE_PALETTE = [
   '#1e40af'      // 13: gb-blue-dark
 ];
 
+// Glitch Color Palette (Red/Purple) for Bugmon Variants & Glitch Transformation
+const BUGMON_PALETTE = [
+  'transparent', // 0: Transparent
+  '#150308',     // 1: Deep glitch dark
+  '#2a040d',     // 2: Dark maroon
+  '#540d1a',     // 3: Dark crimson
+  '#9b51e0',     // 4: Glitch purple
+  '#ffffff',     // 5: Glitch white glow
+  '#ea80fc',     // 6: Neon magenta
+  '#7b1fa2',     // 7: Deep violet
+  '#ff0055',     // 8: Neon crimson
+  '#c2185b',     // 9: Dark neon crimson
+  '#ff1744',     // 10: Bright red
+  '#d50000',     // 11: Deep blood red
+  '#9c27b0',     // 12: Vivid purple
+  '#4a148c'      // 13: Dark purple
+];
+
 // ---------------------------------------------------------------------------
 // 2. 16x16 PIXEL SPRITE GRIDS (Editable arrays of palette indexes)
 // ---------------------------------------------------------------------------
@@ -128,15 +146,16 @@ const SPRITE_CPLUSAUR_BACK = [
 ];
 
 // Helper to draw a pixel sprite from an array
-function drawPixelSprite(ctx, grid, startX, startY, pixelSize = 2) {
+function drawPixelSprite(ctx, grid, startX, startY, pixelSize = 2, palette = SPRITE_PALETTE) {
   if (!ctx || !grid || !grid.length) return;
+  const pal = palette || SPRITE_PALETTE;
   const rows = grid.length;
   for (let r = 0; r < rows; r++) {
     const row = grid[r];
     for (let c = 0; c < row.length; c++) {
       const colorIdx = row[c];
-      if (colorIdx > 0 && SPRITE_PALETTE[colorIdx]) {
-        ctx.fillStyle = SPRITE_PALETTE[colorIdx];
+      if (colorIdx > 0 && pal[colorIdx]) {
+        ctx.fillStyle = pal[colorIdx];
         ctx.fillRect(
           Math.floor(startX + c * pixelSize),
           Math.floor(startY + r * pixelSize),
@@ -163,6 +182,7 @@ const battleVisualState = {
   maxPoints: BATTLE_CONFIG.minPoints,
   turnsLeft: BATTLE_CONFIG.turnLimit,
   isGlitching: false,
+  isBugmon: false,
 
   // Animation offsets & effects
   player: {
@@ -505,12 +525,14 @@ function renderBattleScene(ctx, animTick = 0) {
     }
   });
 
+  const isBugmon = battleVisualState.isBugmon || (typeof window !== 'undefined' && window.gameState && window.gameState.isBugmonBattle);
+
   // 1. Cyber Arena Upper Backdrop (y: 0 to 58)
-  ctx.fillStyle = '#0c1015'; // --gb-darkest
+  ctx.fillStyle = isBugmon ? '#1a0408' : '#0c1015'; // Dark red tint or --gb-darkest
   ctx.fillRect(0, 0, width, 58);
 
   // Matrix horizontal grid scanlines
-  ctx.fillStyle = '#1b2632'; // --gb-dark
+  ctx.fillStyle = isBugmon ? '#350810' : '#1b2632'; // --gb-dark
   for (let y = 6; y < 58; y += 8) {
     ctx.fillRect(0, y, width, 1);
   }
@@ -520,16 +542,16 @@ function renderBattleScene(ctx, animTick = 0) {
   }
 
   // Horizon Divider
-  ctx.fillStyle = '#2c3e50'; // --gb-mid
+  ctx.fillStyle = isBugmon ? '#941e1e' : '#2c3e50'; // --gb-mid
   ctx.fillRect(0, 58, width, 2);
 
   // 2. "Code Grid" Perspective Floor (y: 60 to 144)
-  ctx.fillStyle = '#1b2632'; // --gb-dark
+  ctx.fillStyle = isBugmon ? '#26050e' : '#1b2632'; // --gb-dark
   ctx.fillRect(0, 60, width, 84);
 
   // Perspective horizontal lines (narrower near horizon, wider near bottom)
   const horizLines = [64, 71, 80, 91, 104, 120, 138];
-  ctx.fillStyle = '#2c3e50';
+  ctx.fillStyle = isBugmon ? '#5e101a' : '#2c3e50';
   horizLines.forEach((hy) => {
     ctx.fillRect(0, hy, width, 1);
   });
@@ -540,18 +562,18 @@ function renderBattleScene(ctx, animTick = 0) {
     ctx.beginPath();
     ctx.moveTo(cx, 60);
     ctx.lineTo(cx + (cx - 80) * 0.8, 144);
-    ctx.strokeStyle = '#2c3e50';
+    ctx.strokeStyle = isBugmon ? '#5e101a' : '#2c3e50';
     ctx.lineWidth = 1;
     ctx.stroke();
   });
 
   // 3. Cyber Battle Podiums (Drawn with filled rectangles)
   // Enemy Platform (Top-Right: x: 92 to 154, y: 52 to 62)
-  ctx.fillStyle = '#2c3e50';
+  ctx.fillStyle = isBugmon ? '#540d1a' : '#2c3e50';
   ctx.fillRect(92, 54, 62, 8);
-  ctx.fillStyle = '#1b2632';
+  ctx.fillStyle = isBugmon ? '#2a040d' : '#1b2632';
   ctx.fillRect(94, 55, 58, 6);
-  ctx.fillStyle = '#38bdf8'; // Cyan cyber edge
+  ctx.fillStyle = isBugmon ? '#ff0055' : '#38bdf8'; // Glitch red or cyan cyber edge
   ctx.fillRect(96, 56, 54, 2);
 
   // Player Platform (Bottom-Left: x: 8 to 74, y: 104 to 118)
@@ -573,20 +595,20 @@ function renderBattleScene(ctx, animTick = 0) {
   const enemyHpPct = Math.max(0, enemyHp.display / enemyHp.max);
 
   // Outer border & fill
-  ctx.fillStyle = '#0c1015';
+  ctx.fillStyle = isBugmon ? '#150308' : '#0c1015';
   ctx.fillRect(5, 6, 80, 26);
-  ctx.fillStyle = '#2c3e50';
+  ctx.fillStyle = isBugmon ? '#941e1e' : '#2c3e50';
   ctx.fillRect(6, 7, 78, 24);
-  ctx.fillStyle = '#1b2632';
+  ctx.fillStyle = isBugmon ? '#300812' : '#1b2632';
   ctx.fillRect(8, 9, 74, 20);
 
   // Enemy Name & LV
-  ctx.fillStyle = '#eef5fc';
+  ctx.fillStyle = isBugmon ? '#ff0055' : '#eef5fc';
   ctx.font = '6px monospace';
-  ctx.fillText(enemy.name.toUpperCase().substring(0, 8), 11, 16);
+  ctx.fillText(enemy.name.toUpperCase().substring(0, 10), 11, 16);
 
-  ctx.fillStyle = '#f4b41b';
-  ctx.fillText('LV 5', 64, 16);
+  ctx.fillStyle = isBugmon ? '#ff1744' : '#f4b41b';
+  ctx.fillText(isBugmon ? 'BUG' : 'LV 5', 64, 16);
 
   // Enemy HP Bar
   ctx.fillStyle = '#0c1015';
@@ -612,7 +634,8 @@ function renderBattleScene(ctx, animTick = 0) {
     const enemyX = 110 + battleVisualState.enemy.offsetX;
     const enemyY = 24 + enemyBob + battleVisualState.enemy.offsetY;
 
-    drawPixelSprite(ctx, SPRITE_BUGMON_FRONT, enemyX, enemyY, 2);
+    const enemyPalette = isBugmon ? BUGMON_PALETTE : SPRITE_PALETTE;
+    drawPixelSprite(ctx, SPRITE_BUGMON_FRONT, enemyX, enemyY, 2, enemyPalette);
   }
 
   // -------------------------------------------------------------------------
@@ -710,16 +733,53 @@ const ENEMY_BASE_DAMAGE = 16;
 
 /**
  * evaluateBattleConditions(playerHp, enemyHp, points, turnsLeft)
- * Evaluates the 4 end-of-battle conditions according to BATTLE_CONFIG:
+ * Evaluates battle conditions according to BATTLE_CONFIG and battle phase:
+ * 
+ * Normal Phase:
  * 1. If enemy HP <= 0 AND points >= minPoints: WIN. Show a victory screen.
  * 2. If enemy HP <= 0 but points < minPoints: not a true win. Show
- *    "The enemy is still glitching..." and trigger the Bugmon transformation (Piece 7).
- * 3. If turns run out and points < minPoints: trigger the Bugmon transformation.
+ *    "The enemy is still glitching..." and trigger Bugmon transformation.
+ * 3. If turns run out and points < minPoints: trigger Bugmon transformation.
  * 4. If player HP <= 0: lose.
+ * 
+ * Bugmon Phase:
+ * - If player HP <= 0 or turns run out without winning: "The bug got away..."
+ * - If enemy HP <= 0 AND points >= 150: WIN (double XP, bugmonsDefeated += 1).
  */
 function evaluateBattleConditions(playerHp, enemyHp, points, turnsLeft) {
-  const minPts = (typeof BATTLE_CONFIG !== 'undefined' && BATTLE_CONFIG.minPoints) || 120;
+  const isBugmon = (typeof battleVisualState !== 'undefined' && battleVisualState.isBugmon) || 
+                   (typeof window !== 'undefined' && window.gameState && window.gameState.isBugmonBattle);
+  const minPts = (typeof BATTLE_CONFIG !== 'undefined' && BATTLE_CONFIG.minPoints) || (isBugmon ? 150 : 120);
 
+  // If in Bugmon Battle:
+  if (isBugmon) {
+    // If player HP <= 0: player failed again -> "The bug got away..."
+    if (playerHp <= 0) {
+      return { outcome: 'bugmon_escaped', reason: 'player_fainted' };
+    }
+
+    // If enemy HP <= 0
+    if (enemyHp <= 0) {
+      if (points >= minPts) {
+        return { outcome: 'victory', reason: 'bugmon_debugged' };
+      } else {
+        // Defeated HP but failed minPoints: "The bug got away..."
+        return { outcome: 'bugmon_escaped', reason: 'points_not_met' };
+      }
+    }
+
+    // If turns run out
+    if (turnsLeft <= 0) {
+      if (points >= minPts && enemyHp <= 0) {
+        return { outcome: 'victory', reason: 'bugmon_debugged' };
+      }
+      return { outcome: 'bugmon_escaped', reason: 'turns_exhausted' };
+    }
+
+    return null;
+  }
+
+  // Normal Battle Rules:
   // 4. If player HP <= 0: lose.
   if (playerHp <= 0) {
     return { outcome: 'defeat', reason: 'player_fainted' };
@@ -751,38 +811,114 @@ function evaluateBattleConditions(playerHp, enemyHp, points, turnsLeft) {
 
 /**
  * triggerBugmonTransformation()
- * Triggers the Bugmon transformation (Piece 7).
- * Sets glitch state, displays glitch dialogue and console warnings,
- * activates screen shake, and signals the transformation outcome.
+ * Transformation sequence when triggered:
+ * 1. Dialogue: "Oh no... the points weren't enough!"
+ * 2. Screen glitch effect: CSS animation with the sprite flickering, horizontal
+ *    slicing/offset lines, screen shake, and a short static noise sound.
+ * 3. Dialogue: "[Enemy] turned into a BUGMON!"
+ * 4. Swap the sprite and name, restore the HP bar to the bugmon's full HP, and
+ *    change the battle background tint to a dark red palette.
+ * 5. Add a menu after the transformation: "FIGHT" or "RUN".
  */
 async function triggerBugmonTransformation() {
-  battleVisualState.isGlitching = true;
-  if (window.gameState) {
-    window.gameState.isGlitching = true;
-    window.gameState.isTransformed = true;
+  const triggerMsg = window.showMessage || showMessage;
+  const enemy = (window.gameState && window.gameState.enemy) || { name: 'Bugmon', maxHp: 130 };
+  const player = (window.gameState && window.gameState.player) || { name: 'Codemon', maxHp: 100 };
+  const originalEnemyName = enemy.originalName || enemy.name || 'Codemon';
+
+  // 1. Dialogue: "Oh no... the points weren't enough!"
+  await triggerMsg("Oh no... the points weren't enough!");
+  await new Promise(r => setTimeout(r, 600));
+
+  // 2. Screen glitch effect: CSS animation with the sprite flickering,
+  // horizontal slicing/offset lines, screen shake, and a short static noise sound.
+  if (window.playSound) {
+    window.playSound('static');
   }
 
-  // Screen shake & glitch effect
-  battleVisualState.screenShake.duration = 20;
+  battleVisualState.isGlitching = true;
+  battleVisualState.screenShake.duration = 45;
+
+  const canvasFrame = document.getElementById('canvas-frame');
+  const battleScreen = document.getElementById('screen-battle');
+  if (canvasFrame) {
+    canvasFrame.classList.add('screen-glitch-active');
+  }
+  if (battleScreen) {
+    battleScreen.classList.add('bugmon-glitch-active');
+  }
 
   if (window.appendConsoleLine) {
     window.appendConsoleLine('========================================', 'console-error');
-    window.appendConsoleLine('⚠ GLITCH PHASE TRIGGERED: BUGMON TRANSFORMATION (PIECE 7) ⚠', 'console-error');
-    window.appendConsoleLine('> Insufficient points! Unresolved syntax errors trigger Glitch Mutation!', 'console-warn');
-    window.appendConsoleLine('> Bugmon absorbed unhandled exceptions and transformed into Glitch Spectre v2.0!', 'console-warn');
+    window.appendConsoleLine('⚠ SCREEN GLITCH: SYNTAX INTEGRITY FAILURE ⚠', 'console-error');
+    window.appendConsoleLine('> Horizontal slicing detected. Memory pointers corrupting...', 'console-error');
     window.appendConsoleLine('========================================', 'console-error');
   }
 
-  if (window.playSound) {
-    window.playSound('hit');
+  await new Promise(r => setTimeout(r, 1200));
+
+  // 3. Dialogue: "[Enemy] turned into a BUGMON!"
+  await triggerMsg(`${originalEnemyName} turned into a BUGMON!`);
+  await new Promise(r => setTimeout(r, 600));
+
+  // 4. Swap the sprite and name, restore the HP bar to the bugmon's full HP, and
+  // change the battle background tint to a dark red palette.
+  const variant = (enemy && enemy.bugmonVariant) || {
+    name: `Bug-${originalEnemyName}`,
+    sprite: 'assets/bug-pyrawr.svg',
+    maxHp: Math.round(((enemy && enemy.maxHp) || 130) * 1.5),
+    palette: { primary: '#e03c3c', secondary: '#9b51e0', dark: '#35084a', glow: '#ff1744' }
+  };
+
+  enemy.originalName = originalEnemyName;
+  enemy.name = variant.name;
+  enemy.sprite = variant.sprite;
+  enemy.spriteFront = variant.sprite;
+  enemy.maxHp = variant.maxHp;
+  enemy.hp = variant.maxHp;
+  enemy.currentHp = variant.maxHp;
+  enemy.isBugmon = true;
+  enemy.bugmonVariant = variant;
+
+  battleVisualState.isBugmon = true;
+  battleVisualState.isGlitching = false;
+  if (window.gameState) {
+    window.gameState.isBugmonBattle = true;
+    window.gameState.isTransformed = true;
+    window.gameState.enemy = enemy;
   }
 
-  const triggerMsg = window.showMessage || showMessage;
-  const enemy = (window.gameState && window.gameState.enemy) || { name: 'Bugmon' };
-  await triggerMsg(`CRITICAL GLITCH! ${enemy.name.toUpperCase()} is mutating into an unstable anomaly!`);
+  // Restore the HP bar to the bugmon's full HP
+  const triggerSetHp = window.setHp || setHp;
+  await triggerSetHp('enemy', variant.maxHp, variant.maxHp, true);
 
-  if (window.handleBattleOutcome) {
-    window.handleBattleOutcome('transformation');
+  // Background tint: change to a dark red palette
+  if (canvasFrame) {
+    canvasFrame.classList.remove('screen-glitch-active');
+  }
+  if (battleScreen) {
+    battleScreen.classList.remove('bugmon-glitch-active');
+    battleScreen.classList.add('bugmon-battle-tint');
+  }
+
+  const versusTitle = document.getElementById('battle-versus-title');
+  if (versusTitle) {
+    versusTitle.textContent = `${player.name.toUpperCase()} VS ${enemy.name.toUpperCase()}`;
+  }
+
+  if (window.appendConsoleLine) {
+    window.appendConsoleLine(`⚠ ${enemy.name.toUpperCase()} HAS AWAKENED! (MAX HP: ${variant.maxHp}) ⚠`, 'console-error');
+    window.appendConsoleLine('> Background arena tinted dark red. Challenge matrix locked to Medium & Hard.', 'console-warn');
+  }
+
+  // 5. Add a menu after the transformation: "FIGHT" or "RUN"
+  if (window.showBugmonDecisionModal) {
+    window.showBugmonDecisionModal(variant);
+  } else {
+    const decisionOverlay = document.getElementById('bugmon-decision-overlay');
+    if (decisionOverlay) {
+      decisionOverlay.style.display = 'flex';
+    }
   }
 }
 
@@ -906,7 +1042,8 @@ async function handlePlayerCodeSuccess(challenge, outcome) {
 
   // End-of-battle check if enemy HP <= 0:
   if (newEnemyHp <= 0) {
-    const minPts = (BATTLE_CONFIG && BATTLE_CONFIG.minPoints) || 120;
+    const isBugmon = battleVisualState.isBugmon || (typeof window !== 'undefined' && window.gameState && window.gameState.isBugmonBattle);
+    const minPts = (BATTLE_CONFIG && BATTLE_CONFIG.minPoints) || (isBugmon ? 150 : 120);
     if (battleVisualState.points >= minPts) {
       // 1. If enemy HP <= 0 AND points >= minPoints: WIN. Show a victory screen.
       if (window.handleBattleOutcome) {
@@ -916,11 +1053,21 @@ async function handlePlayerCodeSuccess(challenge, outcome) {
       }
       return { outcome: 'victory', damage, points: pts };
     } else {
-      // 2. If enemy HP <= 0 but points < minPoints: not a true win. Show
-      // "The enemy is still glitching..." and trigger the Bugmon transformation (Piece 7).
-      await triggerMsg('The enemy is still glitching...');
-      await (window.triggerBugmonTransformation || triggerBugmonTransformation)();
-      return { outcome: 'transformation', reason: 'enemy_glitching', damage, points: pts };
+      if (isBugmon) {
+        // In Bugmon battle: failed to achieve minPoints before bug escaped
+        if (window.handleBattleOutcome) {
+          window.handleBattleOutcome('bugmon_escaped');
+        } else {
+          await triggerMsg('The bug got away...');
+        }
+        return { outcome: 'bugmon_escaped', reason: 'points_not_met', damage, points: pts };
+      } else {
+        // 2. If enemy HP <= 0 but points < minPoints: not a true win. Show
+        // "The enemy is still glitching..." and trigger the Bugmon transformation (Piece 7).
+        await triggerMsg('The enemy is still glitching...');
+        await (window.triggerBugmonTransformation || triggerBugmonTransformation)();
+        return { outcome: 'transformation', reason: 'enemy_glitching', damage, points: pts };
+      }
     }
   }
 
@@ -1006,8 +1153,16 @@ async function startEnemyTurn(isBonusDamage = false) {
   }
 
   // 2. Compute damage: normal or with 50% bonus damage
-  const baseDmg = ENEMY_BASE_DAMAGE;
-  const enemyDmg = isBonusDamage ? Math.round(baseDmg * 1.5) : baseDmg;
+  const isBugmon = battleVisualState.isBugmon || (typeof window !== 'undefined' && window.gameState && window.gameState.isBugmonBattle);
+  let enemyDmg;
+  if (isBugmon) {
+    // Bugmon attacks deal 12-20 damage
+    const bugmonRoll = Math.floor(Math.random() * (20 - 12 + 1)) + 12;
+    enemyDmg = isBonusDamage ? Math.round(bugmonRoll * 1.5) : bugmonRoll;
+  } else {
+    const baseDmg = ENEMY_BASE_DAMAGE;
+    enemyDmg = isBonusDamage ? Math.round(baseDmg * 1.5) : baseDmg;
+  }
 
   await new Promise(r => setTimeout(r, 600));
 
@@ -1017,6 +1172,8 @@ async function startEnemyTurn(isBonusDamage = false) {
 
   if (isBonusDamage) {
     await triggerMsg(`${enemy.name.toUpperCase()} strikes with 50% BONUS DAMAGE (${enemyDmg} DMG)!`);
+  } else if (isBugmon) {
+    await triggerMsg(`${enemy.name.toUpperCase()} attacked with Glitch Strike (${enemyDmg} DMG)!`);
   } else {
     await triggerMsg(`${enemy.name.toUpperCase()} countered with Segfault Slam (${enemyDmg} DMG)!`);
   }
@@ -1057,9 +1214,10 @@ async function startEnemyTurn(isBonusDamage = false) {
   // END-OF-BATTLE CHECK (Run after every round):
   // 1. If enemy HP <= 0 AND points >= minPoints: WIN. Show a victory screen.
   // 2. If enemy HP <= 0 but points < minPoints: not a true win. Show
-  //    "The enemy is still glitching..." and trigger the Bugmon transformation (Piece 7).
+  //    "The enemy is still glitching..." and trigger the Bugmon transformation.
   // 3. If turns run out and points < minPoints: trigger the Bugmon transformation.
   // 4. If player HP <= 0: lose.
+  // 5. Bugmon battle failure: "The bug got away..."
   // =========================================================================
   const currentEnemyHp = (window.gameState && window.gameState.enemy && typeof window.gameState.enemy.hp === 'number')
     ? window.gameState.enemy.hp
@@ -1078,6 +1236,15 @@ async function startEnemyTurn(isBonusDamage = false) {
         window.handleBattleOutcome('victory');
       } else {
         await triggerMsg(`VICTORY! ${enemy.name.toUpperCase()} was debugged! Final Score: ${battleVisualState.points} PTS!`);
+      }
+      return roundEval;
+    }
+
+    if (roundEval.outcome === 'bugmon_escaped') {
+      if (window.handleBattleOutcome) {
+        window.handleBattleOutcome('bugmon_escaped');
+      } else {
+        await triggerMsg('The bug got away...');
       }
       return roundEval;
     }

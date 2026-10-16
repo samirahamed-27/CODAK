@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="64" height="64" shape-rendering="crispEdges">
+  <!-- Bug-Cplusaur Front Sprite: Red/Purple Glitch Behemoth -->
+  <!-- Corrupted Spines -->
+  <rect x="2" y="1" width="3" height="3" fill="#c62828" />
+  <rect x="7" y="0" width="3" height="3" fill="#6a1b9a" />
+  <rect x="12" y="1" width="3" height="3" fill="#c62828" />
+  <!-- Armored Glitch Head -->
+  <rect x="4" y="3" width="8" height="6" fill="#311b92" />
+  <rect x="3" y="5" width="10" height="4" fill="#6a1b9a" />
+  <!-- Crimson Optic Sensors -->
+  <rect x="5" y="5" width="2" height="2" fill="#ff1744" />
+  <rect x="9" y="5" width="2" height="2" fill="#ff1744" />
+  <!-- Heavy Glitch Armor Torso -->
+  <rect x="2" y="9" width="12" height="5" fill="#1a0033" />
+  <rect x="4" y="10" width="8" height="4" fill="#c62828" />
+  <!-- Stomping Feet -->
+  <rect x="2" y="14" width="4" height="2" fill="#6a1b9a" />
+  <rect x="10" y="14" width="4" height="2" fill="#c62828" />
+</svg>
