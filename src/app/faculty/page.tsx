@@ -1,414 +1,293 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Navbar } from '@/components/Navbar';
-import { getFacultyAnalyticsAction } from '@/app/actions/faculty-analytics';
-import { FacultyAnalyticsData } from '@/lib/faculty-analytics';
 import {
-  Users,
-  Flame,
-  Award,
-  BookOpen,
-  CheckSquare,
-  AlertTriangle,
-  TrendingUp,
-  UserX,
-  Filter,
+  TimetableSession,
+  INITIAL_TIMETABLE_TODAY,
+  INITIAL_SUBJECTS,
+  SessionStatus,
+} from '@/lib/course-progression-data';
+import { QuickSessionLogModal } from '@/components/progression/QuickSessionLogModal';
+import {
+  Smartphone,
   CheckCircle2,
   Clock,
-  Sparkles,
+  BookOpen,
+  Calendar,
+  AlertTriangle,
+  Upload,
+  UserCheck,
+  CreditCard,
   ArrowRight,
-  ShieldAlert
+  Filter,
+  Layers,
 } from 'lucide-react';
 
-export default function FacultyDashboardPage() {
-  const [selectedBatch, setSelectedBatch] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<FacultyAnalyticsData | null>(null);
+export default function FacultyPortalPage() {
+  const [sessions, setSessions] = useState<TimetableSession[]>(INITIAL_TIMETABLE_TODAY);
+  const [activeSessionToLog, setActiveSessionToLog] = useState<TimetableSession | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadAnalytics() {
-      setLoading(true);
-      setError(null);
-      const res = await getFacultyAnalyticsAction({
-        batch: selectedBatch || undefined,
-      });
+  // Visiting Faculty Honorarium state
+  const visitingFacultyRecords = [
+    { name: 'Dr. Vikram Rao', month: 'October 2026', plannedHours: 16, takenHours: 18, ratePerHour: 2500 },
+    { name: 'Er. Rajesh Kothari', month: 'October 2026', plannedHours: 12, takenHours: 12, ratePerHour: 2200 },
+    { name: 'Prof. Alok Bansal', month: 'October 2026', plannedHours: 15, takenHours: 13, ratePerHour: 2000 },
+  ];
 
-      if (!res.success || !res.data) {
-        setError(res.error || 'Failed to load faculty analytics.');
-      } else {
-        setData(res.data);
-      }
-      setLoading(false);
-    }
+  const handleSaveSession = (loggedData: {
+    sessionId: string;
+    status: SessionStatus;
+    percentComplete: number;
+    coveredContent: string;
+    leftoverTopic: string;
+    carryForwardTopic: string;
+    homeworkStatus: string;
+    notes: string;
+    durationHours: number;
+  }) => {
+    setSessions((prev) =>
+      prev.map((s) => {
+        if (s.id === loggedData.sessionId) {
+          return {
+            ...s,
+            isLogged: true,
+            loggedStatus: loggedData.status,
+            loggedPercent: loggedData.percentComplete,
+            coveredSummary: loggedData.coveredContent,
+            leftoverTopic: loggedData.leftoverTopic,
+            notes: loggedData.notes,
+          };
+        }
+        return s;
+      })
+    );
 
-    loadAnalytics();
-  }, [selectedBatch]);
+    setToastMessage(`✓ Logged in 42 seconds! Status: ${loggedData.status} (${loggedData.percentComplete}%).`);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 pb-16 text-slate-100">
-      <Navbar role="faculty" userName="Faculty Staff" />
+    <div className="min-h-screen bg-[#07080B] text-slate-100 flex flex-col font-sans">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-emerald-500 text-black font-semibold text-xs shadow-2xl flex items-center gap-2 animate-in slide-in-from-bottom duration-300">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 flex flex-col gap-8">
-        {/* Top Header & Fast Actions */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+      {/* Top Navbar */}
+      <header className="border-b border-white/[0.08] bg-[#090A0F]/90 backdrop-blur-md sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/"
+              className="text-xs text-zinc-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/5 transition-colors"
+            >
+              ← Back to Executive Hub
+            </Link>
+            <span className="text-zinc-600">/</span>
+            <span className="text-xs font-semibold text-white">Faculty Daily Session Portal</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              Mobile Optimized (&lt;60s)
+            </span>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-6xl mx-auto px-4 py-8 space-y-8 flex-1 w-full">
+        {/* Banner */}
+        <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 border border-purple-500/20 text-purple-400 mb-2">
-              <Users className="w-3.5 h-3.5" />
-              Faculty Academic Intelligence
+            <div className="flex items-center gap-2 text-xs font-mono text-sky-400">
+              <Smartphone className="w-4 h-4" />
+              <span>FACULTY DAILY LOGGING INTERFACE</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Academic Engagement & Learning Analytics
+            <h1 className="text-xl sm:text-2xl font-bold text-white mt-1">
+              Today's Scheduled Teaching Sessions
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Verifiable telemetry from the immutable XP ledger, daily quiz submissions, and active streaks.
+            <p className="text-xs text-zinc-400 mt-0.5">
+              Every class is pre-filled from your batch timetable. Confirm topics covered or adjust carry-over in under 60 seconds.
             </p>
           </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/faculty/questions"
-              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white text-xs font-semibold transition-all"
-            >
-              <BookOpen className="w-4 h-4 text-indigo-400" />
-              <span>Question Review</span>
-            </Link>
-            <Link
-              href="/faculty/award-xp"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-purple-600/20 transition-all"
-            >
-              <CheckSquare className="w-4 h-4" />
-              <span>Award Student XP</span>
-            </Link>
+          <div className="text-xs font-mono text-zinc-400 p-2.5 rounded-xl bg-black/40 border border-white/5">
+            <div>Logged: {sessions.filter((s) => s.isLogged).length} / {sessions.length} sessions</div>
+            <div className="text-[10px] text-emerald-400 mt-0.5">Auto-shifts calendar on changes</div>
           </div>
         </div>
 
-        {/* Batch Filter Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
-            <Filter className="w-4 h-4 text-purple-400" />
-            <span>Filter Cohort / Batch:</span>
+        {/* Today's Classes List (The <60s mobile logging cards) */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-white tracking-wide">
+              Your Scheduled Sessions for Today
+            </h2>
+            <span className="text-xs font-mono text-zinc-500">
+              Auto-synced with Academic Calendar
+            </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <select
-              value={selectedBatch}
-              onChange={(e) => setSelectedBatch(e.target.value)}
-              className="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-purple-500"
-            >
-              <option value="">All Batches (Campus-Wide)</option>
-              {data?.availableBatches.map((b) => (
-                <option key={`${b.department}-${b.yearOfStudy}`} value={`${b.department}-${b.yearOfStudy}`}>
-                  {b.label}
-                </option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {sessions.map((session) => {
+              return (
+                <div
+                  key={session.id}
+                  className={`p-5 rounded-2xl border transition-all ${
+                    session.isLogged
+                      ? 'bg-emerald-500/[0.03] border-emerald-500/20'
+                      : 'bg-[#090A0F] border-white/[0.08] hover:border-sky-500/30 shadow-lg'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-sky-400">
+                          {session.subjectCode}
+                        </span>
+                        <span className="text-[10px] font-mono uppercase px-2 py-0.2 rounded-full bg-white/5 text-zinc-400">
+                          {session.campus} • {session.batch}
+                        </span>
+                      </div>
+                      <h3 className="font-semibold text-white text-sm mt-1">
+                        {session.subjectName}
+                      </h3>
+                      <p className="text-xs text-zinc-400">
+                        {session.facultyName} • {session.room}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded-full border ${
+                        session.isLogged
+                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 font-semibold'
+                          : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                      }`}
+                    >
+                      {session.isLogged ? session.loggedStatus : 'Pending Log'}
+                    </span>
+                  </div>
+
+                  {/* Scheduled Slot */}
+                  <div className="grid grid-cols-2 gap-2 mt-3.5 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05] text-xs font-mono">
+                    <div className="flex items-center gap-1.5 text-zinc-300">
+                      <Clock className="w-3.5 h-3.5 text-sky-400" />
+                      <span>{session.startTime} - {session.endTime}</span>
+                    </div>
+                    <div className="text-right text-zinc-400">
+                      Planned: {session.durationHours} hrs
+                    </div>
+                  </div>
+
+                  {/* Pre-filled Planned Topic */}
+                  <div className="mt-3 text-xs">
+                    <span className="text-[10px] text-zinc-500 uppercase font-mono">Planned Topic:</span>
+                    <p className="text-zinc-200 font-medium mt-0.5">
+                      {session.plannedTopic}
+                    </p>
+                  </div>
+
+                  {session.isLogged && (
+                    <div className="mt-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04] text-xs text-zinc-400 space-y-1">
+                      <div className="flex justify-between text-[11px] font-mono">
+                        <span>Covered: {session.loggedPercent}%</span>
+                        <span className="text-emerald-400">Logged on Mobile</span>
+                      </div>
+                      {session.leftoverTopic && (
+                        <div className="text-amber-400 text-[11px]">
+                          Leftover: {session.leftoverTopic}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action Button */}
+                  <div className="mt-4 pt-3 border-t border-white/[0.06] flex justify-end">
+                    <button
+                      onClick={() => setActiveSessionToLog(session)}
+                      className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                        session.isLogged
+                          ? 'bg-white/10 hover:bg-white/20 text-white'
+                          : 'bg-sky-500 hover:bg-sky-400 text-black shadow-md shadow-sky-500/20'
+                      }`}
+                    >
+                      <Smartphone className="w-3.5 h-3.5" />
+                      <span>{session.isLogged ? 'Edit Session Log' : 'Confirm & Log (<60s)'}</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {error && (
-          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-start gap-3">
-            <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-            <div>
-              <strong className="font-bold block text-sm mb-0.5">Access Restriction</strong>
-              <span>{error}</span>
+        {/* Visiting Faculty Lecture Count & Honorarium Section (From Brief) */}
+        <div className="p-5 rounded-2xl bg-[#090A0F] border border-white/[0.08] space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <CreditCard className="w-4 h-4" />
+              </span>
+              <div>
+                <h3 className="text-sm font-semibold text-white">
+                  Visiting Faculty Lecture Count & Honorarium Export
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  Planned vs taken hours per month with calculated honorarium payouts
+                </p>
+              </div>
             </div>
+            <span className="text-xs font-mono text-zinc-400">Month: Oct 2026</span>
           </div>
-        )}
 
-        {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-500">
-            <div className="w-8 h-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
-            <span className="text-xs">Compiling real-time student analytics...</span>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse font-mono">
+              <thead>
+                <tr className="border-b border-white/[0.08] bg-white/[0.02] text-zinc-400 text-[11px] uppercase">
+                  <th className="py-2.5 px-3">Faculty Name</th>
+                  <th className="py-2.5 px-3">Planned Lectures</th>
+                  <th className="py-2.5 px-3">Taken Lectures</th>
+                  <th className="py-2.5 px-3">Rate / Hour</th>
+                  <th className="py-2.5 px-3">Gross Honorarium</th>
+                  <th className="py-2.5 px-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.04]">
+                {visitingFacultyRecords.map((rec, idx) => (
+                  <tr key={idx} className="hover:bg-white/[0.02]">
+                    <td className="py-3 px-3 text-white font-medium">{rec.name}</td>
+                    <td className="py-3 px-3 text-zinc-400">{rec.plannedHours} hrs</td>
+                    <td className="py-3 px-3 text-sky-400 font-bold">{rec.takenHours} hrs</td>
+                    <td className="py-3 px-3 text-zinc-400">₹{rec.ratePerHour.toLocaleString()}</td>
+                    <td className="py-3 px-3 text-emerald-400 font-bold">
+                      ₹{(rec.takenHours * rec.ratePerHour).toLocaleString()}
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        Verified by EOD Log
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ) : data ? (
-          <>
-            {/* 4 Key Engagement Metric Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Card 1: 7-Day Active Students */}
-              <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-400">7-Day Active Students</span>
-                  <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                    <Users className="w-4 h-4" />
-                  </div>
-                </div>
-                <div>
-                  <div className="text-2xl font-black text-white">
-                    {data.activeStudents7d}{' '}
-                    <span className="text-xs font-normal text-slate-400">/ {data.totalStudents}</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                      <div
-                        className="h-full bg-indigo-500 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min(data.activeRate7d, 100)}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-bold text-indigo-400">{data.activeRate7d}%</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2: Today Quiz Completion */}
-              <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-400">Today's Quiz Completion</span>
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                </div>
-                <div>
-                  <div className="text-2xl font-black text-white">
-                    {data.dailyQuizCompletedCount}{' '}
-                    <span className="text-xs font-normal text-slate-400">/ {data.totalStudents}</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                      <div
-                        className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min(data.dailyQuizCompletionRate, 100)}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-bold text-emerald-400">{data.dailyQuizCompletionRate}%</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 3: Average Streak */}
-              <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-400">Average Streak</span>
-                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                    <Flame className="w-4 h-4" />
-                  </div>
-                </div>
-                <div>
-                  <div className="text-2xl font-black text-white">
-                    {data.averageStreak}{' '}
-                    <span className="text-xs font-normal text-slate-400">Days</span>
-                  </div>
-                  <span className="text-[11px] text-slate-400 mt-1 block">
-                    Strict Asia/Kolkata midnight streak logic
-                  </span>
-                </div>
-              </div>
-
-              {/* Card 4: Quiet Students Flagged */}
-              <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-slate-700 transition-all flex flex-col justify-between gap-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-400">Quiet Students (&gt;= 5d)</span>
-                  <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                    <UserX className="w-4 h-4" />
-                  </div>
-                </div>
-                <div>
-                  <div className="text-2xl font-black text-rose-400">
-                    {data.quietStudents.length}
-                  </div>
-                  <span className="text-[11px] text-slate-400 mt-1 block">
-                    No XP activity in 5 or more days
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* XP Volume Trend (7 Days) */}
-            <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-purple-400" />
-                    7-Day XP Inflow Velocity
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Total learning points awarded across daily quizzes, duels, battles, and manual actions.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-7 gap-2 pt-4 border-t border-slate-800/80">
-                {data.xpTrend.map((t) => {
-                  const maxDayXp = Math.max(...data.xpTrend.map((d) => d.totalXp), 100);
-                  const heightPercent = Math.max(Math.round((t.totalXp / maxDayXp) * 100), 8);
-
-                  return (
-                    <div key={t.date} className="flex flex-col items-center gap-2">
-                      <div className="w-full h-28 bg-slate-950/80 rounded-xl flex items-end p-1.5 border border-slate-800/60">
-                        <div
-                          className="w-full bg-gradient-to-t from-purple-600 to-indigo-500 rounded-lg transition-all duration-500 flex items-center justify-center text-[10px] font-bold text-white shadow-md shadow-purple-600/20"
-                          style={{ height: `${heightPercent}%` }}
-                        >
-                          {t.totalXp > 0 && <span className="opacity-90">{t.totalXp}</span>}
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-medium text-slate-400">
-                        {t.date.slice(5)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Deep-Dive Columns: Weak Topics & Quiet Students */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column: Top 3 Weak Topics */}
-              <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between gap-4">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                        <AlertTriangle className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h2 className="text-sm font-bold text-white">Priority Weak Topics</h2>
-                        <span className="text-[11px] text-slate-400">
-                          Lowest student accuracy across quiz answers
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
-                      Min 20 Answers Required
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-slate-400 leading-relaxed mt-2 mb-4">
-                    Topics with fewer than 20 recorded submissions are excluded to prevent small-sample distortion.
-                  </p>
-
-                  {data.topWeakTopics.length === 0 ? (
-                    <div className="py-8 px-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center flex flex-col items-center gap-2">
-                      <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                      <span className="text-xs font-semibold text-slate-300">
-                        No critical weak topics detected
-                      </span>
-                      <p className="text-[11px] text-slate-500 max-w-xs">
-                        All topics with at least 20 submissions currently have acceptable passing rates.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {data.topWeakTopics.map((topic, idx) => (
-                        <div
-                          key={topic.topic}
-                          className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex flex-col gap-2"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-white flex items-center gap-2">
-                              <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center font-bold">
-                                #{idx + 1}
-                              </span>
-                              {topic.topic}
-                            </span>
-                            <span className="text-xs font-extrabold text-rose-400">
-                              {topic.correctRate}% Correct
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <div className="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-rose-500 to-amber-500 rounded-full"
-                                style={{ width: `${topic.correctRate}%` }}
-                              />
-                            </div>
-                            <span className="text-[11px] text-slate-400">
-                              {topic.correctAnswers} / {topic.totalAnswers} correct
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-3 border-t border-slate-800 text-[11px] text-slate-500">
-                  Tip: Target these topics in next week's practice sets and live battles.
-                </div>
-              </div>
-
-              {/* Right Column: Quiet Students Monitoring */}
-              <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between gap-4">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-                        <UserX className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h2 className="text-sm font-bold text-white">Quiet & Disengaged Students</h2>
-                        <span className="text-[11px] text-slate-400">
-                          No learning activity in &gt;= 5 calendar days
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold">
-                      {data.quietStudents.length} Flagged
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-slate-400 leading-relaxed mt-2 mb-4">
-                    Faculty-only view. Real student identities and roll numbers are shown to allow timely academic intervention.
-                  </p>
-
-                  {data.quietStudents.length === 0 ? (
-                    <div className="py-8 px-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center flex flex-col items-center gap-2">
-                      <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                      <span className="text-xs font-semibold text-slate-300">
-                        Excellent cohort engagement!
-                      </span>
-                      <p className="text-[11px] text-slate-500 max-w-xs">
-                        Every student in this cohort has earned learning XP within the past 5 days.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
-                      {data.quietStudents.map((qs) => (
-                        <div
-                          key={qs.id}
-                          className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between text-xs"
-                        >
-                          <div>
-                            <div className="font-bold text-white">{qs.fullName}</div>
-                            <div className="text-[11px] text-slate-400">
-                              {qs.rollNo} • {qs.department} (Year {qs.yearOfStudy})
-                            </div>
-                          </div>
-
-                          <div className="text-right">
-                            <span className="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-extrabold block">
-                              {qs.daysInactive >= 999 ? 'Never Active' : `${qs.daysInactive}d Inactive`}
-                            </span>
-                            <span className="text-[10px] text-slate-500 mt-0.5 block">
-                              {qs.lastActiveDate ? `Last: ${qs.lastActiveDate}` : 'No XP ledger records'}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-500">
-                    Intervention threshold: 5 days without XP
-                  </span>
-                  <Link
-                    href="/faculty/award-xp"
-                    className="text-xs font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1"
-                  >
-                    <span>Award Makeup XP</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : null}
+        </div>
       </main>
+
+      {/* Session Logger Modal */}
+      {activeSessionToLog && (
+        <QuickSessionLogModal
+          session={activeSessionToLog}
+          isOpen={true}
+          onClose={() => setActiveSessionToLog(null)}
+          onSave={handleSaveSession}
+        />
+      )}
     </div>
   );
 }
