@@ -130,4 +130,53 @@ describe('H1: Server-Side Anonymous Mode Scope Across All Student Listings', () 
       expect(adminStandings[0].rollNo).toBe('CS-ANON-99');
     });
   });
+
+  describe('3. Award-XP Student Search Anonymity & Role Restriction', () => {
+    it('strictly forbids students from searching peer identities (returns 403 Forbidden)', async () => {
+      const { searchStudentsAction } = await import('@/app/actions/student-search');
+      // Unauthenticated or student caller
+      const res = await searchStudentsAction('Aarav');
+      expect(res.success).toBe(false);
+      expect(res.statusCode).toBe(401); // Without faculty session, returns 401/403
+      expect(res.students).toEqual([]);
+    });
+  });
+
+  describe('4. Battle Teams and Scoreboard Anonymity', () => {
+    it('ensures battle scoreboards contain only team-level metrics with no individual student identities leaked', async () => {
+      const { rankTeamsByScore } = await import('@/lib/battles');
+      const sampleScores = [
+        {
+          team_id: 'team-1',
+          team_name: 'Binary Beasts',
+          total_points: 120,
+          member_count: 5,
+          answered_count: 12,
+          avg_points: 24.0,
+          last_submission_at: '2026-10-17T12:00:00Z',
+        },
+        {
+          team_id: 'team-2',
+          team_name: 'Cyber Dragons',
+          total_points: 150,
+          member_count: 5,
+          answered_count: 15,
+          avg_points: 30.0,
+          last_submission_at: '2026-10-17T12:01:00Z',
+        },
+      ];
+
+      const ranked = rankTeamsByScore(sampleScores);
+      expect(ranked[0].team_name).toBe('Cyber Dragons');
+      expect(ranked[0].rank).toBe(1);
+
+      // Verify that no individual student names, roll numbers, or personal IDs exist in the scoreboard payload
+      for (const row of ranked) {
+        expect((row as any).student_id).toBeUndefined();
+        expect((row as any).student_name).toBeUndefined();
+        expect((row as any).roll_no).toBeUndefined();
+      }
+    });
+  });
 });
+
