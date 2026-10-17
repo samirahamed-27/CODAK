@@ -586,6 +586,7 @@ const battleVisualState = {
   turnsLeft: BATTLE_CONFIG.turnLimit,
   isGlitching: false,
   isBugmon: false,
+  backgroundId: 'cyber_grid',
 
   // Animation offsets & effects
   player: {
@@ -972,6 +973,1223 @@ function playHitAnimation(target, damage = null, isHeavy = false) {
 }
 
 // ---------------------------------------------------------------------------
+// 7.5. 10 RETRO / CYBER ARENA BACKGROUNDS WITH SCARY BUGMON VARIANTS
+// ---------------------------------------------------------------------------
+const BATTLE_BACKGROUNDS = [
+  // 1. CYBER MATRIX / GLITCH VOID
+  {
+    id: 'cyber_grid',
+    name: 'CYBER MATRIX',
+    bugmonName: 'GLITCH VOID',
+    description: 'Tron holographic grid arena / Broken corrupted glitch dimension',
+    render: function(ctx, width, height, animTick, isBugmon) {
+      if (!isBugmon) {
+        // Upper Backdrop
+        ctx.fillStyle = '#0c1015';
+        ctx.fillRect(0, 0, width, 58);
+        ctx.fillStyle = '#1b2632';
+        for (let y = 6; y < 58; y += 8) ctx.fillRect(0, y, width, 1);
+        for (let x = 16; x < width; x += 24) ctx.fillRect(x, 0, 1, 58);
+        // Downward data pulses
+        ctx.fillStyle = '#38bdf8';
+        for (let x = 16; x < width; x += 48) {
+          const py = Math.floor((animTick * 1.2 + x) % 54);
+          ctx.fillRect(x - 1, py, 3, 2);
+        }
+        // Horizon
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(0, 58, width, 2);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(40, 58, 80, 1);
+        // Floor
+        ctx.fillStyle = '#1b2632';
+        ctx.fillRect(0, 60, width, 84);
+        const horizLines = [64, 71, 80, 91, 104, 120, 138];
+        ctx.fillStyle = '#2c3e50';
+        horizLines.forEach(hy => ctx.fillRect(0, hy, width, 1));
+        const floorCols = [-20, 10, 40, 70, 100, 130, 160, 190];
+        floorCols.forEach(cx => {
+          ctx.beginPath();
+          ctx.moveTo(cx, 60);
+          ctx.lineTo(cx + (cx - 80) * 0.8, 144);
+          ctx.strokeStyle = '#2c3e50';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+        // Podiums
+        ctx.fillStyle = '#2c3e50'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#1b2632'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#38bdf8'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#2c3e50'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#1b2632'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#38b764'; ctx.fillRect(12, 109, 58, 2);
+      } else {
+        // Scary Bugmon Variant: GLITCH VOID
+        ctx.fillStyle = '#180206';
+        ctx.fillRect(0, 0, width, 58);
+        // Jagged glitch scanlines with horizontal jitter
+        ctx.fillStyle = '#42060e';
+        for (let y = 4; y < 58; y += 6) {
+          const shift = Math.floor(Math.sin(animTick * 0.2 + y) * 3);
+          ctx.fillRect(shift, y, width, 1);
+        }
+        // Bloody slash rifts across backdrop
+        ctx.strokeStyle = '#941e1e';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(15, 8); ctx.lineTo(65, 48);
+        ctx.moveTo(105, 12); ctx.lineTo(152, 44);
+        ctx.stroke();
+        ctx.strokeStyle = '#ff0055';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(17, 9); ctx.lineTo(67, 49);
+        ctx.moveTo(106, 13); ctx.lineTo(153, 45);
+        ctx.stroke();
+        // Floating glitch blood blocks
+        ctx.fillStyle = '#e03c3c';
+        for (let i = 0; i < 4; i++) {
+          const gx = 25 + i * 35;
+          const gy = Math.floor((52 - (animTick * 1.5 + i * 14)) % 52);
+          ctx.fillRect(gx, gy, 3, 3);
+        }
+        // Horizon: Blazing laser red
+        ctx.fillStyle = '#941e1e'; ctx.fillRect(0, 58, width, 2);
+        ctx.fillStyle = '#ff0033'; ctx.fillRect(0, 58, width, 1);
+        // Floor
+        ctx.fillStyle = '#26050e'; ctx.fillRect(0, 60, width, 84);
+        const horizLines = [64, 71, 80, 91, 104, 120, 138];
+        ctx.fillStyle = '#5e101a';
+        horizLines.forEach((hy, idx) => {
+          if (idx % 2 === 0) {
+            ctx.fillRect(0, hy, width, 1);
+          } else {
+            for (let dx = 0; dx < width; dx += 12) ctx.fillRect(dx, hy, 7, 1);
+          }
+        });
+        const floorCols = [-20, 10, 40, 70, 100, 130, 160, 190];
+        floorCols.forEach(cx => {
+          ctx.beginPath();
+          ctx.moveTo(cx, 60);
+          ctx.lineTo(cx + (cx - 80) * 0.8, 144);
+          ctx.strokeStyle = '#5e101a';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+        // Podiums with dripping glitch blood edges
+        ctx.fillStyle = '#540d1a'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#2a040d'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#ff0055'; ctx.fillRect(96, 56, 54, 2);
+        // Blood drips from enemy platform
+        ctx.fillRect(104, 58, 2, 4);
+        ctx.fillRect(122, 58, 2, 5);
+        ctx.fillRect(138, 58, 2, 3);
+        // Player platform corrupted
+        ctx.fillStyle = '#421017'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#20080c'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#e03c3c'; ctx.fillRect(12, 109, 58, 2);
+      }
+    }
+  },
+
+  // 2. SERVER CORE / MELTDOWN CORE
+  {
+    id: 'server_core',
+    name: 'SERVER CORE',
+    bugmonName: 'MELTDOWN CORE',
+    description: 'Enterprise datacenter server racks / Catastrophic nuclear core meltdown',
+    render: function(ctx, width, height, animTick, isBugmon) {
+      if (!isBugmon) {
+        // Backdrop
+        ctx.fillStyle = '#080e16';
+        ctx.fillRect(0, 0, width, 58);
+        // 4 Server Rack Towers
+        const racks = [6, 42, 78, 118];
+        racks.forEach((rx, idx) => {
+          ctx.fillStyle = '#131e2b';
+          ctx.fillRect(rx, 2, 34, 56);
+          ctx.fillStyle = '#0a1017';
+          ctx.fillRect(rx + 2, 4, 30, 52);
+          // Blades & Blinking LEDs
+          for (let by = 8; by < 52; by += 7) {
+            ctx.fillStyle = '#192635';
+            ctx.fillRect(rx + 4, by, 26, 4);
+            const ledColor = ((animTick + idx * 7 + by) % 40 < 20) ? '#38b764' : '#38bdf8';
+            ctx.fillStyle = ledColor;
+            ctx.fillRect(rx + 6, by + 1, 2, 2);
+            ctx.fillStyle = '#ffb86c';
+            ctx.fillRect(rx + 10, by + 1, 2, 2);
+          }
+        });
+        // Horizon: Industrial Steel with hazard chevrons
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(0, 58, width, 2);
+        for (let hx = 0; hx < width; hx += 16) {
+          ctx.fillStyle = '#facc15';
+          ctx.fillRect(hx, 58, 4, 2);
+        }
+        // Floor: Industrial Tiles
+        ctx.fillStyle = '#0e1620';
+        ctx.fillRect(0, 60, width, 84);
+        ctx.fillStyle = '#1c2838';
+        for (let fy = 66; fy < 144; fy += 12) ctx.fillRect(0, fy, width, 1);
+        for (let fx = 10; fx < 160; fx += 24) ctx.fillRect(fx, 60, 1, 84);
+        // Podiums
+        ctx.fillStyle = '#223242'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#16222e'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#00f0ff'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#223242'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#16222e'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#38bdf8'; ctx.fillRect(12, 109, 58, 2);
+      } else {
+        // Scary Bugmon Variant: MELTDOWN CORE
+        ctx.fillStyle = '#220406';
+        ctx.fillRect(0, 0, width, 58);
+        // Warped burning server racks
+        const racks = [6, 42, 78, 118];
+        racks.forEach((rx) => {
+          ctx.fillStyle = '#36090d';
+          ctx.fillRect(rx, 4, 34, 54);
+          ctx.fillStyle = '#1a0305';
+          ctx.fillRect(rx + 2, 6, 30, 50);
+          // Exposed glowing red-hot coils
+          for (let by = 9; by < 50; by += 8) {
+            ctx.fillStyle = '#ff2200';
+            ctx.fillRect(rx + 4, by, 26, 4);
+            ctx.fillStyle = '#ff8800';
+            ctx.fillRect(rx + 8, by + 1, 16, 2);
+          }
+        });
+        // Pulsing Emergency Strobe Light at top center
+        const strobe = Math.floor(animTick / 10) % 2 === 0;
+        if (strobe) {
+          ctx.fillStyle = '#ff0033';
+          ctx.fillRect(72, 2, 16, 4);
+          ctx.fillStyle = 'rgba(255, 0, 51, 0.2)';
+          ctx.fillRect(0, 0, width, 58);
+        }
+        // Floating spark particles
+        ctx.fillStyle = '#ffcc00';
+        for (let sp = 0; sp < 6; sp++) {
+          const sx = (sp * 27 + animTick * 2) % width;
+          const sy = (56 - (animTick * 2.5 + sp * 9) % 52);
+          ctx.fillRect(sx, sy, 2, 2);
+        }
+        // Horizon: Molten dripping metal
+        ctx.fillStyle = '#ff3300';
+        ctx.fillRect(0, 58, width, 2);
+        ctx.fillStyle = '#ff8800';
+        ctx.fillRect(20, 58, 120, 1);
+        // Floor: Charred cracked magma ground
+        ctx.fillStyle = '#170305';
+        ctx.fillRect(0, 60, width, 84);
+        ctx.fillStyle = '#420a0e';
+        for (let fy = 66; fy < 144; fy += 14) ctx.fillRect(0, fy, width, 1);
+        // Magma fissures
+        ctx.strokeStyle = '#ff2200';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(10, 68); ctx.lineTo(40, 92); ctx.lineTo(30, 140);
+        ctx.moveTo(90, 62); ctx.lineTo(120, 98); ctx.lineTo(145, 135);
+        ctx.stroke();
+        // Podiums
+        ctx.fillStyle = '#4a0d11'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#240407'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#ff2a00'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#380a0e'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#1c0407'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#ff5500'; ctx.fillRect(12, 109, 58, 2);
+      }
+    }
+  },
+
+  // 3. NEON SKYLINE / BLOOD MOON METROPOLIS
+  {
+    id: 'neon_skyline',
+    name: 'NEON SKYLINE',
+    bugmonName: 'BLOOD MOON METROPOLIS',
+    description: 'Synthwave cyberpunk metropolis / Cursed Blood Moon eclipse',
+    render: function(ctx, width, height, animTick, isBugmon) {
+      if (!isBugmon) {
+        // Twilight Synthwave Sky
+        ctx.fillStyle = '#0a0b1e';
+        ctx.fillRect(0, 0, width, 30);
+        ctx.fillStyle = '#1e0e33';
+        ctx.fillRect(0, 30, width, 28);
+        // Synthwave Sun on horizon
+        ctx.fillStyle = '#ff007f';
+        ctx.beginPath();
+        ctx.arc(80, 58, 20, Math.PI, 0, false);
+        ctx.fill();
+        ctx.fillStyle = '#ffbe0b';
+        ctx.beginPath();
+        ctx.arc(80, 58, 14, Math.PI, 0, false);
+        ctx.fill();
+        // Sun horizontal laser cutouts
+        ctx.fillStyle = '#1e0e33';
+        ctx.fillRect(60, 48, 40, 1);
+        ctx.fillRect(63, 52, 34, 1);
+        ctx.fillRect(65, 55, 30, 1);
+        // Skyscrapers
+        const towers = [
+          { x: 4, w: 18, h: 36 },
+          { x: 26, w: 16, h: 48 },
+          { x: 46, w: 14, h: 32 },
+          { x: 104, w: 16, h: 42 },
+          { x: 124, w: 20, h: 50 },
+          { x: 148, w: 12, h: 34 }
+        ];
+        towers.forEach(t => {
+          ctx.fillStyle = '#120722';
+          ctx.fillRect(t.x, 58 - t.h, t.w, t.h);
+          ctx.fillStyle = '#ff007f';
+          ctx.fillRect(t.x, 58 - t.h, t.w, 1);
+          // Windows
+          for (let wy = 58 - t.h + 4; wy < 56; wy += 5) {
+            ctx.fillStyle = (wy % 10 === 0) ? '#38bdf8' : '#facc15';
+            ctx.fillRect(t.x + 3, wy, 2, 2);
+            ctx.fillRect(t.x + t.w - 5, wy, 2, 2);
+          }
+        });
+        // Horizon: Neon purple
+        ctx.fillStyle = '#a239ca';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: Synthwave Grid
+        ctx.fillStyle = '#130620';
+        ctx.fillRect(0, 60, width, 84);
+        const horizLines = [64, 71, 80, 91, 104, 120, 138];
+        ctx.fillStyle = '#ff007f';
+        horizLines.forEach(hy => ctx.fillRect(0, hy, width, 1));
+        const floorCols = [-20, 10, 40, 70, 100, 130, 160, 190];
+        floorCols.forEach(cx => {
+          ctx.beginPath();
+          ctx.moveTo(cx, 60);
+          ctx.lineTo(cx + (cx - 80) * 0.8, 144);
+          ctx.strokeStyle = '#a239ca';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+        // Podiums
+        ctx.fillStyle = '#2c0e42'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#190629'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#ff007f'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#2c0e42'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#190629'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#00f3ff'; ctx.fillRect(12, 109, 58, 2);
+      } else {
+        // Scary Bugmon Variant: BLOOD MOON METROPOLIS
+        ctx.fillStyle = '#0a0104';
+        ctx.fillRect(0, 0, width, 58);
+        // Blood Moon with evil slit pupil
+        ctx.fillStyle = '#b3001e';
+        ctx.beginPath();
+        ctx.arc(80, 26, 16, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ff1144';
+        ctx.beginPath();
+        ctx.arc(80, 26, 12, 0, Math.PI * 2);
+        ctx.fill();
+        // Demonic Slit Pupil
+        const pupilWidth = 2 + Math.sin(animTick * 0.1);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(80 - pupilWidth / 2, 16, pupilWidth, 20);
+        // Blood Rain streaks
+        ctx.fillStyle = '#ff0033';
+        for (let r = 0; r < 8; r++) {
+          const rx = (r * 21 + animTick * 2) % width;
+          const ry = (animTick * 3 + r * 13) % 56;
+          ctx.fillRect(rx, ry, 1, 4);
+        }
+        // Blackened ruined skyscrapers with glowing red evil eyes
+        const towers = [
+          { x: 4, w: 18, h: 36 },
+          { x: 26, w: 16, h: 48 },
+          { x: 46, w: 14, h: 32 },
+          { x: 104, w: 16, h: 42 },
+          { x: 124, w: 20, h: 50 },
+          { x: 148, w: 12, h: 34 }
+        ];
+        towers.forEach(t => {
+          ctx.fillStyle = '#140306';
+          ctx.fillRect(t.x, 58 - t.h, t.w, t.h);
+          // Glowing red eye pair
+          ctx.fillStyle = '#ff0033';
+          ctx.fillRect(t.x + 4, 58 - t.h + 8, 2, 2);
+          ctx.fillRect(t.x + 8, 58 - t.h + 8, 2, 2);
+        });
+        // Horizon: Blood red
+        ctx.fillStyle = '#7a0014';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: Bleeding Obsidian
+        ctx.fillStyle = '#140206';
+        ctx.fillRect(0, 60, width, 84);
+        const horizLines = [64, 71, 80, 91, 104, 120, 138];
+        ctx.fillStyle = '#800a16';
+        horizLines.forEach(hy => ctx.fillRect(0, hy, width, 1));
+        const floorCols = [-20, 10, 40, 70, 100, 130, 160, 190];
+        floorCols.forEach(cx => {
+          ctx.beginPath();
+          ctx.moveTo(cx, 60);
+          ctx.lineTo(cx + (cx - 80) * 0.8, 144);
+          ctx.strokeStyle = '#800a16';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+        // Podiums
+        ctx.fillStyle = '#420812'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#210307'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#ff0033'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#38060f'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#1c0206'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#e03c3c'; ctx.fillRect(12, 109, 58, 2);
+      }
+    }
+  },
+
+  // 4. CIRCUIT MOTHERBOARD / BURNT SILICON
+  {
+    id: 'motherboard',
+    name: 'CIRCUIT MOTHERBOARD',
+    bugmonName: 'BURNT SILICON',
+    description: 'Emerald PCB copper traces / Fried short-circuit silicon disaster',
+    render: function(ctx, width, height, animTick, isBugmon) {
+      if (!isBugmon) {
+        // PCB Emerald Green Backdrop
+        ctx.fillStyle = '#061e14';
+        ctx.fillRect(0, 0, width, 58);
+        // Copper circuit tracks
+        ctx.strokeStyle = '#c59b27';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, 16); ctx.lineTo(35, 16); ctx.lineTo(55, 36); ctx.lineTo(95, 36);
+        ctx.moveTo(160, 12); ctx.lineTo(130, 12); ctx.lineTo(110, 32); ctx.lineTo(80, 32);
+        ctx.moveTo(40, 0); ctx.lineTo(40, 20); ctx.lineTo(60, 40); ctx.lineTo(60, 58);
+        ctx.stroke();
+        // Solder vias (gold pads)
+        const vias = [[35, 16], [55, 36], [130, 12], [110, 32], [60, 40]];
+        vias.forEach(v => {
+          ctx.fillStyle = '#e6b800';
+          ctx.fillRect(v[0] - 1, v[1] - 1, 3, 3);
+          ctx.fillStyle = '#061e14';
+          ctx.fillRect(v[0], v[1], 1, 1);
+        });
+        // IC Surface-Mount Chips
+        ctx.fillStyle = '#153828';
+        ctx.fillRect(10, 24, 18, 14);
+        ctx.fillRect(130, 20, 20, 16);
+        ctx.fillStyle = '#94a3b8';
+        for (let px = 12; px < 26; px += 4) {
+          ctx.fillRect(px, 22, 2, 2);
+          ctx.fillRect(px, 38, 2, 2);
+        }
+        // Glowing data packet moving on trace
+        const packetX = Math.floor((animTick * 1.5) % 95);
+        ctx.fillStyle = '#38b764';
+        ctx.fillRect(packetX, (packetX < 35) ? 15 : (packetX < 55) ? 15 + (packetX - 35) : 35, 3, 3);
+        // Horizon: Gold Edge Connector Bus
+        ctx.fillStyle = '#c59b27';
+        ctx.fillRect(0, 58, width, 2);
+        for (let ex = 4; ex < width; ex += 8) {
+          ctx.fillStyle = '#e6b800';
+          ctx.fillRect(ex, 58, 4, 2);
+        }
+        // Floor: PCB Substrate with ground plane
+        ctx.fillStyle = '#041710';
+        ctx.fillRect(0, 60, width, 84);
+        ctx.strokeStyle = '#184e36';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let gx = 12; gx < width; gx += 20) {
+          ctx.moveTo(gx, 60); ctx.lineTo(gx, 144);
+        }
+        ctx.stroke();
+        // Podiums
+        ctx.fillStyle = '#0c3826'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#062418'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#e6b800'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#0c3826'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#062418'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#28c76f'; ctx.fillRect(12, 109, 58, 2);
+      } else {
+        // Scary Bugmon Variant: BURNT SILICON
+        ctx.fillStyle = '#140805';
+        ctx.fillRect(0, 0, width, 58);
+        // Melted severed traces glowing molten orange
+        ctx.strokeStyle = '#ff4400';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 16); ctx.lineTo(30, 16);
+        ctx.moveTo(60, 36); ctx.lineTo(95, 36);
+        ctx.moveTo(160, 12); ctx.lineTo(135, 12);
+        ctx.stroke();
+        // Electric Sparks snapping at gap
+        if (Math.floor(animTick / 6) % 2 === 0) {
+          ctx.strokeStyle = '#cc44ff';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(30, 16); ctx.lineTo(45, 26); ctx.lineTo(60, 36);
+          ctx.stroke();
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(44, 25, 3, 3);
+        }
+        // Scorched blown chips
+        ctx.fillStyle = '#2b1009';
+        ctx.fillRect(10, 24, 18, 14);
+        ctx.fillRect(130, 20, 20, 16);
+        ctx.fillStyle = '#ff2200';
+        ctx.fillRect(16, 28, 6, 6);
+        // Horizon: Molten solder
+        ctx.fillStyle = '#ff3300';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: Charred blackened substrate
+        ctx.fillStyle = '#100504';
+        ctx.fillRect(0, 60, width, 84);
+        ctx.strokeStyle = '#42140c';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let gx = 12; gx < width; gx += 20) {
+          ctx.moveTo(gx, 60); ctx.lineTo(gx, 144);
+        }
+        ctx.stroke();
+        // Molten cracks
+        ctx.strokeStyle = '#ff5500';
+        ctx.beginPath();
+        ctx.moveTo(25, 75); ctx.lineTo(55, 110);
+        ctx.moveTo(115, 68); ctx.lineTo(135, 95); ctx.lineTo(125, 130);
+        ctx.stroke();
+        // Podiums
+        ctx.fillStyle = '#3d120a'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#1f0804'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#ff4500'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#301009'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#170604'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#ff7700'; ctx.fillRect(12, 109, 58, 2);
+      }
+    }
+  },
+
+  // 5. DEEP TERMINAL / KERNEL PANIC VOID
+  {
+    id: 'deep_terminal',
+    name: 'DEEP TERMINAL',
+    bugmonName: 'KERNEL PANIC VOID',
+    description: 'Amber phosphor CRT hacker terminal / Fatal Kernel Panic crash void',
+    render: function(ctx, width, height, animTick, isBugmon) {
+      if (!isBugmon) {
+        // Amber phosphor CRT Screen
+        ctx.fillStyle = '#0f0c05';
+        ctx.fillRect(0, 0, width, 58);
+        // Amber CRT Scanlines
+        ctx.fillStyle = '#1c1507';
+        for (let y = 3; y < 58; y += 4) ctx.fillRect(0, y, width, 1);
+        // Cascading Hex & Code stream
+        ctx.font = '7px monospace';
+        ctx.fillStyle = '#92400e';
+        ctx.fillText('0x7F MOV EAX, 1', 8, 12);
+        ctx.fillText('0x80 CMP EDX, 0', 8, 22);
+        ctx.fillText('0x84 JNZ 0x00FF', 8, 32);
+        ctx.fillText('0x88 RET CODE', 8, 42);
+        ctx.fillStyle = '#d97706';
+        ctx.fillText('> SANDBOX_ACTIVE', 80, 18);
+        // Blinking amber cursor
+        if (Math.floor(animTick / 16) % 2 === 0) {
+          ctx.fillStyle = '#f59e0b';
+          ctx.fillRect(152, 18, 4, 7);
+        }
+        // Horizon: Amber Beam
+        ctx.fillStyle = '#d97706';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: Amber raster floor
+        ctx.fillStyle = '#1c1407';
+        ctx.fillRect(0, 60, width, 84);
+        const horizLines = [64, 71, 80, 91, 104, 120, 138];
+        ctx.fillStyle = '#b45309';
+        horizLines.forEach(hy => ctx.fillRect(0, hy, width, 1));
+        const floorCols = [-20, 10, 40, 70, 100, 130, 160, 190];
+        floorCols.forEach(cx => {
+          ctx.beginPath();
+          ctx.moveTo(cx, 60); ctx.lineTo(cx + (cx - 80) * 0.8, 144);
+          ctx.strokeStyle = '#78350f';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+        // Podiums
+        ctx.fillStyle = '#362208'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#1e1304'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#f59e0b'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#362208'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#1e1304'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#fbbf24'; ctx.fillRect(12, 109, 58, 2);
+      } else {
+        // Scary Bugmon Variant: KERNEL PANIC VOID
+        ctx.fillStyle = '#060102';
+        ctx.fillRect(0, 0, width, 58);
+        // Glitching red scanlines with jitter
+        ctx.fillStyle = '#3b060d';
+        for (let y = 3; y < 58; y += 4) {
+          const jx = Math.floor(Math.sin(animTick * 0.3 + y) * 4);
+          ctx.fillRect(jx, y, width, 1);
+        }
+        // Panic text crash dump
+        ctx.font = '7px monospace';
+        ctx.fillStyle = '#ef4444';
+        ctx.fillText('⚠ KERNEL PANIC ⚠', 12, 12);
+        ctx.fillText('FATAL TRAP 12: 0xDEAD', 12, 22);
+        ctx.fillText('MEMORY PURGATORY DUMP', 12, 32);
+        ctx.fillStyle = '#ff0033';
+        ctx.fillText('SYSTEM HALTED: BUGMON', 12, 44);
+        // Horizon: Broken red fracture
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: Corrupted red raster
+        ctx.fillStyle = '#140205';
+        ctx.fillRect(0, 60, width, 84);
+        const horizLines = [64, 71, 80, 91, 104, 120, 138];
+        ctx.fillStyle = '#7f1d1d';
+        horizLines.forEach(hy => ctx.fillRect(0, hy, width, 1));
+        const floorCols = [-20, 10, 40, 70, 100, 130, 160, 190];
+        floorCols.forEach(cx => {
+          ctx.beginPath();
+          ctx.moveTo(cx, 60); ctx.lineTo(cx + (cx - 80) * 0.8, 144);
+          ctx.strokeStyle = '#5e101a';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+        // Podiums
+        ctx.fillStyle = '#3d080e'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#1f0307'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#ff0055'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#30080e'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#180306'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#ef4444'; ctx.fillRect(12, 109, 58, 2);
+      }
+    }
+  },
+
+  // 6. DATABASE VAULT / CORRUPTED VAULT
+  {
+    id: 'database_vault',
+    name: 'DATABASE VAULT',
+    bugmonName: 'CORRUPTED VAULT',
+    description: 'SQL storage silos / Malicious SQL injection corruption breach',
+    render: function(ctx, width, height, animTick, isBugmon) {
+      if (!isBugmon) {
+        // Vault Chamber
+        ctx.fillStyle = '#06111e';
+        ctx.fillRect(0, 0, width, 58);
+        // 3 Cylindrical Storage Silos
+        const silos = [14, 64, 114];
+        silos.forEach(sx => {
+          ctx.fillStyle = '#13283f';
+          ctx.fillRect(sx, 4, 32, 52);
+          ctx.fillStyle = '#0b1928';
+          ctx.fillRect(sx + 3, 6, 26, 48);
+          // Glowing storage rings
+          ctx.fillStyle = '#0ea5e9';
+          ctx.fillRect(sx + 5, 14, 22, 2);
+          ctx.fillRect(sx + 5, 28, 22, 2);
+          ctx.fillRect(sx + 5, 42, 22, 2);
+        });
+        // Horizon: Bulkhead Girder
+        ctx.fillStyle = '#1e3a5f';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: Relational Hex Grid
+        ctx.fillStyle = '#0a1829';
+        ctx.fillRect(0, 60, width, 84);
+        ctx.strokeStyle = '#1e40af';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let fy = 66; fy < 144; fy += 14) {
+          ctx.moveTo(0, fy); ctx.lineTo(width, fy);
+        }
+        for (let fx = 15; fx < width; fx += 26) {
+          ctx.moveTo(fx, 60); ctx.lineTo(fx, 144);
+        }
+        ctx.stroke();
+        // Podiums
+        ctx.fillStyle = '#142f4d'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#0b1d30'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#38bdf8'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#142f4d'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#0b1d30'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#10b981'; ctx.fillRect(12, 109, 58, 2);
+      } else {
+        // Scary Bugmon Variant: CORRUPTED VAULT
+        ctx.fillStyle = '#14031f';
+        ctx.fillRect(0, 0, width, 58);
+        // Ruptured Silos leaking purple ooze
+        const silos = [14, 64, 114];
+        silos.forEach((sx, idx) => {
+          ctx.fillStyle = '#29073e';
+          ctx.fillRect(sx, 4, 32, 52);
+          ctx.fillStyle = '#13021f';
+          ctx.fillRect(sx + 3, 6, 26, 48);
+          // Cracked ruptured rings
+          ctx.fillStyle = '#c084fc';
+          ctx.fillRect(sx + 5, 14, 10, 2);
+          ctx.fillRect(sx + 18, 15, 9, 2);
+          // Purple ooze dripping down
+          ctx.fillStyle = '#9333ea';
+          ctx.fillRect(sx + 14, 18, 4, 20 + idx * 6);
+        });
+        // Floating SQL Corruption Warnings
+        ctx.font = '7px monospace';
+        ctx.fillStyle = '#e879f9';
+        ctx.fillText('DROP TABLE *', 24, 10);
+        ctx.fillText('CORRUPT PAGE', 92, 10);
+        // Horizon: Corroded toxic purple girder
+        ctx.fillStyle = '#581c87';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: Toxic Sludge Pool
+        ctx.fillStyle = '#180424';
+        ctx.fillRect(0, 60, width, 84);
+        ctx.strokeStyle = '#6b21a8';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let fy = 66; fy < 144; fy += 14) {
+          ctx.moveTo(0, fy); ctx.lineTo(width, fy);
+        }
+        ctx.stroke();
+        // Bubbling purple toxic hazard puddles
+        ctx.fillStyle = '#a855f7';
+        ctx.fillRect(25, 80, 24, 6);
+        ctx.fillRect(105, 105, 30, 8);
+        // Podiums
+        ctx.fillStyle = '#3b0b52'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#1a0424'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#d946ef'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#2a083a'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#14031d'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#c084fc'; ctx.fillRect(12, 109, 58, 2);
+      }
+    }
+  },
+
+  // 7. CLOUD CLUSTER / STORM OVERFLOW
+  {
+    id: 'cloud_tempest',
+    name: 'CLOUD CLUSTER',
+    bugmonName: 'STORM OVERFLOW',
+    description: 'Digital cloud datacenter / Demonic atmospheric tempest with lightning',
+    render: function(ctx, width, height, animTick, isBugmon) {
+      if (!isBugmon) {
+        // High Altitude Sky
+        ctx.fillStyle = '#071424';
+        ctx.fillRect(0, 0, width, 58);
+        // Layered Drifting Clouds
+        const cloudShift = Math.floor(animTick * 0.4) % 160;
+        ctx.fillStyle = '#0f2742';
+        ctx.beginPath();
+        ctx.arc((cloudShift + 20) % 180 - 10, 24, 18, 0, Math.PI * 2);
+        ctx.arc((cloudShift + 50) % 180 - 10, 20, 24, 0, Math.PI * 2);
+        ctx.arc((cloudShift + 85) % 180 - 10, 26, 20, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#1a3e63';
+        ctx.beginPath();
+        ctx.arc((cloudShift + 120) % 180 - 10, 32, 22, 0, Math.PI * 2);
+        ctx.arc((cloudShift + 155) % 180 - 10, 28, 26, 0, Math.PI * 2);
+        ctx.fill();
+        // Cyan cloud illumination pulse
+        if (animTick % 80 < 8) {
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+          ctx.fillRect(0, 0, width, 58);
+        }
+        // Horizon: Cloud Bank line
+        ctx.fillStyle = '#25527a';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: Aerodynamic Stratosphere Deck
+        ctx.fillStyle = '#0c1f33';
+        ctx.fillRect(0, 60, width, 84);
+        const horizLines = [64, 71, 80, 91, 104, 120, 138];
+        ctx.fillStyle = '#1e4875';
+        horizLines.forEach(hy => ctx.fillRect(0, hy, width, 1));
+        const floorCols = [-20, 10, 40, 70, 100, 130, 160, 190];
+        floorCols.forEach(cx => {
+          ctx.beginPath();
+          ctx.moveTo(cx, 60); ctx.lineTo(cx + (cx - 80) * 0.8, 144);
+          ctx.strokeStyle = '#1e4875';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+        // Podiums
+        ctx.fillStyle = '#183c61'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#0d2238'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#00f0ff'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#183c61'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#0d2238'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#38bdf8'; ctx.fillRect(12, 109, 58, 2);
+      } else {
+        // Scary Bugmon Variant: STORM OVERFLOW
+        ctx.fillStyle = '#0f0217';
+        ctx.fillRect(0, 0, width, 58);
+        // Turbulent Dark Violet Storm Clouds
+        ctx.fillStyle = '#250533';
+        ctx.beginPath();
+        ctx.arc(35, 24, 26, 0, Math.PI * 2);
+        ctx.arc(85, 18, 32, 0, Math.PI * 2);
+        ctx.arc(135, 24, 28, 0, Math.PI * 2);
+        ctx.fill();
+        // Sinister Glowing Red Eyes hiding in storm clouds
+        ctx.fillStyle = '#ff0033';
+        ctx.fillRect(36, 18, 2, 2); ctx.fillRect(41, 18, 2, 2);
+        ctx.fillRect(126, 22, 2, 2); ctx.fillRect(131, 22, 2, 2);
+        // Violent Lightning Strike
+        const isLightning = (animTick % 36 < 6);
+        if (isLightning) {
+          ctx.strokeStyle = '#ff0055';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(85, 0); ctx.lineTo(75, 22); ctx.lineTo(92, 28); ctx.lineTo(82, 58);
+          ctx.stroke();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(86, 0); ctx.lineTo(76, 22); ctx.lineTo(93, 28); ctx.lineTo(83, 58);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(255, 0, 85, 0.2)';
+          ctx.fillRect(0, 0, width, height);
+        }
+        // Torrential Digital Rain
+        ctx.fillStyle = '#7a1239';
+        for (let r = 0; r < 7; r++) {
+          const rx = (r * 24 + animTick * 3) % width;
+          const ry = (animTick * 4 + r * 11) % 56;
+          ctx.fillRect(rx, ry, 1, 5);
+        }
+        // Horizon: Thunderhead Rim
+        ctx.fillStyle = '#6b0f85';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: Electric Abyss Floor
+        ctx.fillStyle = '#160421';
+        ctx.fillRect(0, 60, width, 84);
+        const horizLines = [64, 71, 80, 91, 104, 120, 138];
+        ctx.fillStyle = '#4c0e63';
+        horizLines.forEach(hy => ctx.fillRect(0, hy, width, 1));
+        // Crackling lightning lines on floor
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(40, 62); ctx.lineTo(55, 95); ctx.lineTo(70, 140);
+        ctx.stroke();
+        // Podiums
+        ctx.fillStyle = '#3a0847'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#1b0321'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#ff0055'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#290633'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#140219'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#d946ef'; ctx.fillRect(12, 109, 58, 2);
+      }
+    }
+  },
+
+  // 8. RAM LABORATORY / OUT OF MEMORY HORROR
+  {
+    id: 'ram_buffer',
+    name: 'RAM LABORATORY',
+    bugmonName: 'OUT OF MEMORY HORROR',
+    description: 'Cleanroom memory registers / Biological heap overflow infection',
+    render: function(ctx, width, height, animTick, isBugmon) {
+      if (!isBugmon) {
+        // Sterile Cleanroom Backdrop
+        ctx.fillStyle = '#06171a';
+        ctx.fillRect(0, 0, width, 58);
+        // Memory Address Register Blocks
+        const blocks = [
+          { x: 8, label: '0x00' },
+          { x: 38, label: '0x20' },
+          { x: 68, label: '0x40' },
+          { x: 98, label: '0x80' },
+          { x: 128, label: '0xC0' }
+        ];
+        blocks.forEach((b, idx) => {
+          ctx.fillStyle = '#0e3036';
+          ctx.fillRect(b.x, 12, 24, 30);
+          ctx.fillStyle = '#071f24';
+          ctx.fillRect(b.x + 2, 14, 20, 26);
+          ctx.font = '6px monospace';
+          ctx.fillStyle = '#14b8a6';
+          ctx.fillText(b.label, b.x + 4, 18);
+          // Byte grid dots
+          ctx.fillStyle = ((animTick + idx * 8) % 30 < 15) ? '#2dd4bf' : '#0f766e';
+          ctx.fillRect(b.x + 6, 28, 4, 4);
+          ctx.fillRect(b.x + 14, 28, 4, 4);
+        });
+        // Laser memory pointer scanning
+        const scanX = Math.floor((animTick * 1.6) % 144) + 8;
+        ctx.fillStyle = '#2dd4bf';
+        ctx.fillRect(scanX, 8, 2, 38);
+        // Horizon: Holographic alignment rail
+        ctx.fillStyle = '#15545e';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: Alternating Byte Allocation strips
+        ctx.fillStyle = '#0a2226';
+        ctx.fillRect(0, 60, width, 84);
+        ctx.fillStyle = '#0e3036';
+        for (let fx = 0; fx < width; fx += 32) ctx.fillRect(fx, 60, 16, 84);
+        ctx.fillStyle = '#14565e';
+        const horizLines = [64, 71, 80, 91, 104, 120, 138];
+        horizLines.forEach(hy => ctx.fillRect(0, hy, width, 1));
+        // Podiums
+        ctx.fillStyle = '#134047'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#0a2429'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#10b981'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#134047'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#0a2429'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#06b6d4'; ctx.fillRect(12, 109, 58, 2);
+      } else {
+        // Scary Bugmon Variant: OUT OF MEMORY HORROR
+        ctx.fillStyle = '#1c0409';
+        ctx.fillRect(0, 0, width, 58);
+        // Mutated infected memory registers bursting with tendrils
+        const blocks = [8, 38, 68, 98, 128];
+        blocks.forEach((bx, idx) => {
+          ctx.fillStyle = '#3d0812';
+          ctx.fillRect(bx, 12, 24, 30);
+          ctx.fillStyle = '#21040a';
+          ctx.fillRect(bx + 2, 14, 20, 26);
+          // Pulsing mutated evil eye inside the memory cell
+          ctx.fillStyle = '#ff0033';
+          ctx.fillRect(bx + 8, 22, 8, 8);
+          ctx.fillStyle = '#000000';
+          const pOff = (idx % 2 === 0) ? 2 : 4;
+          ctx.fillRect(bx + 8 + pOff, 24, 2, 4);
+        });
+        // Fleshy red tendrils crawling across the walls
+        ctx.strokeStyle = '#a3152f';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 42); ctx.lineTo(35, 36); ctx.lineTo(60, 48); ctx.lineTo(110, 38); ctx.lineTo(160, 46);
+        ctx.stroke();
+        // OOM Killer Warning Banner
+        ctx.font = '7px monospace';
+        ctx.fillStyle = '#ff1744';
+        ctx.fillText('⚠ OOM KILLER: HEAP CORRUPT ⚠', 16, 6);
+        // Horizon: Organic flesh ridge
+        ctx.fillStyle = '#6b0c1b';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: Black bile swamp floor
+        ctx.fillStyle = '#140307';
+        ctx.fillRect(0, 60, width, 84);
+        ctx.fillStyle = '#420a14';
+        const horizLines = [64, 71, 80, 91, 104, 120, 138];
+        horizLines.forEach(hy => ctx.fillRect(0, hy, width, 1));
+        // Writhing red tendrils on floor
+        ctx.strokeStyle = '#ff0055';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(15, 68); ctx.lineTo(40, 105); ctx.lineTo(30, 135);
+        ctx.moveTo(100, 72); ctx.lineTo(125, 115);
+        ctx.stroke();
+        // Podiums
+        ctx.fillStyle = '#450912'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#240409'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#ff0033'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#ff2255';
+        ctx.fillRect(94, 54, 3, 2); ctx.fillRect(146, 54, 3, 2);
+        ctx.fillStyle = '#2e070d'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#180306'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#ef4444'; ctx.fillRect(12, 109, 58, 2);
+      }
+    }
+  },
+
+  // 9. FIBER HIGHWAY / DDOS MAELSTROM
+  {
+    id: 'fiber_highway',
+    name: 'FIBER HIGHWAY',
+    bugmonName: 'DDOS MAELSTROM',
+    description: 'High-speed fiber optic data tunnel / DDoS packet flood singularity',
+    render: function(ctx, width, height, animTick, isBugmon) {
+      if (!isBugmon) {
+        // Deep Tunnel Perspective
+        ctx.fillStyle = '#041119';
+        ctx.fillRect(0, 0, width, 58);
+        // Concentric Optical Tunnel Rings
+        const rings = [10, 22, 38, 56];
+        rings.forEach(r => {
+          ctx.strokeStyle = '#0c2b3d';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(80, 42, r, Math.PI, 0, false);
+          ctx.stroke();
+        });
+        // Core Photon Gateway at center
+        ctx.fillStyle = '#0284c7';
+        ctx.beginPath();
+        ctx.arc(80, 42, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(80, 42, 3, 0, Math.PI * 2);
+        ctx.fill();
+        // Zipping light packet streaks along tunnel walls
+        ctx.fillStyle = '#facc15';
+        const streakX = (animTick * 3) % 160;
+        ctx.fillRect(streakX, 22, 10, 2);
+        ctx.fillStyle = '#00f0ff';
+        const streakX2 = 160 - ((animTick * 3.5) % 160);
+        ctx.fillRect(streakX2, 34, 8, 2);
+        // Horizon: Gateway Ring
+        ctx.fillStyle = '#0ea5e9';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: High Speed Optical Speedway
+        ctx.fillStyle = '#081d29';
+        ctx.fillRect(0, 60, width, 84);
+        const horizLines = [64, 71, 80, 91, 104, 120, 138];
+        ctx.fillStyle = '#0c384f';
+        horizLines.forEach(hy => ctx.fillRect(0, hy, width, 1));
+        // Optical pulse lines rushing forward
+        const floorCols = [-20, 10, 40, 70, 100, 130, 160, 190];
+        floorCols.forEach(cx => {
+          ctx.beginPath();
+          ctx.moveTo(cx, 60); ctx.lineTo(cx + (cx - 80) * 0.8, 144);
+          ctx.strokeStyle = '#0284c7';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+        // Podiums
+        ctx.fillStyle = '#0f3a4d'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#09232e'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#38bdf8'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#0c2f3f'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#071d26'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#facc15'; ctx.fillRect(12, 109, 58, 2);
+      } else {
+        // Scary Bugmon Variant: DDOS MAELSTROM
+        ctx.fillStyle = '#1c0307';
+        ctx.fillRect(0, 0, width, 58);
+        // Collapsed Black Hole Singularity at center
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(80, 36, 12, 0, Math.PI * 2);
+        ctx.fill();
+        // Event Horizon Red Aura
+        ctx.strokeStyle = '#ff0033';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(80, 36, 14, 0, Math.PI * 2);
+        ctx.stroke();
+        // Blinding red laser interference bursts
+        ctx.fillStyle = '#ff0033';
+        const burstY = (animTick * 4) % 54;
+        ctx.fillRect(0, burstY, width, 1);
+        ctx.fillStyle = '#ff6600';
+        const burstY2 = (animTick * 5 + 24) % 54;
+        ctx.fillRect(0, burstY2, width, 1);
+        // DDOS Warning Stamp
+        ctx.font = '7px monospace';
+        ctx.fillStyle = '#ff1744';
+        ctx.fillText('⚠ DDOS MAELSTROM: 99.9% LOSS ⚠', 10, 8);
+        // Horizon: Red Event Horizon Rim
+        ctx.fillStyle = '#ff0033';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: Scorched Optical Speedway
+        ctx.fillStyle = '#190408';
+        ctx.fillRect(0, 60, width, 84);
+        const horizLines = [64, 71, 80, 91, 104, 120, 138];
+        ctx.fillStyle = '#5c0f1e';
+        horizLines.forEach(hy => ctx.fillRect(0, hy, width, 1));
+        const floorCols = [-20, 10, 40, 70, 100, 130, 160, 190];
+        floorCols.forEach(cx => {
+          ctx.beginPath();
+          ctx.moveTo(cx, 60); ctx.lineTo(cx + (cx - 80) * 0.8, 144);
+          ctx.strokeStyle = '#e11d48';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+        // Podiums
+        ctx.fillStyle = '#470a12'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#260408'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#ff1744'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#31070d'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#1a0306'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#ef4444'; ctx.fillRect(12, 109, 58, 2);
+      }
+    }
+  },
+
+  // 10. LEGACY MAINFRAME / FORGOTTEN COBOL CRYPT
+  {
+    id: 'legacy_grave',
+    name: 'LEGACY MAINFRAME',
+    bugmonName: 'FORGOTTEN COBOL CRYPT',
+    description: '1970s magnetic tape mainframe / Cursed crypt of dead programming languages',
+    render: function(ctx, width, height, animTick, isBugmon) {
+      if (!isBugmon) {
+        // Vintage 1970s Industrial Sepia Room
+        ctx.fillStyle = '#141210';
+        ctx.fillRect(0, 0, width, 58);
+        // 2 Huge Magnetic Tape Drive Cabinets
+        const tapeCabinets = [14, 104];
+        tapeCabinets.forEach(tcx => {
+          ctx.fillStyle = '#2e2822';
+          ctx.fillRect(tcx, 6, 42, 50);
+          ctx.fillStyle = '#1c1814';
+          ctx.fillRect(tcx + 2, 8, 38, 46);
+          // Two Spinning Reels per cabinet
+          const reelAngle = (animTick * 0.15);
+          [tcx + 12, tcx + 30].forEach((rx, ridx) => {
+            ctx.fillStyle = '#d4ceb8';
+            ctx.beginPath();
+            ctx.arc(rx, 22, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#1c1814';
+            ctx.beginPath();
+            ctx.arc(rx, 22, 3, 0, Math.PI * 2);
+            ctx.fill();
+            // Reel spoke
+            const sx = Math.cos(reelAngle + ridx) * 6;
+            const sy = Math.sin(reelAngle + ridx) * 6;
+            ctx.fillStyle = '#544c42';
+            ctx.fillRect(rx + sx - 1, 22 + sy - 1, 2, 2);
+          });
+          // Tape ribbon slot
+          ctx.fillStyle = '#e5e0cf';
+          ctx.fillRect(tcx + 10, 34, 22, 2);
+        });
+        // Warm glowing vacuum tube filaments in center
+        ctx.fillStyle = '#2a221b';
+        ctx.fillRect(66, 16, 28, 32);
+        ctx.fillStyle = '#ea580c';
+        ctx.fillRect(72, 24, 4, 16);
+        ctx.fillRect(84, 24, 4, 16);
+        ctx.fillStyle = '#fde047';
+        ctx.fillRect(73, 28, 2, 8);
+        ctx.fillRect(85, 28, 2, 8);
+        // Horizon: Rusted iron girder
+        ctx.fillStyle = '#3d352e';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: Riveted steel tile floor
+        ctx.fillStyle = '#1c1916';
+        ctx.fillRect(0, 60, width, 84);
+        ctx.strokeStyle = '#786047';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let fy = 66; fy < 144; fy += 14) {
+          ctx.moveTo(0, fy); ctx.lineTo(width, fy);
+        }
+        for (let fx = 12; fx < width; fx += 24) {
+          ctx.moveTo(fx, 60); ctx.lineTo(fx, 144);
+        }
+        ctx.stroke();
+        // Podiums
+        ctx.fillStyle = '#332b24'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#1f1a15'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#f59e0b'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#29231d'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#181410'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#d97706'; ctx.fillRect(12, 109, 58, 2);
+      } else {
+        // Scary Bugmon Variant: FORGOTTEN COBOL CRYPT
+        ctx.fillStyle = '#0c0d0b';
+        ctx.fillRect(0, 0, width, 58);
+        // Smashed tape drives with torn cobweb ribbons
+        ctx.fillStyle = '#1f1c19';
+        ctx.fillRect(14, 6, 42, 50);
+        ctx.fillRect(104, 6, 42, 50);
+        // Shredded hanging tape ribbons
+        ctx.strokeStyle = '#4a443b';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(26, 26); ctx.lineTo(24, 48); ctx.lineTo(32, 56);
+        ctx.moveTo(116, 26); ctx.lineTo(122, 50); ctx.lineTo(114, 56);
+        ctx.stroke();
+        // Blood-plasma glowing vacuum tubes
+        ctx.fillStyle = '#22080d';
+        ctx.fillRect(66, 16, 28, 32);
+        ctx.fillStyle = '#ff0033';
+        ctx.fillRect(72, 24, 4, 16);
+        ctx.fillRect(84, 24, 4, 16);
+        // Ancient Programming Language Tombstones
+        ctx.fillStyle = '#3b342e';
+        // Tombstone 1: COBOL
+        ctx.fillRect(20, 28, 18, 28);
+        ctx.fillStyle = '#ef4444';
+        ctx.font = '5px monospace';
+        ctx.fillText('COBOL', 21, 36);
+        // Tombstone 2: FORTRAN
+        ctx.fillStyle = '#3b342e';
+        ctx.fillRect(110, 28, 22, 28);
+        ctx.fillStyle = '#ef4444';
+        ctx.fillText('FORTRAN', 111, 36);
+        // Horizon: Ancient stone crypt altar
+        ctx.fillStyle = '#301a20';
+        ctx.fillRect(0, 58, width, 2);
+        // Floor: Decaying Stone Tomb Floor with spectral mist
+        ctx.fillStyle = '#14070a';
+        ctx.fillRect(0, 60, width, 84);
+        ctx.fillStyle = '#2e1219';
+        const horizLines = [64, 71, 80, 91, 104, 120, 138];
+        horizLines.forEach(hy => ctx.fillRect(0, hy, width, 1));
+        // Spectral green & red mist wisps
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.2)';
+        ctx.fillRect(10, 90, 60, 8);
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
+        ctx.fillRect(80, 115, 70, 8);
+        // Podiums
+        ctx.fillStyle = '#3b0e17'; ctx.fillRect(92, 54, 62, 8);
+        ctx.fillStyle = '#1c060a'; ctx.fillRect(94, 55, 58, 6);
+        ctx.fillStyle = '#ff0033'; ctx.fillRect(96, 56, 54, 2);
+        ctx.fillStyle = '#240a10'; ctx.fillRect(8, 106, 66, 12);
+        ctx.fillStyle = '#120407'; ctx.fillRect(10, 108, 62, 8);
+        ctx.fillStyle = '#f43f5e'; ctx.fillRect(12, 109, 58, 2);
+      }
+    }
+  }
+];
+
+function getBackgroundById(id) {
+  return BATTLE_BACKGROUNDS.find(b => b.id === id) || BATTLE_BACKGROUNDS[0];
+}
+
+function setBackground(id) {
+  const bg = getBackgroundById(id);
+  battleVisualState.backgroundId = bg.id;
+  updateArenaDisplay();
+  return bg;
+}
+
+function getNextBackground() {
+  const currentId = battleVisualState.backgroundId || 'cyber_grid';
+  const currentIndex = BATTLE_BACKGROUNDS.findIndex(b => b.id === currentId);
+  const nextIndex = (currentIndex + 1) % BATTLE_BACKGROUNDS.length;
+  const nextBg = BATTLE_BACKGROUNDS[nextIndex];
+  setBackground(nextBg.id);
+  return nextBg;
+}
+
+function getBackgroundForEnemy(enemy) {
+  if (!enemy) return 'cyber_grid';
+  const name = ((enemy.id || '') + ' ' + (enemy.name || enemy.originalName || '')).toLowerCase();
+  if (name.includes('404')) return 'deep_terminal';
+  if (name.includes('500')) return 'server_core';
+  if (name.includes('null_pointer') || name.includes('null pointer')) return 'legacy_grave';
+  if (name.includes('stack_overflow') || name.includes('stack overflow')) return 'cloud_tempest';
+  if (name.includes('syntax')) return 'fiber_highway';
+  if (name.includes('sql')) return 'database_vault';
+  if (name.includes('java')) return 'server_core';
+  if (name.includes('rubi') || name.includes('ruby')) return 'neon_skyline';
+  if (name.includes('pyrawr') || name.includes('python')) return 'motherboard';
+  if (name.includes('cplus') || name.includes('c++')) return 'ram_buffer';
+  if (name.includes('jaskull') || name.includes('javascript')) return 'cyber_grid';
+  return 'cyber_grid';
+}
+
+function updateArenaDisplay() {
+  const displayEl = document.getElementById('arena-name-display');
+  if (!displayEl) return;
+  const bg = getBackgroundById(battleVisualState.backgroundId || 'cyber_grid');
+  const isBugmon = battleVisualState.isBugmon || (typeof window !== 'undefined' && window.gameState && window.gameState.isBugmonBattle);
+  if (isBugmon) {
+    displayEl.textContent = `⚠ ${bg.bugmonName} ⚠`;
+    displayEl.className = 'text-red font-pixel arena-pulsing';
+  } else {
+    displayEl.textContent = `■ ${bg.name} ■`;
+    displayEl.className = 'text-blue font-pixel';
+  }
+}
+
+// ---------------------------------------------------------------------------
 // 8. 160x144 CANVAS BATTLE SCENE RENDERER
 // ---------------------------------------------------------------------------
 function renderBattleScene(ctx, animTick = 0) {
@@ -1000,62 +2218,13 @@ function renderBattleScene(ctx, animTick = 0) {
 
   const isBugmon = battleVisualState.isBugmon || (typeof window !== 'undefined' && window.gameState && window.gameState.isBugmonBattle);
 
-  // 1. Cyber Arena Upper Backdrop (y: 0 to 58)
-  ctx.fillStyle = isBugmon ? '#1a0408' : '#0c1015'; // Dark red tint or --gb-darkest
-  ctx.fillRect(0, 0, width, 58);
-
-  // Matrix horizontal grid scanlines
-  ctx.fillStyle = isBugmon ? '#350810' : '#1b2632'; // --gb-dark
-  for (let y = 6; y < 58; y += 8) {
-    ctx.fillRect(0, y, width, 1);
+  // 1. Render Active Background & Podiums (Backdrop, Floor, Podiums & Scary Bugmon Variants)
+  const activeBg = getBackgroundById(battleVisualState.backgroundId || 'cyber_grid');
+  if (activeBg && typeof activeBg.render === 'function') {
+    activeBg.render(ctx, width, height, animTick, isBugmon);
+  } else if (BATTLE_BACKGROUNDS[0]) {
+    BATTLE_BACKGROUNDS[0].render(ctx, width, height, animTick, isBugmon);
   }
-  // Matrix vertical grid lines
-  for (let x = 16; x < width; x += 24) {
-    ctx.fillRect(x, 0, 1, 58);
-  }
-
-  // Horizon Divider
-  ctx.fillStyle = isBugmon ? '#941e1e' : '#2c3e50'; // --gb-mid
-  ctx.fillRect(0, 58, width, 2);
-
-  // 2. "Code Grid" Perspective Floor (y: 60 to 144)
-  ctx.fillStyle = isBugmon ? '#26050e' : '#1b2632'; // --gb-dark
-  ctx.fillRect(0, 60, width, 84);
-
-  // Perspective horizontal lines (narrower near horizon, wider near bottom)
-  const horizLines = [64, 71, 80, 91, 104, 120, 138];
-  ctx.fillStyle = isBugmon ? '#5e101a' : '#2c3e50';
-  horizLines.forEach((hy) => {
-    ctx.fillRect(0, hy, width, 1);
-  });
-
-  // Perspective angled matrix columns
-  const floorCols = [-20, 10, 40, 70, 100, 130, 160, 190];
-  floorCols.forEach((cx) => {
-    ctx.beginPath();
-    ctx.moveTo(cx, 60);
-    ctx.lineTo(cx + (cx - 80) * 0.8, 144);
-    ctx.strokeStyle = isBugmon ? '#5e101a' : '#2c3e50';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  });
-
-  // 3. Cyber Battle Podiums (Drawn with filled rectangles)
-  // Enemy Platform (Top-Right: x: 92 to 154, y: 52 to 62)
-  ctx.fillStyle = isBugmon ? '#540d1a' : '#2c3e50';
-  ctx.fillRect(92, 54, 62, 8);
-  ctx.fillStyle = isBugmon ? '#2a040d' : '#1b2632';
-  ctx.fillRect(94, 55, 58, 6);
-  ctx.fillStyle = isBugmon ? '#ff0055' : '#38bdf8'; // Glitch red or cyan cyber edge
-  ctx.fillRect(96, 56, 54, 2);
-
-  // Player Platform (Bottom-Left: x: 8 to 74, y: 104 to 118)
-  ctx.fillStyle = '#2c3e50';
-  ctx.fillRect(8, 106, 66, 12);
-  ctx.fillStyle = '#1b2632';
-  ctx.fillRect(10, 108, 62, 8);
-  ctx.fillStyle = '#38b764'; // Green cyber edge
-  ctx.fillRect(12, 109, 58, 2);
 
   // -------------------------------------------------------------------------
   // 4. TOP-LEFT: ENEMY INFO BOX
@@ -1444,6 +2613,7 @@ async function triggerBugmonTransformation() {
     window.gameState.isTransformed = true;
     window.gameState.enemy = enemy;
   }
+  updateArenaDisplay();
 
   // Restore the HP bar to the bugmon's full HP
   const triggerSetHp = window.setHp || setHp;
@@ -1910,7 +3080,15 @@ window.BattleEngine = {
 
   // Renderer & state
   render: renderBattleScene,
-  visualState: battleVisualState
+  visualState: battleVisualState,
+
+  // Arena Backgrounds & Helpers
+  BATTLE_BACKGROUNDS,
+  getBackgroundById,
+  setBackground,
+  getNextBackground,
+  getBackgroundForEnemy,
+  updateArenaDisplay
 };
 
 // Global direct bindings for code panel and external modules
@@ -1930,5 +3108,11 @@ window.handlePlayerCodePartial = handlePlayerCodePartial;
 window.handleTurnTimeout = handleTurnTimeout;
 window.startEnemyTurn = startEnemyTurn;
 window.setCodePanelEnemyTurnUI = setCodePanelEnemyTurnUI;
+window.BATTLE_BACKGROUNDS = BATTLE_BACKGROUNDS;
+window.getBackgroundById = getBackgroundById;
+window.setBackground = setBackground;
+window.getNextBackground = getNextBackground;
+window.getBackgroundForEnemy = getBackgroundForEnemy;
+window.updateArenaDisplay = updateArenaDisplay;
 window.BattleScene = window.BattleEngine;
 

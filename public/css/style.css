@@ -262,8 +262,53 @@ html, body {
 }
 
 .hud-strip-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   font-size: 11px;
   letter-spacing: 0.08em;
+}
+
+#arena-name-display {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  transition: color 0.2s ease;
+}
+
+#btn-switch-arena {
+  font-size: 9px;
+  padding: 3px 6px;
+  background-color: var(--gb-dark);
+  color: var(--gb-cyan);
+  border: 1px solid var(--gb-cyan);
+  box-shadow: 1px 1px 0 var(--gb-darkest);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+#btn-switch-arena:hover {
+  background-color: var(--gb-cyan);
+  color: var(--gb-darkest);
+}
+
+.arena-pulsing {
+  animation: arenaRedPulse 1.2s infinite ease-in-out;
+  color: var(--gb-red) !important;
+  text-shadow: 0 0 6px rgba(255, 0, 85, 0.7);
+}
+
+@keyframes arenaRedPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(0.97);
+  }
 }
 
 /* Battle End Result Overlay (Victory / Defeat / Glitch Transformation) */

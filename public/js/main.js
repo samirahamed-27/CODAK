@@ -2299,6 +2299,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.BattleEngine.visualState.turnsLeft = startingTurns;
     }
 
+    // Set thematic background based on active enemy
+    const setBg = window.setBackground || (window.BattleEngine && window.BattleEngine.setBackground);
+    const getBgForEnemy = window.getBackgroundForEnemy || (window.BattleEngine && window.BattleEngine.getBackgroundForEnemy);
+    if (setBg && getBgForEnemy) {
+      setBg(getBgForEnemy(enemy));
+    }
+
     // Reset battle tint and overlays
     const battleScreen = document.getElementById('screen-battle');
     const canvasFrame = document.getElementById('canvas-frame');
@@ -2365,6 +2372,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (btnStartGame) {
     btnStartGame.addEventListener('click', () => {
       showScreen('select');
+    });
+  }
+
+  // Arena Background Switcher Button
+  const btnSwitchArena = document.getElementById('btn-switch-arena');
+  if (btnSwitchArena) {
+    btnSwitchArena.addEventListener('click', () => {
+      playSound('click');
+      const getNext = window.getNextBackground || (window.BattleEngine && window.BattleEngine.getNextBackground);
+      if (getNext) {
+        const nextBg = getNext();
+        const isBugmon = (window.BattleEngine && window.BattleEngine.visualState && window.BattleEngine.visualState.isBugmon) || (window.gameState && window.gameState.isBugmonBattle);
+        const nameToShow = isBugmon ? nextBg.bugmonName : nextBg.name;
+        appendConsoleLine(`> Arena shifted: ${nameToShow}`, 'console-info');
+      }
     });
   }
 
