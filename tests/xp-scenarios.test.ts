@@ -56,14 +56,16 @@ describe.runIf(isDevProject)('10 Scripted Student Scenarios - Exact Ledger Integ
   }
 
   afterAll(async () => {
-    // Clean up all created scenario users and their events
-    for (const id of createdUserIds) {
-      await adminClient.from('xp_events').delete().eq('student_id', id);
-      await adminClient.from('students').delete().eq('id', id);
-      await adminClient.from('profiles').delete().eq('id', id);
-      await adminClient.auth.admin.deleteUser(id);
-    }
-  });
+    // Clean up all created scenario users and their events in parallel
+    await Promise.all(
+      createdUserIds.map(async (id) => {
+        await adminClient.from('xp_events').delete().eq('student_id', id);
+        await adminClient.from('students').delete().eq('id', id);
+        await adminClient.from('profiles').delete().eq('id', id);
+        await adminClient.auth.admin.deleteUser(id);
+      })
+    );
+  }, 60000);
 
   async function verifyLedgerMatchesTotal(studentId: string) {
     // 1. Fetch all events for the student

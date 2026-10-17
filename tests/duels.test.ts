@@ -210,7 +210,7 @@ describe('Phase 3E & H8: Async Quiz Duels & Anti-Win-Trading Suite', () => {
     it('blocks double-submission when a challenger attempts to submit answers again', () => {
       const duel = {
         status: 'active',
-        expires_at: new Date('2026-10-17T10:00:00Z').toISOString(),
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         challenger_id: 'student-1',
         challenged_id: 'student-2',
         challenger_submitted_at: '2026-10-16T11:00:00Z',
@@ -225,7 +225,7 @@ describe('Phase 3E & H8: Async Quiz Duels & Anti-Win-Trading Suite', () => {
     it('blocks double-submission when a challenged student attempts to submit answers again', () => {
       const duel = {
         status: 'active',
-        expires_at: new Date('2026-10-17T10:00:00Z').toISOString(),
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         challenger_id: 'student-1',
         challenged_id: 'student-2',
         challenger_submitted_at: null,
@@ -240,7 +240,7 @@ describe('Phase 3E & H8: Async Quiz Duels & Anti-Win-Trading Suite', () => {
     it('blocks third-party non-participants from submitting answers', () => {
       const duel = {
         status: 'active',
-        expires_at: new Date('2026-10-17T10:00:00Z').toISOString(),
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         challenger_id: 'student-1',
         challenged_id: 'student-2',
         challenger_submitted_at: null,
@@ -255,7 +255,7 @@ describe('Phase 3E & H8: Async Quiz Duels & Anti-Win-Trading Suite', () => {
     it('allows valid submission when participant has not yet submitted and duel is active', () => {
       const duel = {
         status: 'active',
-        expires_at: new Date('2026-10-17T10:00:00Z').toISOString(),
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         challenger_id: 'student-1',
         challenged_id: 'student-2',
         challenger_submitted_at: null,
