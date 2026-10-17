@@ -932,6 +932,7 @@ function setCodePanelEnemyTurnUI(isEnemyTurn) {
   const textarea = document.getElementById('code-textarea');
   const btnRun = document.getElementById('btn-run-tests');
   const btnDevPower = document.getElementById('btn-dev-power');
+  const btnHolyHeal = document.getElementById('btn-holy-heal');
   const btnHint = document.getElementById('btn-hint');
   const btnReset = document.getElementById('btn-reset-code');
   const pickerContainer = document.getElementById('picker-cards-container');
@@ -952,6 +953,7 @@ function setCodePanelEnemyTurnUI(isEnemyTurn) {
     if (textarea) textarea.disabled = true;
     if (btnRun) btnRun.disabled = true;
     if (btnDevPower) btnDevPower.disabled = true;
+    if (btnHolyHeal) btnHolyHeal.disabled = true;
     if (btnHint) btnHint.disabled = true;
     if (btnReset) btnReset.disabled = true;
 
@@ -963,6 +965,7 @@ function setCodePanelEnemyTurnUI(isEnemyTurn) {
       });
     }
   } else {
+    if (btnHolyHeal) btnHolyHeal.disabled = false;
     if (pickerBadge) {
       pickerBadge.textContent = 'SELECT DIFFICULTY TO ATTACK';
       pickerBadge.className = 'section-badge font-code text-yellow';

@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const btnRunTests = document.getElementById('btn-run-tests');
   const btnDevPower = document.getElementById('btn-dev-power');
+  const btnHolyHeal = document.getElementById('btn-holy-heal');
   const btnHint = document.getElementById('btn-hint');
   const btnResetCode = document.getElementById('btn-reset-code');
 
@@ -630,6 +631,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (codeTextarea) codeTextarea.disabled = true;
     if (btnRunTests) btnRunTests.disabled = true;
     if (btnDevPower) btnDevPower.disabled = true;
+    if (btnHolyHeal) btnHolyHeal.disabled = true;
     if (btnHint) btnHint.disabled = true;
     if (btnResetCode) btnResetCode.disabled = true;
 
@@ -854,6 +856,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (btnRunTests) btnRunTests.disabled = false;
     if (btnDevPower) btnDevPower.disabled = false;
+    if (btnHolyHeal) btnHolyHeal.disabled = false;
     if (btnHint) {
       btnHint.disabled = false;
       btnHint.textContent = '? HINT (-5 PTS)';
@@ -970,6 +973,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           appendConsoleLine(`> PASS: All ${outcome.results.length} tests passed cleanly! Unleashing attack...`, 'console-pass');
 
           if (btnDevPower) btnDevPower.disabled = true;
+          if (btnHolyHeal) btnHolyHeal.disabled = true;
           if (btnHint) btnHint.disabled = true;
           if (btnResetCode) btnResetCode.disabled = true;
           if (codeTextarea) codeTextarea.disabled = true;
@@ -1003,12 +1007,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
           btnRunTests.disabled = false;
           if (btnDevPower) btnDevPower.disabled = false;
+          if (btnHolyHeal) btnHolyHeal.disabled = false;
         }
 
       } catch (err) {
         appendConsoleLine(`UNEXPECTED RUNNER ERROR: ${err.message || String(err)}`, 'console-error');
         btnRunTests.disabled = false;
         if (btnDevPower) btnDevPower.disabled = false;
+        if (btnHolyHeal) btnHolyHeal.disabled = false;
       } finally {
         isTestingCode = false;
       }
@@ -1027,6 +1033,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       isTestingCode = true;
       if (btnRunTests) btnRunTests.disabled = true;
       btnDevPower.disabled = true;
+      if (btnHolyHeal) btnHolyHeal.disabled = true;
       if (btnHint) btnHint.disabled = true;
       if (btnResetCode) btnResetCode.disabled = true;
       if (codeTextarea) codeTextarea.disabled = true;
@@ -1079,6 +1086,61 @@ document.addEventListener('DOMContentLoaded', async () => {
       } finally {
         isTestingCode = false;
       }
+    });
+  }
+
+  // Holy Heal: Divine restoration for the user's Codemon
+  async function holyHeal() {
+    const isBattle = battleActive || (window.gameState && window.gameState.battleActive);
+    if (!isBattle) {
+      appendConsoleLine('> [HOLY HEAL]: Start a battle before calling divine healing!', 'console-warn');
+      return false;
+    }
+
+    const player = (window.gameState && window.gameState.player) || selectedCodemon;
+    if (!player) return false;
+
+    const maxHp = player.maxHp || 100;
+    const prevHp = (typeof player.hp === 'number') ? player.hp : maxHp;
+
+    playSound('heal');
+
+    player.hp = maxHp;
+    if (player.currentHp !== undefined) player.currentHp = maxHp;
+    if (window.gameState && window.gameState.player) {
+      window.gameState.player.hp = maxHp;
+      window.gameState.player.currentHp = maxHp;
+    }
+
+    const triggerSetHp = window.setHp || (window.BattleEngine && window.BattleEngine.setHp);
+    if (triggerSetHp) {
+      await triggerSetHp('player', maxHp, maxHp, false);
+    }
+
+    const restored = maxHp - prevHp;
+    const playerName = player.name || 'Codemon';
+
+    if (restored > 0) {
+      appendConsoleLine(`✨ [HOLY HEAL]: Restored ${restored} HP to ${playerName}! (${maxHp}/${maxHp} HP)`, 'console-pass');
+    } else {
+      appendConsoleLine(`✨ [HOLY HEAL]: Divine light shines on ${playerName}! HP is already maxed (${maxHp}/${maxHp})!`, 'console-pass');
+    }
+
+    if (window.typeText) {
+      window.typeText(`Holy light shines down! ${playerName} was fully healed!`, 20);
+    } else if (window.showMessage) {
+      window.showMessage(`Holy light healed ${playerName} to full HP!`);
+    }
+
+    return true;
+  }
+  window.holyHeal = holyHeal;
+
+  if (btnHolyHeal) {
+    btnHolyHeal.addEventListener('click', async () => {
+      const isBattle = battleActive || (window.gameState && window.gameState.battleActive);
+      if (!isBattle || isTestingCode) return;
+      await holyHeal();
     });
   }
 
@@ -1181,6 +1243,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (codeTextarea) codeTextarea.disabled = true;
     if (btnRunTests) btnRunTests.disabled = true;
     if (btnDevPower) btnDevPower.disabled = true;
+    if (btnHolyHeal) btnHolyHeal.disabled = true;
     if (btnHint) btnHint.disabled = true;
     if (btnResetCode) btnResetCode.disabled = true;
 
@@ -1257,7 +1320,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       // When it's player's turn again, show 3 new challenge cards
       setTimeout(() => {
         if (!battleActive) return;
-        startPlayerTurn();
+        if (btnHolyHeal) btnHolyHeal.disabled = false;
+    startPlayerTurn();
       }, 1400);
     }, 1000);
   }
@@ -1460,6 +1524,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (codeTextarea) codeTextarea.disabled = true;
     if (btnRunTests) btnRunTests.disabled = true;
     if (btnDevPower) btnDevPower.disabled = true;
+    if (btnHolyHeal) btnHolyHeal.disabled = true;
     if (btnHint) btnHint.disabled = true;
     if (btnResetCode) btnResetCode.disabled = true;
   }
@@ -1553,6 +1618,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.typeText(`A wild ${enemy.name} appeared! Compile code on the right to strike.`, 22);
     }
 
+    if (btnHolyHeal) btnHolyHeal.disabled = false;
     startPlayerTurn();
   }
 
@@ -1724,7 +1790,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       appendConsoleLine('> Bugmon attack power increased to 12 - 20 DMG.', 'console-warn');
       appendConsoleLine('========================================', 'console-error');
 
-      startPlayerTurn();
+      if (btnHolyHeal) btnHolyHeal.disabled = false;
+    startPlayerTurn();
     });
   }
 

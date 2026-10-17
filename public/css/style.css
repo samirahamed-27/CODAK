@@ -1355,6 +1355,28 @@ html, body {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.toolbar-dev-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toolbar-dev-col .pixel-btn {
+  padding: 6px 12px;
+  font-size: 11px;
+}
+
+.pixel-btn-cyan {
+  background-color: #38bdf8;
+  color: var(--pixel-black);
+}
+
+.pixel-btn-cyan:hover {
+  background-color: #7dd3fc;
+  color: var(--pixel-black);
 }
 
 .toolbar-right {
