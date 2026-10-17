@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function getMinPoints() {
     return (typeof window !== 'undefined' && window.BATTLE_CONFIG && window.BATTLE_CONFIG.minPoints) || 120;
   }
-  const targetPoints = getMinPoints();
+  let targetPoints = getMinPoints();
   let turnsLeft = (typeof window !== 'undefined' && window.BATTLE_CONFIG && window.BATTLE_CONFIG.turnLimit) || 8;
   const battleUsedChallenges = new Set();
   let currentTurnCards = [];
@@ -155,6 +155,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
         osc.start(now);
         osc.stop(now + 0.18);
+      } else if (type === 'heal') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.setValueAtTime(659.25, now + 0.08);
+        osc.frequency.setValueAtTime(783.99, now + 0.16);
+        osc.frequency.setValueAtTime(1046.50, now + 0.24);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.36);
+        osc.start(now);
+        osc.stop(now + 0.36);
       } else if (type === 'static' || type === 'glitch') {
         // Short static noise sound using procedural audio buffer
         try {
@@ -426,20 +436,28 @@ document.addEventListener('DOMContentLoaded', async () => {
           <span class="stat-atk">ATK ${codemon.attackPower}x</span>
         </div>
         <div class="starter-pixel-desc font-code">${codemon.description}</div>
+        <div class="starter-pixel-moves font-code">
+          <span class="moves-count-label text-green">MOVES (${(codemon.moves || []).length}):</span>
+          <div class="moves-chips-row">${(codemon.moves || []).slice(0, 3).map(m => `<span class="move-mini-chip">${m.name}</span>`).join('')}</div>
+        </div>
       `;
-
-      // Hover highlights card with blinking border
-      card.addEventListener('mouseenter', () => {
-        selectStarterIndex(idx, false);
-      });
 
       // Arrow-key focusing highlights card
       card.addEventListener('focus', () => {
         selectStarterIndex(idx, false);
       });
 
-      // Clicking a card stores choice in gameState.player and calls showScreen("battle")
+      // Clicking a card selects it. If already selected, confirms and enters battle.
       card.addEventListener('click', () => {
+        if (selectedIndex === idx) {
+          confirmStarterChoice();
+        } else {
+          selectStarterIndex(idx, true);
+        }
+      });
+
+      // Double-clicking immediately confirms and enters battle
+      card.addEventListener('dblclick', () => {
         selectStarterIndex(idx, false);
         confirmStarterChoice();
       });
@@ -733,6 +751,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (btnRunTests) btnRunTests.disabled = true;
     if (btnDevPower) btnDevPower.disabled = true;
+    if (btnHolyHeal) btnHolyHeal.disabled = false;
     if (btnHint) {
       btnHint.disabled = true;
       btnHint.textContent = '? HINT (-5 PTS)';
@@ -784,12 +803,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       card.innerHTML = `
         <div class="picker-card-header">
-          <span class="picker-badge font-pixel">${challenge.difficulty.toUpperCase()}</span>
+          <span class="picker-badge font-pixel">${(challenge.difficulty || 'EASY').toUpperCase()}</span>
           <span class="picker-card-dmg font-pixel">${dmg} DMG</span>
         </div>
-        <div class="picker-card-title font-pixel">${challenge.title}</div>
-        <div class="picker-card-desc font-code">${challenge.description}</div>
-        <div class="picker-card-topic font-pixel">TOPIC: ${challenge.topic.toUpperCase()}</div>
+        <div class="picker-card-title font-pixel">${challenge.title || 'Challenge'}</div>
+        <div class="picker-card-desc font-code">${challenge.description || ''}</div>
+        <div class="picker-card-topic font-pixel">TOPIC: ${(challenge.topic || 'LOGIC').toUpperCase()}</div>
       `;
 
       card.addEventListener('click', () => {
@@ -839,12 +858,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Load the challenge into editor
     if (currentChallengeBadge) {
-      currentChallengeBadge.textContent = `[${challenge.difficulty.toUpperCase()}] ${dmg} DMG`;
-      currentChallengeBadge.className = `badge-difficulty ${challenge.difficulty} font-pixel`;
+      currentChallengeBadge.textContent = `[${(challenge.difficulty || 'EASY').toUpperCase()}] ${dmg} DMG`;
+      currentChallengeBadge.className = `badge-difficulty ${challenge.difficulty || 'easy'} font-pixel`;
     }
-    if (editorChallengeTitle) editorChallengeTitle.textContent = challenge.title;
-    if (editorChallengeTopic) editorChallengeTopic.textContent = `TOPIC: ${challenge.topic.toUpperCase()}`;
-    if (editorChallengeDesc) editorChallengeDesc.textContent = challenge.description;
+    if (editorChallengeTitle) editorChallengeTitle.textContent = challenge.title || 'Challenge';
+    if (editorChallengeTopic) editorChallengeTopic.textContent = `TOPIC: ${(challenge.topic || 'LOGIC').toUpperCase()}`;
+    if (editorChallengeDesc) editorChallengeDesc.textContent = challenge.description || '';
     if (challengeHintBox) challengeHintBox.style.display = 'none';
 
     if (codeTextarea) {
@@ -1252,10 +1271,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const baseEnemyDmg = 16;
     const enemyDmg = isBonusDamage ? Math.round(baseEnemyDmg * 1.5) : baseEnemyDmg;
 
+    const isBugmon = (window.gameState && window.gameState.isBugmonBattle) || (enemy && enemy.isBugmon);
+    let moveName = isBugmon ? 'Glitch Strike' : 'Segfault Slam';
+    const movePool = (isBugmon && enemy.bugmonVariant && Array.isArray(enemy.bugmonVariant.moves) && enemy.bugmonVariant.moves.length > 0)
+      ? enemy.bugmonVariant.moves
+      : (Array.isArray(enemy.moves) && enemy.moves.length > 0 ? enemy.moves : null);
+    if (movePool && movePool.length > 0) {
+      const picked = movePool[Math.floor(Math.random() * movePool.length)];
+      if (picked && picked.name) {
+        moveName = picked.name;
+      }
+    }
+
     if (window.typeText) {
       const atkDesc = isBonusDamage
-        ? `${enemy.name.toUpperCase()} strikes with 50% BONUS DAMAGE (${enemyDmg} DMG)!`
-        : `${enemy.name.toUpperCase()} countered with Segfault Slam (${enemyDmg} DMG)!`;
+        ? `${enemy.name.toUpperCase()} strikes with 50% BONUS DAMAGE via ${moveName} (${enemyDmg} DMG)!`
+        : `${enemy.name.toUpperCase()} countered with ${moveName} (${enemyDmg} DMG)!`;
       window.typeText(atkDesc, 20);
     }
 
@@ -1320,8 +1351,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // When it's player's turn again, show 3 new challenge cards
       setTimeout(() => {
         if (!battleActive) return;
-        if (btnHolyHeal) btnHolyHeal.disabled = false;
-    startPlayerTurn();
+        startPlayerTurn();
       }, 1400);
     }, 1000);
   }
@@ -1648,7 +1678,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.addEventListener('keydown', (e) => {
     if (currentScreen === 'title') {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         showScreen('select');
       }
@@ -1659,7 +1689,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         moveSelection(1);
-      } else if (e.key === 'Enter') {
+      } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         confirmStarterChoice();
       }
@@ -1790,8 +1820,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       appendConsoleLine('> Bugmon attack power increased to 12 - 20 DMG.', 'console-warn');
       appendConsoleLine('========================================', 'console-error');
 
-      if (btnHolyHeal) btnHolyHeal.disabled = false;
-    startPlayerTurn();
+      startPlayerTurn();
     });
   }
 
