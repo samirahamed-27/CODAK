@@ -28,7 +28,7 @@ export function isBadgeCriteriaMet(
   criteria: Record<string, unknown>,
   ctx: BadgeEvaluationContext
 ): boolean {
-  switch (badgeCode) {
+  switch (badgeCode.toLowerCase()) {
     case 'first_quiz':
       return ctx.completedQuizzesCount >= 1;
 
