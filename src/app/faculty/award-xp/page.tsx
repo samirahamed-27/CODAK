@@ -4,23 +4,34 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { awardXpAction, AwardXpResult } from '@/app/actions/xp';
+import { searchStudentsAction, StudentSearchResult } from '@/app/actions/student-search';
 import { createClient } from '@/lib/supabase/client';
 import { XpRule } from '@/types/database';
-import { Award, ArrowLeft, CheckCircle2, AlertTriangle, AlertCircle, Sparkles } from 'lucide-react';
-
-interface StudentOption {
-  id: string;
-  full_name: string;
-  roll_no: string;
-  department: string;
-}
+import {
+  Award,
+  ArrowLeft,
+  CheckCircle2,
+  AlertTriangle,
+  AlertCircle,
+  Sparkles,
+  Search,
+  UserCheck,
+  X,
+  Loader2,
+} from 'lucide-react';
 
 export default function AwardXpPage() {
   const supabase = createClient();
 
-  const [students, setStudents] = useState<StudentOption[]>([]);
   const [rules, setRules] = useState<XpRule[]>([]);
-  const [loadingInitial, setLoadingInitial] = useState(true);
+  const [loadingRules, setLoadingRules] = useState(true);
+
+  // Student Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<StudentSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<StudentSearchResult | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   // Form State
   const [selectedStudentId, setSelectedStudentId] = useState('');
@@ -30,28 +41,9 @@ export default function AwardXpPage() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<AwardXpResult | null>(null);
 
+  // 1. Fetch Active Rules
   useEffect(() => {
-    async function loadData() {
-      // 1. Fetch Students
-      const { data: studentsData } = await supabase
-        .from('students')
-        .select('id, roll_no, department, profiles(full_name)')
-        .limit(50);
-
-      if (studentsData) {
-        const formatted = studentsData.map((s: any) => ({
-          id: s.id,
-          roll_no: s.roll_no,
-          department: s.department,
-          full_name: s.profiles?.full_name || 'Student',
-        }));
-        setStudents(formatted);
-        if (formatted.length > 0) {
-          setSelectedStudentId(formatted[0].id);
-        }
-      }
-
-      // 2. Fetch Active Rules
+    async function loadRules() {
       const { data: rulesData } = await supabase
         .from('xp_rules')
         .select('*')
@@ -65,11 +57,32 @@ export default function AwardXpPage() {
         }
       }
 
-      setLoadingInitial(false);
+      setLoadingRules(false);
     }
 
-    loadData();
+    loadRules();
   }, []);
+
+  // 2. Debounced Student Search
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      const res = await searchStudentsAction(searchQuery);
+      if (res.success) {
+        setSearchResults(res.students);
+        setShowDropdown(true);
+      }
+      setIsSearching(false);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Auto-generate reference suggestion whenever action or student changes
   useEffect(() => {
@@ -82,8 +95,31 @@ export default function AwardXpPage() {
 
   const activeRule = rules.find((r) => r.action_type === selectedActionType);
 
+  const handleSelectStudent = (student: StudentSearchResult) => {
+    setSelectedStudent(student);
+    setSelectedStudentId(student.id);
+    setShowDropdown(false);
+    setSearchQuery('');
+  };
+
+  const handleClearSelectedStudent = () => {
+    setSelectedStudent(null);
+    setSelectedStudentId('');
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedStudentId) {
+      setResult({
+        success: false,
+        status: 'error',
+        error: 'Please search and select a student by roll number or name first.',
+      });
+      return;
+    }
+
     setSubmitting(true);
     setResult(null);
 
@@ -165,7 +201,7 @@ export default function AwardXpPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 pb-16">
+    <div className="min-h-screen flex flex-col bg-slate-950 pb-16 text-slate-100">
       <Navbar role="faculty" userName="Faculty Staff" />
 
       <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-8">
@@ -198,26 +234,82 @@ export default function AwardXpPage() {
           onSubmit={handleSubmit}
           className="mt-6 p-6 sm:p-8 rounded-3xl bg-slate-900/80 border border-slate-800 flex flex-col gap-5 shadow-2xl backdrop-blur-md"
         >
-          {/* Pick Student */}
-          <div>
+          {/* Pick Student: Debounced Roll Number Search */}
+          <div className="relative">
             <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-              Select Student
+              Search Student by Roll Number or Name
             </label>
-            {loadingInitial ? (
-              <div className="text-xs text-slate-500">Loading student directory...</div>
+
+            {selectedStudent ? (
+              <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <UserCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-white block">
+                      {selectedStudent.fullName}
+                    </span>
+                    <span className="text-[11px] text-indigo-300 font-mono">
+                      {selectedStudent.rollNo} • {selectedStudent.department} (Year {selectedStudent.yearOfStudy})
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleClearSelectedStudent}
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-xs text-slate-300 transition-colors flex items-center gap-1"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Change</span>
+                </button>
+              </div>
             ) : (
-              <select
-                value={selectedStudentId}
-                onChange={(e) => setSelectedStudentId(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500"
-              >
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.full_name} ({s.roll_no} • {s.department})
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <div className="relative flex items-center">
+                  <Search className="w-4 h-4 text-slate-500 absolute left-3.5 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Type roll number (e.g. CS2026-001) or student name..."
+                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+                  />
+                  {isSearching && (
+                    <Loader2 className="w-4 h-4 text-slate-400 animate-spin absolute right-3.5" />
+                  )}
+                </div>
+
+                {/* Dropdown Results (Max 10) */}
+                {showDropdown && searchResults.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-2 z-20 max-h-60 overflow-y-auto rounded-2xl bg-slate-950 border border-slate-800 shadow-2xl py-1">
+                    {searchResults.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => handleSelectStudent(s)}
+                        className="w-full text-left px-4 py-2.5 hover:bg-slate-900 flex items-center justify-between border-b border-slate-900/50 last:border-0 transition-colors"
+                      >
+                        <div>
+                          <div className="text-xs font-semibold text-white">{s.fullName}</div>
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            {s.rollNo} • {s.department}
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md">
+                          Select
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {showDropdown && searchQuery.trim() && searchResults.length === 0 && !isSearching && (
+                  <div className="absolute left-0 right-0 top-full mt-2 z-20 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 text-center">
+                    No students found matching "{searchQuery}".
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -226,20 +318,24 @@ export default function AwardXpPage() {
             <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
               Learning Action Type
             </label>
-            <select
-              value={selectedActionType}
-              onChange={(e) => setSelectedActionType(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500"
-            >
-              {rules.map((r) => (
-                <option key={r.action_type} value={r.action_type}>
-                  {r.display_name} ({r.base_xp} Base XP
-                  {r.extra_xp > 0 ? ` + ${r.extra_xp}/unit` : ''}
-                  {r.daily_limit ? `, Max ${r.daily_limit}/day` : ''})
-                </option>
-              ))}
-            </select>
+            {loadingRules ? (
+              <div className="text-xs text-slate-500">Loading XP rules...</div>
+            ) : (
+              <select
+                value={selectedActionType}
+                onChange={(e) => setSelectedActionType(e.target.value)}
+                required
+                className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500"
+              >
+                {rules.map((r) => (
+                  <option key={r.action_type} value={r.action_type}>
+                    {r.display_name} ({r.base_xp} Base XP
+                    {r.extra_xp > 0 ? ` + ${r.extra_xp}/unit` : ''}
+                    {r.daily_limit ? `, Max ${r.daily_limit}/day` : ''})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Extra Units (if applicable) */}
@@ -284,7 +380,7 @@ export default function AwardXpPage() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={submitting || loadingInitial}
+            disabled={submitting || !selectedStudentId}
             className="w-full mt-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:scale-[0.99] text-white text-xs font-bold shadow-xl shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {submitting ? (

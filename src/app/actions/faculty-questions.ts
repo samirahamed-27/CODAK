@@ -16,6 +16,10 @@ export interface ManualQuestionInput {
   explanation: string;
 }
 
+export interface EditQuestionInput extends ManualQuestionInput {
+  id: string;
+}
+
 export interface QuestionRecord {
   id: string;
   subject_id: string;
@@ -28,7 +32,12 @@ export interface QuestionRecord {
   correct_option: string;
   explanation: string;
   status: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string | null;
   created_at: string;
+  created_by?: string | null;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  approved_at?: string | null;
 }
 
 function getAdminClient() {
@@ -39,15 +48,16 @@ function getAdminClient() {
 
 /**
  * Ensures caller is logged in and possesses 'faculty' or 'admin' role.
+ * Returns 403 Forbidden for students.
  */
-async function authenticateFaculty() {
+export async function authenticateFaculty() {
   const supabaseServer = await createServerClient();
   const {
     data: { user },
   } = await supabaseServer.auth.getUser();
 
   if (!user) {
-    return { error: 'Unauthorized: You must be logged in.', user: null };
+    return { error: 'Unauthorized: You must be logged in.', statusCode: 401, user: null };
   }
 
   const { data: profile } = await supabaseServer
@@ -57,10 +67,10 @@ async function authenticateFaculty() {
     .single();
 
   if (!profile || (profile.role !== 'faculty' && profile.role !== 'admin')) {
-    return { error: 'Forbidden: Faculty or Administrator access required.', user: null };
+    return { error: 'Forbidden: Faculty or Administrator access required.', statusCode: 403, user: null };
   }
 
-  return { error: null, user };
+  return { error: null, statusCode: 200, user };
 }
 
 /**
@@ -69,7 +79,7 @@ async function authenticateFaculty() {
 export async function getFacultyQuestionsAction() {
   const auth = await authenticateFaculty();
   if (auth.error || !auth.user) {
-    return { success: false, error: auth.error, questions: [] };
+    return { success: false, statusCode: auth.statusCode, error: auth.error, questions: [] };
   }
 
   const adminClient = getAdminClient();
@@ -80,10 +90,10 @@ export async function getFacultyQuestionsAction() {
     .order('created_at', { ascending: false });
 
   if (error) {
-    return { success: false, error: error.message, questions: [] };
+    return { success: false, statusCode: 500, error: error.message, questions: [] };
   }
 
-  return { success: true, questions: (data || []) as QuestionRecord[] };
+  return { success: true, statusCode: 200, questions: (data || []) as QuestionRecord[] };
 }
 
 /**
@@ -92,26 +102,26 @@ export async function getFacultyQuestionsAction() {
 export async function addQuestionManualAction(input: ManualQuestionInput) {
   const auth = await authenticateFaculty();
   if (auth.error || !auth.user) {
-    return { success: false, error: auth.error };
+    return { success: false, statusCode: auth.statusCode, error: auth.error };
   }
 
   // Validate fields
-  if (!input.topic?.trim()) return { success: false, error: 'Topic is required.' };
-  if (!input.questionText?.trim()) return { success: false, error: 'Question text is required.' };
+  if (!input.topic?.trim()) return { success: false, statusCode: 400, error: 'Topic is required.' };
+  if (!input.questionText?.trim()) return { success: false, statusCode: 400, error: 'Question text is required.' };
   if (!input.optionA?.trim() || !input.optionB?.trim() || !input.optionC?.trim() || !input.optionD?.trim()) {
-    return { success: false, error: 'All 4 options must be non-empty.' };
+    return { success: false, statusCode: 400, error: 'All 4 options must be non-empty.' };
   }
-  if (!input.explanation?.trim()) return { success: false, error: 'Explanation is required.' };
+  if (!input.explanation?.trim()) return { success: false, statusCode: 400, error: 'Explanation is required.' };
 
   // Check distinct options
   const opts = [input.optionA.trim(), input.optionB.trim(), input.optionC.trim(), input.optionD.trim()];
   const uniqueOpts = new Set(opts.map((o) => o.toLowerCase()));
   if (uniqueOpts.size !== 4) {
-    return { success: false, error: 'All 4 answer options must be distinct from each other.' };
+    return { success: false, statusCode: 400, error: 'All 4 answer options must be distinct from each other.' };
   }
 
   if (!['A', 'B', 'C', 'D'].includes(input.correctOption)) {
-    return { success: false, error: 'Correct option must be A, B, C, or D.' };
+    return { success: false, statusCode: 400, error: 'Correct option must be A, B, C, or D.' };
   }
 
   const adminClient = getAdminClient();
@@ -128,9 +138,10 @@ export async function addQuestionManualAction(input: ManualQuestionInput) {
   }
 
   if (!subjectId) {
-    return { success: false, error: 'Default subject CS101 not found.' };
+    return { success: false, statusCode: 404, error: 'Default subject CS101 not found.' };
   }
 
+  const nowIso = new Date().toISOString();
   const { error } = await adminClient.from('questions').insert({
     subject_id: subjectId,
     topic: input.topic.trim(),
@@ -144,14 +155,15 @@ export async function addQuestionManualAction(input: ManualQuestionInput) {
     status: 'approved', // Direct faculty entry is marked approved
     created_by: auth.user.id,
     reviewed_by: auth.user.id,
-    reviewed_at: new Date().toISOString(),
+    reviewed_at: nowIso,
+    approved_at: nowIso,
   });
 
   if (error) {
-    return { success: false, error: error.message };
+    return { success: false, statusCode: 500, error: error.message };
   }
 
-  return { success: true };
+  return { success: true, statusCode: 200 };
 }
 
 /**
@@ -161,13 +173,14 @@ export async function addQuestionManualAction(input: ManualQuestionInput) {
 export async function uploadQuestionsCsvAction(csvContent: string) {
   const auth = await authenticateFaculty();
   if (auth.error || !auth.user) {
-    return { success: false, error: auth.error, importedCount: 0, errors: [] };
+    return { success: false, statusCode: auth.statusCode, error: auth.error, importedCount: 0, errors: [] };
   }
 
   const parseResult = parseAndValidateQuestionsCsv(csvContent);
   if (!parseResult.success || parseResult.questions.length === 0) {
     return {
       success: false,
+      statusCode: 400,
       error: 'CSV validation failed. Please correct the highlighted errors.',
       importedCount: 0,
       errors: parseResult.errors,
@@ -184,7 +197,7 @@ export async function uploadQuestionsCsvAction(csvContent: string) {
     .single();
 
   if (!subject) {
-    return { success: false, error: 'Default subject CS101 not found.', importedCount: 0, errors: [] };
+    return { success: false, statusCode: 404, error: 'Default subject CS101 not found.', importedCount: 0, errors: [] };
   }
 
   const rowsToInsert = parseResult.questions.map((q) => ({
@@ -203,38 +216,145 @@ export async function uploadQuestionsCsvAction(csvContent: string) {
 
   const { error } = await adminClient.from('questions').insert(rowsToInsert);
   if (error) {
-    return { success: false, error: error.message, importedCount: 0, errors: [] };
+    return { success: false, statusCode: 500, error: error.message, importedCount: 0, errors: [] };
   }
 
   return {
     success: true,
+    statusCode: 200,
     importedCount: rowsToInsert.length,
     errors: [],
   };
 }
 
 /**
- * Reviewer action: Approve or reject a question.
+ * Approves a pending question, setting approved_at and recording who approved.
  */
-export async function updateQuestionStatusAction(questionId: string, status: 'approved' | 'rejected') {
+export async function approveQuestionAction(questionId: string) {
   const auth = await authenticateFaculty();
   if (auth.error || !auth.user) {
-    return { success: false, error: auth.error };
+    return { success: false, statusCode: auth.statusCode, error: auth.error };
   }
 
   const adminClient = getAdminClient();
+  const nowIso = new Date().toISOString();
+
   const { error } = await adminClient
     .from('questions')
     .update({
-      status,
+      status: 'approved',
+      approved_at: nowIso,
       reviewed_by: auth.user.id,
-      reviewed_at: new Date().toISOString(),
+      reviewed_at: nowIso,
+      rejection_reason: null,
     })
     .eq('id', questionId);
 
   if (error) {
-    return { success: false, error: error.message };
+    return { success: false, statusCode: 500, error: error.message };
   }
 
-  return { success: true };
+  return { success: true, statusCode: 200 };
+}
+
+/**
+ * Rejects a question with a mandatory rejection reason.
+ */
+export async function rejectQuestionAction(questionId: string, rejectionReason: string) {
+  const auth = await authenticateFaculty();
+  if (auth.error || !auth.user) {
+    return { success: false, statusCode: auth.statusCode, error: auth.error };
+  }
+
+  if (!rejectionReason || !rejectionReason.trim()) {
+    return { success: false, statusCode: 400, error: 'Rejection reason is required.' };
+  }
+
+  const adminClient = getAdminClient();
+  const nowIso = new Date().toISOString();
+
+  const { error } = await adminClient
+    .from('questions')
+    .update({
+      status: 'rejected',
+      rejection_reason: rejectionReason.trim(),
+      reviewed_by: auth.user.id,
+      reviewed_at: nowIso,
+      approved_at: null,
+    })
+    .eq('id', questionId);
+
+  if (error) {
+    return { success: false, statusCode: 500, error: error.message };
+  }
+
+  return { success: true, statusCode: 200 };
+}
+
+/**
+ * Edits a question.
+ * Crucial Rule: Editing an approved question moves it back to pending.
+ */
+export async function editQuestionAction(input: EditQuestionInput) {
+  const auth = await authenticateFaculty();
+  if (auth.error || !auth.user) {
+    return { success: false, statusCode: auth.statusCode, error: auth.error };
+  }
+
+  if (!input.id) return { success: false, statusCode: 400, error: 'Question ID is required.' };
+  if (!input.topic?.trim()) return { success: false, statusCode: 400, error: 'Topic is required.' };
+  if (!input.questionText?.trim()) return { success: false, statusCode: 400, error: 'Question text is required.' };
+  if (!input.optionA?.trim() || !input.optionB?.trim() || !input.optionC?.trim() || !input.optionD?.trim()) {
+    return { success: false, statusCode: 400, error: 'All 4 options must be non-empty.' };
+  }
+  if (!input.explanation?.trim()) return { success: false, statusCode: 400, error: 'Explanation is required.' };
+
+  const opts = [input.optionA.trim(), input.optionB.trim(), input.optionC.trim(), input.optionD.trim()];
+  const uniqueOpts = new Set(opts.map((o) => o.toLowerCase()));
+  if (uniqueOpts.size !== 4) {
+    return { success: false, statusCode: 400, error: 'All 4 answer options must be distinct from each other.' };
+  }
+
+  if (!['A', 'B', 'C', 'D'].includes(input.correctOption)) {
+    return { success: false, statusCode: 400, error: 'Correct option must be A, B, C, or D.' };
+  }
+
+  const adminClient = getAdminClient();
+
+  // Update details and move status back to pending, clearing approved_at and reviewed metadata
+  const { error } = await adminClient
+    .from('questions')
+    .update({
+      topic: input.topic.trim(),
+      question_text: input.questionText.trim(),
+      option_a: input.optionA.trim(),
+      option_b: input.optionB.trim(),
+      option_c: input.optionC.trim(),
+      option_d: input.optionD.trim(),
+      correct_option: input.correctOption,
+      explanation: input.explanation.trim(),
+      status: 'pending', // Reset to pending for re-review
+      approved_at: null,
+      reviewed_by: null,
+      reviewed_at: null,
+      rejection_reason: null,
+    })
+    .eq('id', input.id);
+
+  if (error) {
+    return { success: false, statusCode: 500, error: error.message };
+  }
+
+  return { success: true, statusCode: 200 };
+}
+
+/**
+ * Legacy wrapper for updateQuestionStatusAction
+ */
+export async function updateQuestionStatusAction(questionId: string, status: 'approved' | 'rejected', rejectionReason?: string) {
+  if (status === 'approved') {
+    return approveQuestionAction(questionId);
+  } else {
+    return rejectQuestionAction(questionId, rejectionReason || 'Rejected by faculty');
+  }
 }
