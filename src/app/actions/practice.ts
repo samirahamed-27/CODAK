@@ -15,6 +15,20 @@ export async function getPracticeLinksAction(filter?: PracticeFilter): Promise<{
   topics: string[];
   error?: string;
 }> {
+  const supabaseServer = await createServerClient();
+  const {
+    data: { user },
+  } = await supabaseServer.auth.getUser();
+
+  if (!user) {
+    return {
+      success: false,
+      links: [],
+      topics: [],
+      error: 'Unauthorized',
+    };
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 

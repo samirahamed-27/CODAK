@@ -50,31 +50,127 @@ describe('Security Fixes Regression Guards (AUDIT-SEC-01 & AUDIT-SEC-02)', () =>
     });
   });
 
-  describe('Demo Mode Server-Side Guard', () => {
-    it('with NEXT_PUBLIC_DEMO_MODE=false, unauthenticated requests are rejected and demo student fallback is disabled', async () => {
-      vi.stubEnv('NEXT_PUBLIC_DEMO_MODE', 'false');
+  describe('Demo Mode Server-Side Guard (L3)', () => {
+    const modes = ['false', 'true'] as const;
 
-      // 1. Concept Match
-      const conceptRes = await getConceptMatchRoundAction();
-      if (conceptRes.roundToken) {
-        const { verifySignedRoundToken } = await import('@/lib/concept-match');
-        const token = verifySignedRoundToken(
-          conceptRes.roundToken,
-          process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.CRON_SECRET || 'concept-match-local-secret'
-        );
-        // Student ID in round token must be anonymous, never a demo student ID
-        expect(token.payload?.studentId).toBe('anonymous');
-      }
+    for (const mode of modes) {
+      it(`with NEXT_PUBLIC_DEMO_MODE=${mode}, unauthenticated requests to server actions return Unauthorized / 401`, async () => {
+        vi.stubEnv('NEXT_PUBLIC_DEMO_MODE', mode);
 
-      // 2. Duels auto-match action without session
-      const duelRes = await createOrJoinAutoMatchAction();
-      expect(duelRes.success).toBe(false);
-      expect(duelRes.error).toMatch(/Student not found|login required/i);
+        // 1. Concept Match Round & Submit
+        const conceptRound = await getConceptMatchRoundAction();
+        if (conceptRound.roundToken) {
+          const { verifySignedRoundToken } = await import('@/lib/concept-match');
+          const token = verifySignedRoundToken(
+            conceptRound.roundToken,
+            process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.CRON_SECRET || 'concept-match-local-secret'
+          );
+          expect(token.payload?.studentId).toBe('anonymous');
+        }
 
-      // 3. Quests action without session
-      const questsRes = await getStudentQuestsAction();
-      expect(questsRes.success).toBe(false);
-      expect(questsRes.error).toMatch(/Student not found|login required/i);
-    });
+        const { submitConceptMatchAction } = await import('@/app/actions/concept-match');
+        const conceptSubmit = await submitConceptMatchAction([], 'invalid');
+        expect(conceptSubmit.success).toBe(false);
+        expect(conceptSubmit.error).toMatch(/Unauthorized/i);
+
+        // 2. Duels auto-match action without session
+        const duelRes = await createOrJoinAutoMatchAction();
+        expect(duelRes.success).toBe(false);
+        expect(duelRes.error).toMatch(/Unauthorized/i);
+
+        // 3. Quests action without session
+        const questsRes = await getStudentQuestsAction();
+        expect(questsRes.success).toBe(false);
+        expect(questsRes.error).toMatch(/Unauthorized/i);
+
+        // 4. Leagues actions without session
+        const { getStudentLeagueAction } = await import('@/app/actions/leagues');
+        const leagueRes = await getStudentLeagueAction();
+        expect(leagueRes.success).toBe(false);
+        expect(leagueRes.error).toMatch(/Unauthorized/i);
+
+        // 5. Battles actions without session
+        const { getMyBattlesAction } = await import('@/app/actions/battles');
+        const battlesRes = await getMyBattlesAction();
+        expect(battlesRes.success).toBe(false);
+        expect(battlesRes.error).toMatch(/Unauthorized/i);
+
+        // 6. Quiz actions without session
+        const {
+          getDailyQuizSessionAction,
+          submitQuizAnswerAction,
+          finalizeQuizAction,
+          getPracticeQuizSessionAction,
+          getStudentStreakAction,
+        } = await import('@/app/actions/quiz');
+
+        const dailyQuizRes = await getDailyQuizSessionAction();
+        expect(dailyQuizRes.status).toBe('error');
+        expect(dailyQuizRes.error).toMatch(/Unauthorized/i);
+
+        const submitQuizRes = await submitQuizAnswerAction({
+          attemptId: '00000000-0000-0000-0000-000000000000',
+          questionId: '00000000-0000-0000-0000-000000000000',
+          selectedOption: 'A',
+        });
+        expect(submitQuizRes.success).toBe(false);
+        expect(submitQuizRes.error).toMatch(/Unauthorized/i);
+
+        const finalizeQuizRes = await finalizeQuizAction({
+          attemptId: '00000000-0000-0000-0000-000000000000',
+        });
+        expect(finalizeQuizRes.success).toBe(false);
+        expect(finalizeQuizRes.error).toMatch(/Unauthorized/i);
+
+        const practiceQuizRes = await getPracticeQuizSessionAction();
+        expect(practiceQuizRes.success).toBe(false);
+        expect(practiceQuizRes.error).toMatch(/Unauthorized/i);
+
+        const streakRes = await getStudentStreakAction();
+        expect(streakRes.error).toMatch(/Unauthorized/i);
+
+        // 7. Badges actions without session
+        const { getStudentBadgesAction, evaluateMyBadgesAction } = await import('@/app/actions/badges');
+        const getBadgesRes = await getStudentBadgesAction();
+        expect(getBadgesRes.success).toBe(false);
+        expect(getBadgesRes.error).toMatch(/Unauthorized/i);
+
+        const evalBadgesRes = await evaluateMyBadgesAction();
+        expect(evalBadgesRes.success).toBe(false);
+        expect(evalBadgesRes.error).toMatch(/Unauthorized/i);
+
+        // 8. Faculty actions without session
+        const { getFacultyAnalyticsAction } = await import('@/app/actions/faculty-analytics');
+        const analyticsRes = await getFacultyAnalyticsAction();
+        expect(analyticsRes.success).toBe(false);
+        expect(analyticsRes.statusCode).toBe(401);
+
+        const { searchStudentsAction } = await import('@/app/actions/student-search');
+        const searchRes = await searchStudentsAction('test');
+        expect(searchRes.success).toBe(false);
+        expect(searchRes.statusCode).toBe(401);
+
+        // 9. XP actions without session
+        const { awardXpAction } = await import('@/app/actions/xp');
+        const awardRes = await awardXpAction({
+          studentId: '00000000-0000-0000-0000-000000000000',
+          actionType: 'MANUAL_AWARD',
+          referenceId: 'ref_test',
+        });
+        expect(awardRes.success).toBe(false);
+        expect(awardRes.statusCode).toBe(401);
+
+        // 10. Practice links action without session
+        const { getPracticeLinksAction } = await import('@/app/actions/practice');
+        const practiceLinksRes = await getPracticeLinksAction();
+        expect(practiceLinksRes.success).toBe(false);
+        expect(practiceLinksRes.error).toMatch(/Unauthorized/i);
+
+        // 11. API routes without session (Leaderboard)
+        const req = new NextRequest('http://localhost:3000/api/leaderboard');
+        const response = await leaderboardGet(req);
+        expect(response.status).toBe(401);
+      });
+    }
   });
 });

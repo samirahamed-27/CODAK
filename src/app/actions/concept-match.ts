@@ -32,15 +32,8 @@ export async function getConceptMatchRoundAction(): Promise<{
     } = await supabaseServer.auth.getUser();
 
     let studentId = user?.id;
-
-    if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-      if (supabaseUrl && serviceRoleKey) {
-        const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
-        const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
-        studentId = demo?.id;
-      }
+    if (!studentId) {
+      return { success: false, error: 'Unauthorized: Student session required' };
     }
 
     const round = generateConceptMatchRound(4);
@@ -79,6 +72,22 @@ export async function submitConceptMatchAction(
   xpAwarded?: number;
   error?: string;
 }> {
+  const supabaseServer = await createServerClient();
+  const {
+    data: { user },
+  } = await supabaseServer.auth.getUser();
+
+  if (!user) {
+    return {
+      success: false,
+      correctCount: 0,
+      totalCount: 0,
+      isPerfect: false,
+      xpAwarded: 0,
+      error: 'Unauthorized: Student session required',
+    };
+  }
+
   if (!roundToken) {
     return {
       success: false,
@@ -104,14 +113,7 @@ export async function submitConceptMatchAction(
   }
 
   const { payload } = tokenCheck;
-
-  // 2. Identify student
-  const supabaseServer = await createServerClient();
-  const {
-    data: { user },
-  } = await supabaseServer.auth.getUser();
-
-  let studentId = user?.id;
+  const studentId = user.id;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -122,13 +124,8 @@ export async function submitConceptMatchAction(
 
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-    const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
-    studentId = demo?.id;
-  }
-
   if (!studentId) {
-    return { success: false, correctCount: 0, totalCount: 0, isPerfect: false, xpAwarded: 0, error: 'Unauthorized: login required' };
+    return { success: false, correctCount: 0, totalCount: 0, isPerfect: false, xpAwarded: 0, error: 'Unauthorized: Student session required' };
   }
 
   // Verify token matches current student if authenticated

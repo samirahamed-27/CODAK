@@ -30,18 +30,8 @@ export async function getStudentQuestsAction(fakeDate?: string): Promise<GetQues
 
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  // Fallback to demo student if not logged in and demo mode is active
-  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-    const { data: demoStudent } = await adminClient
-      .from('students')
-      .select('id')
-      .limit(1)
-      .single();
-    studentId = demoStudent?.id;
-  }
-
   if (!studentId) {
-    return { success: false, quests: [], error: 'Student not found' };
+    return { success: false, quests: [], error: 'Unauthorized: Student session required' };
   }
 
   const result = await evaluateStudentQuests(studentId, adminClient, fakeDate);

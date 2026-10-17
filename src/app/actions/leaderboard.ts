@@ -46,14 +46,6 @@ export async function getLeaderboardAction(options: {
     if (profile?.role) {
       requesterRole = profile.role as 'student' | 'faculty' | 'admin';
     }
-  } else if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-    // Demo student fallback when demo mode is active
-    const { data: demoStudent } = await adminClient
-      .from('students')
-      .select('id')
-      .limit(1)
-      .single();
-    requesterId = demoStudent?.id;
   }
 
   try {
@@ -102,17 +94,8 @@ export async function updateAnonymousPreferenceAction(isAnonymous: boolean): Pro
     ? createAdminClient(supabaseUrl, serviceRoleKey)
     : supabaseServer;
 
-  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-    const { data: demoStudent } = await adminClient
-      .from('students')
-      .select('id')
-      .limit(1)
-      .single();
-    studentId = demoStudent?.id;
-  }
-
   if (!studentId) {
-    return { success: false, isAnonymous: false, error: 'Unauthorized: Student record not found' };
+    return { success: false, isAnonymous: false, error: 'Unauthorized: Student session required' };
   }
 
   const { error: updateErr } = await adminClient

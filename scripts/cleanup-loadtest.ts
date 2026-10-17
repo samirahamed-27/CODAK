@@ -43,6 +43,7 @@ export async function cleanupLoadtest() {
     const battleIds = battleRes.rows.map((r) => r.id);
 
     // 2. Delete XP events related to loadtest battles or loadtest students
+    await client.query(`SET app.allow_ledger_cleanup = 'on';`);
     await client.query(`
       DELETE FROM public.xp_events
       WHERE reference_id LIKE 'battle:%'

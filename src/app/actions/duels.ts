@@ -67,13 +67,8 @@ export async function createOrJoinAutoMatchAction(): Promise<{
 
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-    const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
-    studentId = demo?.id;
-  }
-
   if (!studentId) {
-    return { success: false, error: 'Student not found' };
+    return { success: false, error: 'Unauthorized: Student session required' };
   }
 
   const now = new Date().toISOString();
@@ -200,12 +195,7 @@ export async function challengeDirectStudentAction(targetStudentId: string): Pro
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-    const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
-    studentId = demo?.id;
-  }
-
-  if (!studentId) return { success: false, error: 'Student not found' };
+  if (!studentId) return { success: false, error: 'Unauthorized: Student session required' };
 
   // Block self-challenge
   const challengeCheck = validateDuelChallenge(studentId, targetStudentId);
@@ -274,12 +264,7 @@ export async function getDuelSessionAction(duelId: string): Promise<{
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-    const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
-    studentId = demo?.id;
-  }
-
-  if (!studentId) return { success: false, error: 'Student not found' };
+  if (!studentId) return { success: false, error: 'Unauthorized: Student session required' };
 
   // 1. Fetch duel
   const { data: duel, error: duelErr } = await adminClient
@@ -358,12 +343,7 @@ export async function submitDuelAnswersAction(input: DuelSubmissionInput): Promi
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-    const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
-    studentId = demo?.id;
-  }
-
-  if (!studentId) return { success: false, error: 'Student not found' };
+  if (!studentId) return { success: false, error: 'Unauthorized: Student session required' };
 
   // 1. Verify Duel
   const { data: duel, error: duelErr } = await adminClient
@@ -545,11 +525,6 @@ export async function getMyDuelsAction(): Promise<{
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
-
-  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-    const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
-    studentId = demo?.id;
-  }
 
   if (!studentId) return { success: false, duels: [] };
 

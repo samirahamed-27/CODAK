@@ -57,7 +57,11 @@ export async function getStudentBadgesAction(targetStudentId?: string): Promise<
     data: { user },
   } = await supabaseServer.auth.getUser();
 
-  const studentId = targetStudentId || user?.id;
+  if (!user) {
+    return { success: false, badges: [], error: 'Unauthorized' };
+  }
+
+  const studentId = targetStudentId || user.id;
 
   if (!studentId) {
     return { success: false, badges: [], error: 'No student specified' };

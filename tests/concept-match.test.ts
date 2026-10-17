@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   createSignedRoundToken,
   verifySignedRoundToken,
@@ -31,7 +31,18 @@ function loadEnvLocal() {
 }
 
 loadEnvLocal();
-process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
+
+// Mock authenticated student session for server actions
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn().mockImplementation(async () => ({
+    auth: {
+      getUser: vi.fn().mockResolvedValue({
+        data: { user: { id: '0ffe4ab0-5e55-4205-a6b1-980a24b21de4' } },
+        error: null,
+      }),
+    },
+  })),
+}));
 
 describe('H7 & Option B: Concept Match Server-Verification & Anti-Tamper Suite', () => {
   const SECRET = 'test-secret-key-concept-match-12345';

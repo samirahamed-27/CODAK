@@ -42,10 +42,6 @@ async function getRequesterAuth() {
     if (profile?.role) {
       role = profile.role as 'student' | 'faculty' | 'admin';
     }
-  } else if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-    // Demo fallback for local development only when demo mode is active
-    const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
-    studentId = demo?.id;
   }
 
   return { studentId, role, adminClient };
@@ -421,6 +417,17 @@ export async function getMyBattlesAction(): Promise<{
 }> {
   try {
     const { studentId, adminClient } = await getRequesterAuth();
+
+    if (!studentId) {
+      return {
+        success: false,
+        live: [],
+        upcoming: [],
+        finished: [],
+        enrolledBattleIds: [],
+        error: 'Unauthorized: Student session required',
+      };
+    }
 
     // 1. Fetch live and upcoming battles
     const { data: allBattles, error } = await adminClient

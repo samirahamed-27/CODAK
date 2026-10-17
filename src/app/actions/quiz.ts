@@ -785,6 +785,7 @@ export async function getStudentStreakAction() {
       isTodayCompleted: false,
       todayDate,
       maxDailyQuizXp: 40,
+      error: 'Unauthorized',
     };
   }
 
