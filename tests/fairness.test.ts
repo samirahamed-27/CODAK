@@ -56,7 +56,7 @@ describe('Phase 3G: Concept Match & Fairness Checkpoint Suite', () => {
     /**
      * SIMULATION:
      * Student "Kavya" commits small, steady daily effort:
-     * - Solves 1 daily quiz per day for 7 consecutive days (scoring 3/5 = 30 XP/day).
+     * - Solves 1 daily quiz per day for 7 consecutive days (learning and improving from 2/5 to 4/5).
      * - Never grinds 50 quizzes or plays for hours; just 5-10 minutes each morning.
      * - Maintains an uninterrupted 7-day streak.
      *
@@ -69,13 +69,13 @@ describe('Phase 3G: Concept Match & Fairness Checkpoint Suite', () => {
       const studentId = 'student-kavya-steady';
       const earnedBadgeCodes = new Set<string>();
 
-      // DAY 1: Kavya completes first quiz (3/5 correct)
+      // DAY 1: Kavya completes first quiz (2/5 correct, starting out)
       const day1Ctx: BadgeEvaluationContext = {
         completedQuizzesCount: 1,
         currentStreak: 1,
         longestStreak: 1,
         completedQuestsCount: 0,
-        recentQuizScores: [{ score: 3, total: 5, date: '2026-10-12' }],
+        recentQuizScores: [{ score: 2, total: 5, date: '2026-10-12' }],
         hasBrokenStreakHistory: false,
       };
 
@@ -84,7 +84,9 @@ describe('Phase 3G: Concept Match & Fairness Checkpoint Suite', () => {
       }
       expect(earnedBadgeCodes.has('first_quiz')).toBe(true);
 
-      // DAY 7: Uninterrupted daily streak reached + score improvement
+      // DAY 7: Uninterrupted daily streak reached + genuine score improvement (2/5 -> 3/5 -> 4/5)
+      // Previous 6 days average = (2/5 + 2/5 + 3/5 + 3/5 + 3/5 + 4/5)/6 = 56.67%
+      // Day 7 score = 4/5 = 80% (strictly better than own average)
       const day7Ctx: BadgeEvaluationContext = {
         completedQuizzesCount: 7,
         currentStreak: 7,
@@ -92,8 +94,12 @@ describe('Phase 3G: Concept Match & Fairness Checkpoint Suite', () => {
         completedQuestsCount: 1, // Completed 1 quest during the week
         recentQuizScores: [
           { score: 4, total: 5, date: '2026-10-18' }, // Day 7: 4/5 (80%)
-          { score: 3, total: 5, date: '2026-10-17' }, // Day 6: 3/5 (60%)
+          { score: 4, total: 5, date: '2026-10-17' }, // Day 6: 4/5 (80%)
           { score: 3, total: 5, date: '2026-10-16' }, // Day 5: 3/5 (60%)
+          { score: 3, total: 5, date: '2026-10-15' }, // Day 4: 3/5 (60%)
+          { score: 3, total: 5, date: '2026-10-14' }, // Day 3: 3/5 (60%)
+          { score: 2, total: 5, date: '2026-10-13' }, // Day 2: 2/5 (40%)
+          { score: 2, total: 5, date: '2026-10-12' }, // Day 1: 2/5 (40%)
         ],
         hasBrokenStreakHistory: false,
       };
@@ -112,18 +118,21 @@ describe('Phase 3G: Concept Match & Fairness Checkpoint Suite', () => {
       expect(earnedBadgeCodes.has('improvement_score')).toBe(true);
 
       // LEDGER SIMULATION:
-      // Day 1..7: 7 quizzes * 30 XP = 210 XP
+      // Day 1-2: 2 quizzes * 20 XP = 40 XP
+      // Day 3-5: 3 quizzes * 30 XP = 90 XP
+      // Day 6-7: 2 quizzes * 40 XP = 80 XP
+      // Total Quiz XP = 210 XP
       // Day 7 streak bonus: +50 XP
       // Week Quest completion: +50 XP
       // Total Kavya weekly XP = 310 XP
       const kavyaWeeklyLedger = [
-        { action: 'DAILY_QUIZ', amount: 30, ref: 'quiz:day1' },
-        { action: 'DAILY_QUIZ', amount: 30, ref: 'quiz:day2' },
+        { action: 'DAILY_QUIZ', amount: 20, ref: 'quiz:day1' },
+        { action: 'DAILY_QUIZ', amount: 20, ref: 'quiz:day2' },
         { action: 'DAILY_QUIZ', amount: 30, ref: 'quiz:day3' },
         { action: 'DAILY_QUIZ', amount: 30, ref: 'quiz:day4' },
         { action: 'DAILY_QUIZ', amount: 30, ref: 'quiz:day5' },
-        { action: 'DAILY_QUIZ', amount: 30, ref: 'quiz:day6' },
-        { action: 'DAILY_QUIZ', amount: 30, ref: 'quiz:day7' },
+        { action: 'DAILY_QUIZ', amount: 40, ref: 'quiz:day6' },
+        { action: 'DAILY_QUIZ', amount: 40, ref: 'quiz:day7' },
         { action: 'STREAK_7_BONUS', amount: 50, ref: 'streak_7_bonus_kavya_week1' },
         { action: 'QUEST_REWARD', amount: 50, ref: 'quest:quest-1:2026-W42' },
       ];
