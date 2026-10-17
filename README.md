@@ -115,13 +115,19 @@ npm run migrate
 ```
 
 ### 2. Cron Endpoints & Scheduling
-- **Endpoint**: `/api/cron/weekly-leagues` (Supports `GET` with Bearer auth and `POST` with `x-cron-secret`)
+- **Weekly League Rollover Endpoint**: `/api/cron/weekly-leagues` (Supports `GET` with Bearer auth and `POST` with `x-cron-secret`)
+  - **Cron Schedule**: `30 18 * * 0` (Every Sunday at 18:30 UTC = Monday 00:00:00 IST).
+  - **Idempotency Guarantee**: Rollover detects already-completed groups (`status = 'completed'`) and safely skips them, ensuring duplicate executions never create duplicate XP or recalculate ranks.
+- **Daily XP Spike Detection Endpoint**: `/api/cron/detect-spikes` (Supports `GET` with Bearer auth and `POST` with `x-cron-secret`)
+  - **Cron Schedule**: `30 18 * * *` (Daily at 18:30 UTC = midnight 00:00:00 IST).
+  - **Algorithm**: Compares today's XP to the student's 14-day active average. Flags when `today > 3x average` AND `today >= 200 XP` AND `>= 5 baseline active days`.
+  - **Flag Only**: Statistical flags never auto-punish or void XP automatically.
+  - **Idempotency Guarantee**: Unique index on `flags` table ensures duplicate runs for the same date generate 0 duplicate flags.
+  - **CLI Runner**: `npm run detect-spikes [-- --date YYYY-MM-DD]`
 - **Authentication**: Secured via `CRON_SECRET`. The request must include either:
   - Header `Authorization: Bearer <CRON_SECRET>` (standard Vercel Cron format)
   - Header `x-cron-secret: <CRON_SECRET>`
-- **Cron Schedule**: `30 18 * * 0` (Every Sunday at 18:30 UTC, which corresponds exactly to Monday 00:00:00 IST).
 - **Vercel Hobby Timing Note**: Vercel Hobby cron timing is not exact and may trigger with a slight delay or variance.
-- **Idempotency Guarantee**: Rollover detects already-completed groups (`status = 'completed'`) and safely skips them, ensuring duplicate executions never create duplicate XP or recalculate ranks.
 - **Vercel Cron Configuration (`vercel.json`)**:
 ```json
 {
@@ -129,6 +135,10 @@ npm run migrate
     {
       "path": "/api/cron/weekly-leagues",
       "schedule": "30 18 * * 0"
+    },
+    {
+      "path": "/api/cron/detect-spikes",
+      "schedule": "30 18 * * *"
     }
   ]
 }
@@ -137,6 +147,11 @@ npm run migrate
 ```bash
 # Manual trigger example with curl:
 curl -X POST https://your-domain.com/api/cron/weekly-leagues \
+  -H "Authorization: Bearer your-cron-secret-token" \
+  -H "Content-Type: application/json"
+
+# Trigger daily spike detection:
+curl -X POST https://your-domain.com/api/cron/detect-spikes \
   -H "Authorization: Bearer your-cron-secret-token" \
   -H "Content-Type: application/json"
 ```

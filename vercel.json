@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/weekly-leagues",
       "schedule": "30 18 * * 0"
+    },
+    {
+      "path": "/api/cron/detect-spikes",
+      "schedule": "30 18 * * *"
     }
   ]
 }
