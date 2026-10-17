@@ -1,6 +1,6 @@
 'use client';
 
-import React, { use } from 'react';
+import React, { use, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import BattleArena from '@/components/battles/BattleArena';
 import { Navbar } from '@/components/Navbar';
@@ -8,9 +8,15 @@ import { BottomNav } from '@/components/BottomNav';
 import Aurora from '@/components/Aurora';
 import { ArrowLeft } from 'lucide-react';
 
-export default function StudentBattlePage({ params }: { params: Promise<{ id: string }> }) {
+function BattleContent({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
+
+  return <BattleArena battleId={id} onExit={() => router.push('/student/compete')} />;
+}
+
+export default function StudentBattlePage({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
 
   return (
     <div className="min-h-screen flex flex-col relative pb-24 overflow-x-hidden bg-[#07080B]">
@@ -41,7 +47,9 @@ export default function StudentBattlePage({ params }: { params: Promise<{ id: st
             </button>
           </div>
 
-          <BattleArena battleId={id} onExit={() => router.push('/student/compete')} />
+          <Suspense fallback={<div className="p-8 text-center text-slate-400 text-xs">Loading battle arena...</div>}>
+            <BattleContent params={params} />
+          </Suspense>
         </main>
 
         <BottomNav />

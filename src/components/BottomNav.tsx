@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, BookOpen, Gamepad2, Trophy, User } from 'lucide-react';
 import MagneticDock, { DockItem } from '@/components/ui/magnetic-dock';
 
-export function BottomNav() {
+function BottomNavContent() {
   const pathname = usePathname();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -63,5 +63,13 @@ export function BottomNav() {
         </div>
       )}
     </nav>
+  );
+}
+
+export function BottomNav() {
+  return (
+    <Suspense fallback={null}>
+      <BottomNavContent />
+    </Suspense>
   );
 }
