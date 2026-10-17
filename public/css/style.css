@@ -1257,6 +1257,186 @@ body.resizing-row .split-resizer-row .resizer-row-handle span {
   border-color: #38bdf8;
 }
 
+/* Cards View Toolbar (Top of Code Panel) */
+.cards-view-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 14px;
+  background-color: #0d1219;
+  border-bottom: 2px solid #1f2b38;
+  min-height: 32px;
+  flex-shrink: 0;
+  user-select: none;
+  font-size: 11px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cards-view-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cards-view-tag {
+  color: var(--pixel-yellow);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  font-weight: bold;
+}
+
+.view-toggle-chip {
+  background-color: #1a2430;
+  color: #eef5fc;
+  border: 1px solid #2c3e50;
+  padding: 3px 8px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.view-toggle-chip:hover {
+  border-color: #38bdf8;
+  background-color: #223447;
+}
+
+.view-toggle-chip.active {
+  background-color: #12283a;
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.view-toggle-chip.active .chip-dot {
+  color: #38bdf8;
+}
+
+.view-toggle-chip:not(.active) {
+  background-color: #161a20;
+  border-color: #333d48;
+  color: #7a8b9e;
+  text-decoration: line-through;
+}
+
+.view-toggle-chip:not(.active) .chip-dot {
+  color: #556270;
+}
+
+.cards-view-right {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.locked-indicator {
+  color: var(--pixel-green);
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Hide / Unhide Action Buttons on Section Headers */
+.btn-hide-unhide {
+  background-color: #1b2632;
+  color: #eef5fc;
+  border: 1px solid #2c3e50;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  line-height: 1.2;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-hide-unhide:hover {
+  background-color: #2c3e50;
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.btn-hide-unhide.is-hidden {
+  background-color: #3d2c0b;
+  border-color: #f4b41b;
+  color: #ffd043;
+  font-weight: bold;
+  box-shadow: 0 0 8px rgba(244, 180, 27, 0.4);
+}
+
+.btn-hide-unhide-sm {
+  background-color: #1b2632;
+  color: #8da4be;
+  border: 1px solid #2c3e50;
+  padding: 2px 7px;
+  font-size: 10px;
+  cursor: pointer;
+  line-height: 1.2;
+  border-radius: 2px;
+  letter-spacing: 0.04em;
+  transition: all 0.15s ease;
+}
+
+.btn-hide-unhide-sm:hover {
+  background-color: #2c3e50;
+  color: #ffffff;
+}
+
+.btn-hide-unhide-sm.is-hidden {
+  background-color: #3d2c0b;
+  border-color: #f4b41b;
+  color: #ffd043;
+  font-weight: bold;
+}
+
+/* Collapsed Hidden States for Cards */
+#question-picker.card-hidden {
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  flex: 0 0 38px !important;
+}
+
+#question-picker.card-hidden .picker-body {
+  display: none !important;
+}
+
+#challenge-info-strip.card-hidden {
+  padding: 6px 16px;
+}
+
+#challenge-info-strip.card-hidden .challenge-desc,
+#challenge-info-strip.card-hidden .challenge-hint-box {
+  display: none !important;
+}
+
+#challenge-info-strip.card-hidden .challenge-title-row {
+  margin-bottom: 0;
+}
+
+#output-console.card-hidden {
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  flex: 0 0 38px !important;
+}
+
+#output-console.card-hidden .console-body {
+  display: none !important;
+}
+
+.split-resizer-row.hidden-resizer {
+  display: none !important;
+}
+
 /* 1. #question-picker (Resizable height) */
 #question-picker {
   height: var(--picker-height, 25%);
@@ -1730,6 +1910,12 @@ body.resizing-row .split-resizer-row .resizer-row-handle span {
   letter-spacing: 0.05em;
   color: var(--pixel-yellow);
   margin: 0;
+}
+
+.challenge-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .challenge-topic-tag {

@@ -317,12 +317,34 @@
 
       <!-- Active Code Lab: 3 Stacked Sections -->
       <div id="code-panel-content" class="code-panel-sections">
+        <!-- Cards Visibility Toolbar: Hide / Unhide Cards (Game & Editor Always Active) -->
+        <div class="cards-view-bar font-pixel" role="toolbar" aria-label="Cards Visibility Bar">
+          <div class="cards-view-left">
+            <span class="cards-view-tag">CARDS:</span>
+            <button type="button" class="view-toggle-chip active font-pixel" id="bar-toggle-picker" data-target="question-picker" aria-pressed="true" title="Toggle Question Cards Visibility">
+              <span class="chip-dot">●</span> QUESTIONS
+            </button>
+            <button type="button" class="view-toggle-chip active font-pixel" id="bar-toggle-desc" data-target="challenge-desc" aria-pressed="true" title="Toggle Challenge Description Card Visibility">
+              <span class="chip-dot">●</span> INFO CARD
+            </button>
+            <button type="button" class="view-toggle-chip active font-pixel" id="bar-toggle-console" data-target="output-console" aria-pressed="true" title="Toggle Output Console Card Visibility">
+              <span class="chip-dot">●</span> CONSOLE
+            </button>
+          </div>
+          <div class="cards-view-right font-code">
+            <span class="locked-indicator text-green">● GAME &amp; CODE ALWAYS OPEN</span>
+          </div>
+        </div>
+
         <!-- Section 1: Question Picker (Top) -->
         <section id="question-picker" class="code-section" aria-label="Question Picker">
           <div class="section-header font-pixel">
             <span class="section-title">■ [01] QUESTION_PICKER</span>
             <div class="section-header-actions">
               <span id="picker-status-badge" class="section-badge font-code">SELECT DIFFICULTY TO ATTACK</span>
+              <button type="button" id="btn-toggle-picker" class="btn-hide-unhide font-pixel" data-target="question-picker" aria-expanded="true" title="Hide/Unhide Question Challenge Cards">
+                [-] HIDE CARDS
+              </button>
               <button type="button" class="btn-section-toggle font-pixel" data-section="question-picker" title="Maximize / Restore Question Picker" aria-label="Maximize / Restore Question Picker">⤢</button>
             </div>
           </div>
@@ -371,10 +393,15 @@
           </div>
 
           <!-- Challenge Description & Hint Box -->
-          <div class="challenge-info-strip font-code">
+          <div id="challenge-info-strip" class="challenge-info-strip font-code">
             <div class="challenge-title-row">
               <h3 id="editor-challenge-title" class="challenge-title text-yellow font-pixel">SELECT A CHALLENGE CARD ABOVE</h3>
-              <span id="editor-challenge-topic" class="challenge-topic-tag font-pixel">TOPIC: NONE</span>
+              <div class="challenge-title-actions">
+                <span id="editor-challenge-topic" class="challenge-topic-tag font-pixel">TOPIC: NONE</span>
+                <button type="button" id="btn-toggle-desc" class="btn-hide-unhide-sm font-pixel" data-target="challenge-desc" aria-expanded="true" title="Hide/Unhide Challenge Description Details">
+                  [-] HIDE DESC
+                </button>
+              </div>
             </div>
             <p id="editor-challenge-desc" class="challenge-desc">Pick an attack challenge above (Easy: 10 DMG, Medium: 20 DMG, Hard: 35 DMG) to load your coding turn.</p>
             <div id="challenge-hint-box" class="challenge-hint-box" style="display: none;">
@@ -465,6 +492,9 @@
             </div>
             <div class="console-header-right">
               <span id="console-status-badge" class="section-badge font-code text-green">SYS: READY</span>
+              <button type="button" id="btn-toggle-console" class="btn-hide-unhide font-pixel" data-target="output-console" aria-expanded="true" title="Hide/Unhide Output Console Card">
+                [-] HIDE CONSOLE
+              </button>
               <button type="button" class="btn-section-toggle font-pixel" data-section="output-console" title="Maximize / Restore Output Console" aria-label="Maximize / Restore Output Console">⤢</button>
             </div>
           </div>

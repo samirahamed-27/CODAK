@@ -2967,13 +2967,224 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // -------------------------------------------------------------------------
+  // CARD VISIBILITY CONTROLLER: HIDE / UNHIDE CARDS
+  // (Game and Coding Editor are strictly protected and must always stay open)
+  // -------------------------------------------------------------------------
+  function initCardVisibilityToggles() {
+    const questionPickerSec = document.getElementById('question-picker');
+    const resizerPickerEditor = document.getElementById('resizer-picker-editor');
+    const challengeInfoStrip = document.getElementById('challenge-info-strip');
+    const outputConsoleSec = document.getElementById('output-console');
+    const resizerEditorConsole = document.getElementById('resizer-editor-console');
+
+    // Section Header Action Buttons
+    const btnTogglePicker = document.getElementById('btn-toggle-picker');
+    const btnToggleDesc = document.getElementById('btn-toggle-desc');
+    const btnToggleConsole = document.getElementById('btn-toggle-console');
+
+    // Top Visibility Toolbar Chips
+    const barTogglePicker = document.getElementById('bar-toggle-picker');
+    const barToggleDesc = document.getElementById('bar-toggle-desc');
+    const barToggleConsole = document.getElementById('bar-toggle-console');
+
+    // 1. Toggle Question Picker Cards
+    function setQuestionPickerVisibility(visible) {
+      if (!questionPickerSec) return;
+      if (visible) {
+        questionPickerSec.classList.remove('card-hidden');
+        if (resizerPickerEditor) resizerPickerEditor.classList.remove('hidden-resizer');
+        if (btnTogglePicker) {
+          btnTogglePicker.textContent = '[-] HIDE CARDS';
+          btnTogglePicker.classList.remove('is-hidden');
+          btnTogglePicker.setAttribute('aria-expanded', 'true');
+        }
+        if (barTogglePicker) {
+          barTogglePicker.classList.add('active');
+          barTogglePicker.setAttribute('aria-pressed', 'true');
+          const dot = barTogglePicker.querySelector('.chip-dot');
+          if (dot) dot.textContent = '●';
+        }
+      } else {
+        questionPickerSec.classList.add('card-hidden');
+        if (resizerPickerEditor) resizerPickerEditor.classList.add('hidden-resizer');
+        if (btnTogglePicker) {
+          btnTogglePicker.textContent = '[+] SHOW CARDS';
+          btnTogglePicker.classList.add('is-hidden');
+          btnTogglePicker.setAttribute('aria-expanded', 'false');
+        }
+        if (barTogglePicker) {
+          barTogglePicker.classList.remove('active');
+          barTogglePicker.setAttribute('aria-pressed', 'false');
+          const dot = barTogglePicker.querySelector('.chip-dot');
+          if (dot) dot.textContent = '○';
+        }
+      }
+      saveCardVisibility();
+      window.dispatchEvent(new Event('resize'));
+    }
+
+    // 2. Toggle Challenge Description Card
+    function setChallengeDescVisibility(visible) {
+      if (!challengeInfoStrip) return;
+      if (visible) {
+        challengeInfoStrip.classList.remove('card-hidden');
+        if (btnToggleDesc) {
+          btnToggleDesc.textContent = '[-] HIDE DESC';
+          btnToggleDesc.classList.remove('is-hidden');
+          btnToggleDesc.setAttribute('aria-expanded', 'true');
+        }
+        if (barToggleDesc) {
+          barToggleDesc.classList.add('active');
+          barToggleDesc.setAttribute('aria-pressed', 'true');
+          const dot = barToggleDesc.querySelector('.chip-dot');
+          if (dot) dot.textContent = '●';
+        }
+      } else {
+        challengeInfoStrip.classList.add('card-hidden');
+        if (btnToggleDesc) {
+          btnToggleDesc.textContent = '[+] SHOW DESC';
+          btnToggleDesc.classList.add('is-hidden');
+          btnToggleDesc.setAttribute('aria-expanded', 'false');
+        }
+        if (barToggleDesc) {
+          barToggleDesc.classList.remove('active');
+          barToggleDesc.setAttribute('aria-pressed', 'false');
+          const dot = barToggleDesc.querySelector('.chip-dot');
+          if (dot) dot.textContent = '○';
+        }
+      }
+      saveCardVisibility();
+      window.dispatchEvent(new Event('resize'));
+    }
+
+    // 3. Toggle Output Console Card
+    function setConsoleVisibility(visible) {
+      if (!outputConsoleSec) return;
+      if (visible) {
+        outputConsoleSec.classList.remove('card-hidden');
+        if (resizerEditorConsole) resizerEditorConsole.classList.remove('hidden-resizer');
+        if (btnToggleConsole) {
+          btnToggleConsole.textContent = '[-] HIDE CONSOLE';
+          btnToggleConsole.classList.remove('is-hidden');
+          btnToggleConsole.setAttribute('aria-expanded', 'true');
+        }
+        if (barToggleConsole) {
+          barToggleConsole.classList.add('active');
+          barToggleConsole.setAttribute('aria-pressed', 'true');
+          const dot = barToggleConsole.querySelector('.chip-dot');
+          if (dot) dot.textContent = '●';
+        }
+      } else {
+        outputConsoleSec.classList.add('card-hidden');
+        if (resizerEditorConsole) resizerEditorConsole.classList.add('hidden-resizer');
+        if (btnToggleConsole) {
+          btnToggleConsole.textContent = '[+] SHOW CONSOLE';
+          btnToggleConsole.classList.add('is-hidden');
+          btnToggleConsole.setAttribute('aria-expanded', 'false');
+        }
+        if (barToggleConsole) {
+          barToggleConsole.classList.remove('active');
+          barToggleConsole.setAttribute('aria-pressed', 'false');
+          const dot = barToggleConsole.querySelector('.chip-dot');
+          if (dot) dot.textContent = '○';
+        }
+      }
+      saveCardVisibility();
+      window.dispatchEvent(new Event('resize'));
+    }
+
+    function saveCardVisibility() {
+      try {
+        const state = {
+          picker: !questionPickerSec?.classList.contains('card-hidden'),
+          desc: !challengeInfoStrip?.classList.contains('card-hidden'),
+          console: !outputConsoleSec?.classList.contains('card-hidden')
+        };
+        localStorage.setItem('codemons_cards_visibility', JSON.stringify(state));
+      } catch (_) {}
+    }
+
+    // Restore saved card visibility from localStorage
+    try {
+      const saved = localStorage.getItem('codemons_cards_visibility');
+      if (saved) {
+        const state = JSON.parse(saved);
+        if (state.picker === false) setQuestionPickerVisibility(false);
+        if (state.desc === false) setChallengeDescVisibility(false);
+        if (state.console === false) setConsoleVisibility(false);
+      }
+    } catch (_) {}
+
+    // Attach listeners for Question Picker
+    if (btnTogglePicker) {
+      btnTogglePicker.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playSound('click');
+        const isHidden = questionPickerSec?.classList.contains('card-hidden');
+        setQuestionPickerVisibility(isHidden);
+      });
+    }
+    if (barTogglePicker) {
+      barTogglePicker.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playSound('click');
+        const isHidden = questionPickerSec?.classList.contains('card-hidden');
+        setQuestionPickerVisibility(isHidden);
+      });
+    }
+
+    // Attach listeners for Challenge Description Card
+    if (btnToggleDesc) {
+      btnToggleDesc.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playSound('click');
+        const isHidden = challengeInfoStrip?.classList.contains('card-hidden');
+        setChallengeDescVisibility(isHidden);
+      });
+    }
+    if (barToggleDesc) {
+      barToggleDesc.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playSound('click');
+        const isHidden = challengeInfoStrip?.classList.contains('card-hidden');
+        setChallengeDescVisibility(isHidden);
+      });
+    }
+
+    // Attach listeners for Output Console
+    if (btnToggleConsole) {
+      btnToggleConsole.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playSound('click');
+        const isHidden = outputConsoleSec?.classList.contains('card-hidden');
+        setConsoleVisibility(isHidden);
+      });
+    }
+    if (barToggleConsole) {
+      barToggleConsole.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playSound('click');
+        const isHidden = outputConsoleSec?.classList.contains('card-hidden');
+        setConsoleVisibility(isHidden);
+      });
+    }
+
+    // Expose helpers globally
+    window.setQuestionPickerVisibility = setQuestionPickerVisibility;
+    window.setChallengeDescVisibility = setChallengeDescVisibility;
+    window.setConsoleVisibility = setConsoleVisibility;
+  }
+
   // Expose methods for BattleEngine in battle.js and external integration
   window.startPlayerTurn = startPlayerTurn;
   window.appendConsoleLine = appendConsoleLine;
   window.handleBattleOutcome = handleBattleOutcome;
   window.initResizablePanels = initResizablePanels;
+  window.initCardVisibilityToggles = initCardVisibilityToggles;
 
   // Initial setup
   renderStarters();
   initResizablePanels();
+  initCardVisibilityToggles();
 });
