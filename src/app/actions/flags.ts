@@ -70,11 +70,7 @@ export async function getFlagsAction(filters?: FlagFilters): Promise<{
   const adminClient = createAdminClient();
   let query = adminClient
     .from('flags')
-    .select(`
-      *,
-      student:students!flags_student_id_fkey(id, roll_no, profiles(full_name)),
-      second_student:students!flags_second_student_id_fkey(id, roll_no, profiles(full_name))
-    `)
+    .select('*')
     .order('created_at', { ascending: false });
 
   if (filters?.kind) {
@@ -87,30 +83,57 @@ export async function getFlagsAction(filters?: FlagFilters): Promise<{
     query = query.or(`student_id.eq.${filters.studentId},second_student_id.eq.${filters.studentId}`);
   }
 
-  const { data, error } = await query;
+  const { data: flagsData, error } = await query;
   if (error) {
     return { success: false, statusCode: 500, flags: [], error: error.message };
   }
 
-  const mapped: FlagItem[] = (data || []).map((f: any) => ({
-    id: f.id,
-    kind: f.kind,
-    severity: f.severity,
-    studentId: f.student_id,
-    studentName: f.student?.profiles?.full_name || 'Student',
-    studentRoll: f.student?.roll_no || 'N/A',
-    secondStudentId: f.second_student_id,
-    secondStudentName: f.second_student?.profiles?.full_name || null,
-    secondStudentRoll: f.second_student?.roll_no || null,
-    windowStart: f.window_start,
-    windowEnd: f.window_end,
-    evidence: f.evidence || {},
-    status: f.status,
-    createdAt: f.created_at,
-    reviewedBy: f.reviewed_by,
-    reviewedAt: f.reviewed_at,
-    reviewNote: f.review_note,
-  }));
+  // Collect distinct student IDs
+  const studentIds = new Set<string>();
+  for (const f of flagsData || []) {
+    if (f.student_id) studentIds.add(f.student_id);
+    if (f.second_student_id) studentIds.add(f.second_student_id);
+  }
+
+  const studentMap = new Map<string, { rollNo: string; fullName: string }>();
+  if (studentIds.size > 0) {
+    const { data: studentRows } = await adminClient
+      .from('students')
+      .select('id, roll_no, profiles(full_name)')
+      .in('id', Array.from(studentIds));
+
+    for (const s of studentRows || []) {
+      studentMap.set(s.id, {
+        rollNo: s.roll_no || 'N/A',
+        fullName: (s.profiles as any)?.full_name || 'Student',
+      });
+    }
+  }
+
+  const mapped: FlagItem[] = (flagsData || []).map((f: any) => {
+    const s1Info = studentMap.get(f.student_id);
+    const s2Info = f.second_student_id ? studentMap.get(f.second_student_id) : undefined;
+
+    return {
+      id: f.id,
+      kind: f.kind,
+      severity: f.severity,
+      studentId: f.student_id,
+      studentName: s1Info?.fullName || 'Student',
+      studentRoll: s1Info?.rollNo || 'N/A',
+      secondStudentId: f.second_student_id,
+      secondStudentName: s2Info?.fullName || null,
+      secondStudentRoll: s2Info?.rollNo || null,
+      windowStart: f.window_start,
+      windowEnd: f.window_end,
+      evidence: f.evidence || {},
+      status: f.status,
+      createdAt: f.created_at,
+      reviewedBy: f.reviewed_by,
+      reviewedAt: f.reviewed_at,
+      reviewNote: f.review_note,
+    };
+  });
 
   return { success: true, statusCode: 200, flags: mapped };
 }
@@ -172,7 +195,8 @@ export async function reviewFlagAction(input: {
  * Available to faculty and admin.
  */
 export async function voidFlaggedXpAction(input: {
-  eventIds: string[];
+  eventIds?: string[];
+  flagId?: string;
   reason: string;
 }): Promise<{
   success: boolean;
@@ -185,31 +209,63 @@ export async function voidFlaggedXpAction(input: {
     return { success: false, statusCode: auth.statusCode, voidedCount: 0, error: auth.error };
   }
 
-  if (!input.reason || !input.reason.trim()) {
+  const trimmedReason = input.reason?.trim();
+  if (!trimmedReason || trimmedReason.length < 5) {
     return {
       success: false,
       statusCode: 400,
       voidedCount: 0,
-      error: 'Validation error: A written reason is strictly required to void XP.',
-    };
-  }
-
-  if (!input.eventIds || input.eventIds.length === 0) {
-    return {
-      success: false,
-      statusCode: 400,
-      voidedCount: 0,
-      error: 'Validation error: No event IDs provided to void.',
+      error: 'Validation error: A detailed written reason (minimum 5 characters) is required to void XP.',
     };
   }
 
   const adminClient = createAdminClient();
-  let voidedCount = 0;
+  let targetEventIds: string[] = input.eventIds ? [...input.eventIds] : [];
 
-  for (const eventId of input.eventIds) {
+  // If flagId is provided, resolve target event IDs from flag if not provided
+  if (input.flagId) {
+    const { data: flag } = await adminClient
+      .from('flags')
+      .select('*')
+      .eq('id', input.flagId)
+      .single();
+
+    if (flag) {
+      if (targetEventIds.length === 0) {
+        if (Array.isArray(flag.evidence?.event_ids) && flag.evidence.event_ids.length > 0) {
+          targetEventIds = flag.evidence.event_ids;
+        } else {
+          // Query valid XP events in the flag window for the primary student
+          const { data: windowEvents } = await adminClient
+            .from('xp_events')
+            .select('id')
+            .eq('student_id', flag.student_id)
+            .eq('status', 'valid')
+            .gte('created_at', flag.window_start)
+            .lte('created_at', flag.window_end);
+
+          if (windowEvents) {
+            targetEventIds = windowEvents.map((e) => e.id);
+          }
+        }
+      }
+    }
+  }
+
+  if (targetEventIds.length === 0) {
+    return {
+      success: false,
+      statusCode: 400,
+      voidedCount: 0,
+      error: 'Validation error: No XP events found or provided to void.',
+    };
+  }
+
+  let voidedCount = 0;
+  for (const eventId of targetEventIds) {
     const { data, error } = await adminClient.rpc('void_xp', {
       p_event_id: eventId,
-      p_reason: input.reason.trim(),
+      p_reason: trimmedReason,
       p_actor: auth.user.id,
     });
 
@@ -222,6 +278,33 @@ export async function voidFlaggedXpAction(input: {
     if (res?.status === 'voided' || res?.status === 'already_voided') {
       voidedCount++;
     }
+  }
+
+  // If a flagId was provided, update the flag's review status to 'confirmed'
+  if (input.flagId && voidedCount > 0) {
+    const nowIso = new Date().toISOString();
+    await adminClient
+      .from('flags')
+      .update({
+        status: 'confirmed',
+        reviewed_by: auth.user.id,
+        reviewed_at: nowIso,
+        review_note: `Confirmed and voided ${voidedCount} XP event(s). Reason: ${trimmedReason}`,
+      })
+      .eq('id', input.flagId);
+
+    await writeAuditLog({
+      actorId: auth.user.id,
+      action: 'flag_xp_voided',
+      targetType: 'flag',
+      targetId: input.flagId,
+      reason: trimmedReason,
+      details: {
+        flag_id: input.flagId,
+        voided_count: voidedCount,
+        event_ids: targetEventIds,
+      },
+    });
   }
 
   return { success: true, statusCode: 200, voidedCount };

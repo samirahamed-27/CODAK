@@ -308,14 +308,19 @@ export default function StudentProfilePage() {
                           {formatActionName(event.action_type)}
                         </span>
                         {!isValid && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                            Voided
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            Adjusted
                           </span>
                         )}
                       </div>
                       <div className="text-[10px] text-slate-500 font-mono truncate max-w-[200px]">
                         {event.reference_id}
                       </div>
+                      {!isValid && (
+                        <div className="text-[11px] text-amber-300/90 font-medium mt-1">
+                          XP adjusted by faculty: {event.void_reason || 'Administrative adjustment'}
+                        </div>
+                      )}
                       <div className="text-[10px] text-slate-400 mt-0.5">
                         {new Date(event.created_at).toLocaleDateString('en-IN', {
                           month: 'short',
@@ -335,6 +340,11 @@ export default function StudentProfilePage() {
                       >
                         +{event.xp_amount} XP
                       </span>
+                      {!isValid && (
+                        <div className="text-[9px] text-slate-500 font-mono uppercase tracking-wider">
+                          Adjusted
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

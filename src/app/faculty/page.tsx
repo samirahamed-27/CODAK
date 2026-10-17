@@ -69,6 +69,13 @@ export default function FacultyDashboardPage() {
 
           <div className="flex flex-wrap items-center gap-3">
             <Link
+              href="/faculty/flags"
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold transition-all"
+            >
+              <ShieldAlert className="w-4 h-4 text-amber-400" />
+              <span>Integrity Flags</span>
+            </Link>
+            <Link
               href="/faculty/questions"
               className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white text-xs font-semibold transition-all"
             >
