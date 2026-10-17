@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnBackToTitle = document.getElementById('btn-back-to-title');
   const btnConfirmStarter = document.getElementById('btn-confirm-starter');
   const btnForfeitBattle = document.getElementById('btn-forfeit-battle');
+  const btnBugMode = document.getElementById('btn-bug-mode');
   const startersContainer = document.getElementById('starters-list');
   const soundToggleBtn = document.getElementById('sound-toggle-btn');
   const effectsToggleBtn = document.getElementById('effects-toggle-btn');
@@ -2348,6 +2349,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (btnHolyHeal) btnHolyHeal.disabled = false;
+    if (btnBugMode) btnBugMode.disabled = false;
     startPlayerTurn();
   }
 
@@ -2585,6 +2587,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       stopTurnTimer();
       showScreen('title');
+    });
+  }
+
+  // Instant Bugmon Transformation Button ("BUG MODE")
+  if (btnBugMode) {
+    btnBugMode.addEventListener('click', async () => {
+      playSound('click');
+      if (!battleActive) return;
+      const isAlreadyBugmon = (window.BattleEngine && window.BattleEngine.visualState && window.BattleEngine.visualState.isBugmon) || (window.gameState && window.gameState.isBugmonBattle);
+      if (isAlreadyBugmon) {
+        appendConsoleLine('> [BUG MODE]: Enemy is already transformed into a BUGMON!', 'console-warn');
+        return;
+      }
+      appendConsoleLine('> ⚡ [BUG MODE ENGAGED]: Instant corruption signal sent! Triggering transformation...', 'console-error');
+      btnBugMode.disabled = true;
+      if (window.triggerBugmonTransformation) {
+        await window.triggerBugmonTransformation();
+      } else if (window.BattleEngine && window.BattleEngine.triggerBugmonTransformation) {
+        await window.BattleEngine.triggerBugmonTransformation();
+      }
     });
   }
 

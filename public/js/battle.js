@@ -571,6 +571,82 @@ function drawPixelSprite(ctx, grid, startX, startY, pixelSize = 2, palette = SPR
 }
 
 // ---------------------------------------------------------------------------
+// 2.5. CRISP PIXEL FONT RENDERER (100% Crisp Integer Grid Text)
+// ---------------------------------------------------------------------------
+const PIXEL_FONT_3X5 = {
+  'A': [0b111, 0b101, 0b111, 0b101, 0b101],
+  'B': [0b110, 0b101, 0b110, 0b101, 0b110],
+  'C': [0b111, 0b100, 0b100, 0b100, 0b111],
+  'D': [0b110, 0b101, 0b101, 0b101, 0b110],
+  'E': [0b111, 0b100, 0b110, 0b100, 0b111],
+  'F': [0b111, 0b100, 0b110, 0b100, 0b100],
+  'G': [0b111, 0b100, 0b101, 0b101, 0b111],
+  'H': [0b101, 0b101, 0b111, 0b101, 0b101],
+  'I': [0b111, 0b010, 0b010, 0b010, 0b111],
+  'J': [0b001, 0b001, 0b001, 0b101, 0b010],
+  'K': [0b101, 0b110, 0b100, 0b110, 0b101],
+  'L': [0b100, 0b100, 0b100, 0b100, 0b111],
+  'M': [0b101, 0b111, 0b101, 0b101, 0b101],
+  'N': [0b110, 0b101, 0b101, 0b101, 0b101],
+  'O': [0b111, 0b101, 0b101, 0b101, 0b111],
+  'P': [0b111, 0b101, 0b111, 0b100, 0b100],
+  'Q': [0b111, 0b101, 0b101, 0b111, 0b001],
+  'R': [0b111, 0b101, 0b110, 0b101, 0b101],
+  'S': [0b111, 0b100, 0b111, 0b001, 0b111],
+  'T': [0b111, 0b010, 0b010, 0b010, 0b010],
+  'U': [0b101, 0b101, 0b101, 0b101, 0b111],
+  'V': [0b101, 0b101, 0b101, 0b101, 0b010],
+  'W': [0b101, 0b101, 0b101, 0b111, 0b101],
+  'X': [0b101, 0b101, 0b010, 0b101, 0b101],
+  'Y': [0b101, 0b101, 0b010, 0b010, 0b010],
+  'Z': [0b111, 0b001, 0b010, 0b100, 0b111],
+  '0': [0b111, 0b101, 0b101, 0b101, 0b111],
+  '1': [0b010, 0b110, 0b010, 0b010, 0b111],
+  '2': [0b111, 0b001, 0b111, 0b100, 0b111],
+  '3': [0b111, 0b001, 0b111, 0b001, 0b111],
+  '4': [0b101, 0b101, 0b111, 0b001, 0b001],
+  '5': [0b111, 0b100, 0b111, 0b001, 0b111],
+  '6': [0b111, 0b100, 0b111, 0b101, 0b111],
+  '7': [0b111, 0b001, 0b010, 0b010, 0b010],
+  '8': [0b111, 0b101, 0b111, 0b101, 0b111],
+  '9': [0b111, 0b101, 0b111, 0b001, 0b111],
+  '/': [0b001, 0b001, 0b010, 0b100, 0b100],
+  '-': [0b000, 0b000, 0b111, 0b000, 0b000],
+  '+': [0b000, 0b010, 0b111, 0b010, 0b000],
+  ':': [0b000, 0b010, 0b000, 0b010, 0b000],
+  '.': [0b000, 0b000, 0b000, 0b000, 0b010],
+  '!': [0b010, 0b010, 0b010, 0b000, 0b010],
+  '?': [0b110, 0b001, 0b010, 0b000, 0b010],
+  '>': [0b100, 0b010, 0b001, 0b010, 0b100],
+  '<': [0b001, 0b010, 0b100, 0b010, 0b001],
+  '_': [0b000, 0b000, 0b000, 0b000, 0b111],
+  '*': [0b101, 0b010, 0b111, 0b010, 0b101],
+  '%': [0b101, 0b001, 0b010, 0b100, 0b101],
+  '(': [0b010, 0b100, 0b100, 0b100, 0b010],
+  ')': [0b010, 0b001, 0b001, 0b001, 0b010],
+  ' ': [0, 0, 0, 0, 0]
+};
+
+function drawPixelText(ctx, text, startX, startY, color = '#ffffff', scale = 1) {
+  if (!ctx || text === undefined || text === null) return;
+  const str = String(text).toUpperCase();
+  ctx.fillStyle = color;
+  let curX = Math.round(startX);
+  const sY = Math.round(startY);
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i];
+    const bitmap = PIXEL_FONT_3X5[ch] || PIXEL_FONT_3X5[' '];
+    for (let r = 0; r < 5; r++) {
+      const row = bitmap[r];
+      if (row & 0b100) ctx.fillRect(curX, sY + r * scale, scale, scale);
+      if (row & 0b010) ctx.fillRect(curX + scale, sY + r * scale, scale, scale);
+      if (row & 0b001) ctx.fillRect(curX + 2 * scale, sY + r * scale, scale, scale);
+    }
+    curX += 4 * scale; // 3px glyph width + 1px spacing
+  }
+}
+
+// ---------------------------------------------------------------------------
 // 3. BATTLE VISUAL STATE & ANIMATION ENGINE
 // ---------------------------------------------------------------------------
 const battleVisualState = {
@@ -2195,6 +2271,8 @@ function updateArenaDisplay() {
 function renderBattleScene(ctx, animTick = 0) {
   if (!ctx) return;
 
+  ctx.imageSmoothingEnabled = false;
+
   const width = 160;
   const height = 144;
 
@@ -2244,20 +2322,14 @@ function renderBattleScene(ctx, animTick = 0) {
   ctx.fillStyle = isBugmon ? '#300812' : '#1b2632';
   ctx.fillRect(8, 9, 74, 20);
 
-  // Enemy Name & LV
-  ctx.fillStyle = isBugmon ? '#ff0055' : '#eef5fc';
-  ctx.font = '6px monospace';
-  ctx.fillText(enemy.name.toUpperCase().substring(0, 10), 11, 16);
-
-  ctx.fillStyle = isBugmon ? '#ff1744' : '#f4b41b';
-  ctx.fillText(isBugmon ? 'BUG' : 'LV 5', 64, 16);
+  // Enemy Name & LV (Pixel-perfect crisp bitmap text)
+  drawPixelText(ctx, enemy.name.substring(0, 10), 11, 12, isBugmon ? '#ff0055' : '#eef5fc', 1);
+  drawPixelText(ctx, isBugmon ? 'BUG' : 'LV 5', 60, 12, isBugmon ? '#ff1744' : '#f4b41b', 1);
 
   // Enemy HP Bar
   ctx.fillStyle = '#0c1015';
   ctx.fillRect(11, 19, 68, 6);
-  ctx.fillStyle = '#f4b41b';
-  ctx.font = '5px monospace';
-  ctx.fillText('HP', 13, 24);
+  drawPixelText(ctx, 'HP', 13, 20, '#f4b41b', 1);
 
   // Bar groove
   ctx.fillStyle = '#2c3e50';
@@ -2403,37 +2475,28 @@ function renderBattleScene(ctx, animTick = 0) {
   ctx.fillStyle = '#1b2632';
   ctx.fillRect(75, 71, 77, 28);
 
-  // Player Name & LV
-  ctx.fillStyle = '#eef5fc';
-  ctx.font = '6px monospace';
-  ctx.fillText(player.name.toUpperCase().substring(0, 8), 79, 79);
-
-  ctx.fillStyle = '#f4b41b';
-  ctx.fillText('LV 5', 134, 79);
+  // Player Name & LV (Pixel-perfect crisp bitmap text)
+  drawPixelText(ctx, player.name.substring(0, 8), 78, 73, '#eef5fc', 1);
+  drawPixelText(ctx, 'LV 5', 130, 73, '#f4b41b', 1);
 
   // Player HP Bar
   ctx.fillStyle = '#0c1015';
-  ctx.fillRect(79, 82, 70, 6);
-  ctx.fillStyle = '#f4b41b';
-  ctx.font = '5px monospace';
-  ctx.fillText('HP', 81, 87);
+  ctx.fillRect(78, 81, 70, 6);
+  drawPixelText(ctx, 'HP', 80, 82, '#f4b41b', 1);
 
   // Bar groove
   ctx.fillStyle = '#2c3e50';
-  ctx.fillRect(91, 83, 56, 4);
+  ctx.fillRect(90, 82, 56, 4);
 
   // Bar fill
   const playerFillW = Math.max(0, Math.min(56, Math.round(56 * playerHpPct)));
   ctx.fillStyle = getHpColor(playerHpPct);
-  ctx.fillRect(91, 83, playerFillW, 4);
+  ctx.fillRect(90, 82, playerFillW, 4);
 
   // Numeric HP display right-aligned (e.g. "80/100")
-  ctx.fillStyle = '#eef5fc';
-  ctx.font = '6px monospace';
-  ctx.textAlign = 'right';
   const numHpStr = `${Math.max(0, Math.round(playerHp.display))}/${playerHp.max}`;
-  ctx.fillText(numHpStr, 148, 95);
-  ctx.textAlign = 'left';
+  const numWidth = numHpStr.length * 4;
+  drawPixelText(ctx, numHpStr, 146 - numWidth, 90, '#eef5fc', 1);
 
   ctx.restore();
 }
@@ -2614,6 +2677,11 @@ async function triggerBugmonTransformation() {
     window.gameState.enemy = enemy;
   }
   updateArenaDisplay();
+
+  const btnBugMode = document.getElementById('btn-bug-mode');
+  if (btnBugMode) {
+    btnBugMode.disabled = true;
+  }
 
   // Restore the HP bar to the bugmon's full HP
   const triggerSetHp = window.setHp || setHp;
@@ -3082,6 +3150,10 @@ window.BattleEngine = {
   render: renderBattleScene,
   visualState: battleVisualState,
 
+  // Pixel Font & Text Renderer
+  PIXEL_FONT_3X5,
+  drawPixelText,
+
   // Arena Backgrounds & Helpers
   BATTLE_BACKGROUNDS,
   getBackgroundById,
@@ -3114,5 +3186,7 @@ window.setBackground = setBackground;
 window.getNextBackground = getNextBackground;
 window.getBackgroundForEnemy = getBackgroundForEnemy;
 window.updateArenaDisplay = updateArenaDisplay;
+window.drawPixelText = drawPixelText;
+window.PIXEL_FONT_3X5 = PIXEL_FONT_3X5;
 window.BattleScene = window.BattleEngine;
 
