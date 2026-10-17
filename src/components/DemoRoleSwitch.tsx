@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { IS_DEMO_MODE } from '@/lib/config';
 import { Wrench } from 'lucide-react';
 
-export function DemoRoleSwitch() {
+function DemoRoleSwitchContent() {
   const pathname = usePathname();
 
   // Non-negotiable security guard: Never render unless NEXT_PUBLIC_DEMO_MODE=true
@@ -56,5 +56,13 @@ export function DemoRoleSwitch() {
         </Link>
       </div>
     </aside>
+  );
+}
+
+export function DemoRoleSwitch() {
+  return (
+    <Suspense fallback={null}>
+      <DemoRoleSwitchContent />
+    </Suspense>
   );
 }
