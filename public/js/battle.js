@@ -1112,11 +1112,11 @@ function renderBattleScene(ctx, animTick = 0) {
     // Pick sprite grid based on enemy identity and Bugmon status
     let enemyGrid;
     if (isBugmon) {
-      if (eId.includes('pyrawr')) {
+      if (eId.includes('pyrawr') || eId.includes('python')) {
         enemyGrid = SPRITE_BUG_PYRAWR_FRONT;
-      } else if (eId.includes('jaskull')) {
+      } else if (eId.includes('jaskull') || eId.includes('javascript') || eId === 'js') {
         enemyGrid = SPRITE_BUG_JASKULL_FRONT;
-      } else if (eId.includes('cplusaur')) {
+      } else if (eId.includes('cplusaur') || eId.includes('c++') || eId.includes('cpp')) {
         enemyGrid = SPRITE_BUG_CPLUSAUR_FRONT;
       } else if (eId.includes('javagron') || eId.includes('java')) {
         enemyGrid = SPRITE_BUG_JAVAGRON_FRONT;
@@ -1138,11 +1138,11 @@ function renderBattleScene(ctx, animTick = 0) {
         enemyGrid = SPRITE_BUG_BUGMON_FRONT;
       }
     } else {
-      if (eId.includes('pyrawr')) {
+      if (eId.includes('pyrawr') || eId.includes('python')) {
         enemyGrid = SPRITE_PYRAWR_FRONT;
-      } else if (eId.includes('jaskull')) {
+      } else if (eId.includes('jaskull') || eId.includes('javascript') || eId === 'js') {
         enemyGrid = SPRITE_JASKULL_FRONT;
-      } else if (eId.includes('cplusaur')) {
+      } else if (eId.includes('cplusaur') || eId.includes('c++') || eId.includes('cpp')) {
         enemyGrid = SPRITE_CPLUSAUR_FRONT;
       } else if (eId.includes('javagron') || eId.includes('java')) {
         enemyGrid = SPRITE_JAVAGRON_FRONT;
@@ -1201,9 +1201,9 @@ function renderBattleScene(ctx, animTick = 0) {
     // Pick sprite based on chosen starter
     const pId = (player.id || player.name || '').toLowerCase();
     let playerGrid = SPRITE_PYRAWR_BACK;
-    if (pId.includes('jaskull')) {
+    if (pId.includes('jaskull') || pId.includes('javascript') || pId === 'js') {
       playerGrid = SPRITE_JASKULL_BACK;
-    } else if (pId.includes('cplusaur')) {
+    } else if (pId.includes('cplusaur') || pId.includes('c++') || pId.includes('cpp')) {
       playerGrid = SPRITE_CPLUSAUR_BACK;
     } else if (pId.includes('javagron') || pId.includes('java')) {
       playerGrid = SPRITE_JAVAGRON_BACK;

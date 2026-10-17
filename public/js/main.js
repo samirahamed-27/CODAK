@@ -656,7 +656,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const codemonsList = window.CODEMONS || (window.CodemonData ? window.CodemonData.CODEMONS : []);
     if (!codemonsList.length) return;
 
-    const newIndex = (selectedIndex + direction + codemonsList.length) % codemonsList.length;
+    const len = codemonsList.length;
+    const newIndex = ((selectedIndex + direction) % len + len) % len;
     selectStarterIndex(newIndex, true);
 
     const cards = document.querySelectorAll('.starter-pixel-card');
@@ -2158,12 +2159,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         showScreen('select');
       }
     } else if (currentScreen === 'select') {
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      if (e.key === 'ArrowLeft') {
         e.preventDefault();
         moveSelection(-1);
-      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         moveSelection(1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const cols = (window.innerWidth && window.innerWidth <= 640) ? 1 : 3;
+        moveSelection(-cols);
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const cols = (window.innerWidth && window.innerWidth <= 640) ? 1 : 3;
+        moveSelection(cols);
       } else if (e.key === 'Enter' || e.key === ' ') {
         if (document.activeElement && (document.activeElement.id === 'btn-back-to-title' || document.activeElement.id === 'sound-toggle-btn' || document.activeElement.id === 'effects-toggle-btn')) {
           return;
