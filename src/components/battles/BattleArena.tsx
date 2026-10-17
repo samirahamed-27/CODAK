@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   getBattleLobbyAction,
   submitBattleAnswerAction,
@@ -47,7 +47,7 @@ export default function BattleArena({ battleId, onExit }: BattleArenaProps) {
   const [finalRankings, setFinalRankings] = useState<BattleScore[]>([]);
 
   // Load Battle data
-  async function loadBattle() {
+  const loadBattle = useCallback(async () => {
     setLoading(true);
     const res = await getBattleLobbyAction(battleId);
     if (res.success && res.battle) {
@@ -82,11 +82,11 @@ export default function BattleArena({ battleId, onExit }: BattleArenaProps) {
       }
     }
     setLoading(false);
-  }
+  }, [battleId]);
 
   useEffect(() => {
     loadBattle();
-  }, [battleId]);
+  }, [battleId, loadBattle]);
 
   // Countdown timer effect
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { BattleScore, rankTeamsByScore } from '@/lib/battles';
 import { getBattleScoresAction } from '@/app/actions/battles';
@@ -25,12 +25,12 @@ export default function LiveScoreboard({
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Poll fallback
-  const fetchScores = async () => {
+  const fetchScores = useCallback(async () => {
     const res = await getBattleScoresAction(battleId);
     if (res.success && res.scores) {
       setScores(res.scores);
     }
-  };
+  }, [battleId]);
 
   useEffect(() => {
     let supabase: any = null;
@@ -86,7 +86,7 @@ export default function LiveScoreboard({
         clearInterval(pollingRef.current);
       }
     };
-  }, [battleId]);
+  }, [battleId, fetchScores]);
 
   return (
     <div

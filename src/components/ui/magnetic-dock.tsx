@@ -239,7 +239,9 @@ function MagneticDockBase({
   const labels = items.map((i) => i.label).join("\u0000");
 
   const params = React.useRef({ magnetRadius, maxScale, lift, stiffness, damping, idleWave, tooltip });
-  params.current = { magnetRadius, maxScale, lift, stiffness, damping, idleWave, tooltip };
+  React.useEffect(() => {
+    params.current = { magnetRadius, maxScale, lift, stiffness, damping, idleWave, tooltip };
+  }, [magnetRadius, maxScale, lift, stiffness, damping, idleWave, tooltip]);
 
   React.useEffect(() => {
     const bar = barRef.current;

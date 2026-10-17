@@ -38,8 +38,8 @@ export default function StudentPracticePage() {
         });
         if (res.success) {
           setLinks(res.links);
-          if (res.topics.length > 0 && topics.length === 0) {
-            setTopics(res.topics);
+          if (res.topics.length > 0) {
+            setTopics((prev) => (prev.length === 0 ? res.topics : prev));
           }
         }
       } catch (err) {
