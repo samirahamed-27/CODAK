@@ -1972,6 +1972,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 3. Screen navigation (Arrows, Enter, Space)
     if (currentScreen === 'title') {
       if (e.key === 'Enter' || e.key === ' ') {
+        if (document.activeElement && (document.activeElement.tagName === 'BUTTON' || document.activeElement.tagName === 'A')) {
+          return;
+        }
         e.preventDefault();
         showScreen('select');
       }
@@ -1983,6 +1986,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         moveSelection(1);
       } else if (e.key === 'Enter' || e.key === ' ') {
+        if (document.activeElement && (document.activeElement.id === 'btn-back-to-title' || document.activeElement.id === 'sound-toggle-btn' || document.activeElement.id === 'effects-toggle-btn')) {
+          return;
+        }
         e.preventDefault();
         confirmStarterChoice();
       }
