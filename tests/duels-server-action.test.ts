@@ -261,4 +261,176 @@ describe.runIf(isLiveConfigured)('Phase 3E Audit: Duels Server Action & Schema A
     expect(finalDuel!.status).toBe('completed');
     expect(finalDuel!.winner_id).toBe(student1Id); // Student 1 had score 2 vs score 1
   });
+
+  it('5. Verifies winner (DUEL_WIN) and loser (DUEL_LOSS) XP awards in xp_events ledger', async () => {
+    const { data: winEvents } = await adminClient
+      .from('xp_events')
+      .select('student_id, action_type, xp_amount, status')
+      .eq('student_id', student1Id)
+      .eq('reference_id', `duel:${testDuelId}`);
+
+    expect(winEvents).toBeDefined();
+    expect(winEvents!.length).toBe(1);
+    expect(winEvents![0].action_type).toBe('DUEL_WIN');
+    expect(winEvents![0].xp_amount).toBeGreaterThan(0);
+    expect(winEvents![0].status).toBe('valid');
+
+    const { data: lossEvents } = await adminClient
+      .from('xp_events')
+      .select('student_id, action_type, xp_amount, status')
+      .eq('student_id', student2Id)
+      .eq('reference_id', `duel:${testDuelId}`);
+
+    expect(lossEvents).toBeDefined();
+    expect(lossEvents!.length).toBe(1);
+    expect(lossEvents![0].action_type).toBe('DUEL_PARTICIPATION');
+    expect(lossEvents![0].status).toBe('valid');
+  });
+
+  it('6. Rejects self-duel challenge via challengeDirectStudentAction', async () => {
+    const { challengeDirectStudentAction } = await import('@/app/actions/duels');
+    mockCurrentUser = { id: student1Id };
+
+    const selfDuelRes = await challengeDirectStudentAction(student1Id);
+    expect(selfDuelRes.success).toBe(false);
+    expect(selfDuelRes.error).toMatch(/cannot challenge yourself/i);
+  });
+
+  it('7. Rejects submission to an expired duel', async () => {
+    const { submitDuelAnswersAction } = await import('@/app/actions/duels');
+    
+    // Create an expired duel
+    const { data: expiredDuel } = await adminClient
+      .from('duels')
+      .insert({
+        challenger_id: student1Id,
+        challenged_id: student2Id,
+        status: 'active',
+        expires_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+      })
+      .select('id')
+      .single();
+
+    mockCurrentUser = { id: student1Id };
+    const submitRes = await submitDuelAnswersAction({
+      duelId: expiredDuel!.id,
+      answers: [{ questionId: question1Id, selectedChoice: 'A', timeSpentSeconds: 5 }],
+      totalTimeSeconds: 5,
+    });
+
+    expect(submitRes.success).toBe(false);
+    expect(submitRes.error).toMatch(/expired/i);
+
+    // Cleanup expired duel
+    await adminClient.from('duels').delete().eq('id', expiredDuel!.id);
+  });
+
+  it('8. Tests create/auto-match flow where both players get the EXACT SAME questions without leaked keys', async () => {
+    const { createOrJoinAutoMatchAction, getDuelSessionAction } = await import('@/app/actions/duels');
+
+    // Ensure database has no lingering open duels so matchmaking is deterministic
+    await adminClient.from('duels').delete().eq('status', 'open');
+
+    // Player 1 creates / finds duel (creates open duel since none open)
+    mockCurrentUser = { id: student1Id };
+    const p1Res = await createOrJoinAutoMatchAction();
+    expect(p1Res.success).toBe(true);
+    expect(p1Res.duelId).toBeDefined();
+    const matchmakingDuelId = p1Res.duelId!;
+
+    // Player 2 calls createOrJoinAutoMatchAction -> auto-matches into the open duel
+    mockCurrentUser = { id: student2Id };
+    const p2Res = await createOrJoinAutoMatchAction();
+    expect(p2Res.success).toBe(true);
+    expect(p2Res.duelId).toBe(matchmakingDuelId);
+    expect(p2Res.isNew).toBe(false);
+
+    // Both players fetch questions for the matched duel
+    mockCurrentUser = { id: student1Id };
+    const p1Session = await getDuelSessionAction(matchmakingDuelId);
+    mockCurrentUser = { id: student2Id };
+    const p2Session = await getDuelSessionAction(matchmakingDuelId);
+
+    expect(p1Session.success).toBe(true);
+    expect(p2Session.success).toBe(true);
+    expect(p1Session.questions?.length).toBe(p2Session.questions?.length);
+
+    // Verify both receive identical question IDs in identical order
+    const p1QIds = p1Session.questions!.map((q) => q.id);
+    const p2QIds = p2Session.questions!.map((q) => q.id);
+    expect(p1QIds).toEqual(p2QIds);
+
+    // Verify neither player has answer keys or explanations leaked
+    for (const q of [...p1Session.questions!, ...p2Session.questions!]) {
+      expect((q as any).correct_option).toBeUndefined();
+      expect((q as any).correct_answer).toBeUndefined();
+      expect((q as any).explanation).toBeUndefined();
+    }
+
+    // Cleanup matchmaking duel
+    await adminClient.from('duel_answers').delete().eq('duel_id', matchmakingDuelId);
+    await adminClient.from('duel_questions').delete().eq('duel_id', matchmakingDuelId);
+    await adminClient.from('duels').delete().eq('id', matchmakingDuelId);
+  });
+
+  it('9. Enforces level band matchmaking: does not auto-match students beyond level band', async () => {
+    const { createOrJoinAutoMatchAction } = await import('@/app/actions/duels');
+    const ts = Date.now();
+
+    // Ensure database has no lingering open duels
+    await adminClient.from('duels').delete().eq('status', 'open');
+
+    // Create a high-level student (e.g. 5000 XP -> Level 10+)
+    const { data: highUser } = await adminClient.auth.admin.createUser({
+      email: `audit_high_level_${ts}@test.edu`,
+      password: 'Password123!',
+      email_confirm: true,
+      user_metadata: { full_name: 'Audit Grandmaster', roll_no: `AUDIT-GM-${ts}`, department: 'CSE' },
+    });
+    const highStudentId = highUser.user!.id;
+
+    let highDuelId: string | undefined;
+    let s1DuelId: string | undefined;
+
+    try {
+      // Seed high XP for high-level student via xp_events (student_xp_totals is a view over xp_events)
+      const { error: xpErr } = await adminClient.from('xp_events').insert({
+        student_id: highStudentId,
+        action_type: 'ASSIGNMENT_ON_TIME',
+        xp_amount: 5000,
+        reference_id: `audit_level_test_${ts}`,
+        status: 'valid',
+      });
+      expect(xpErr).toBeNull();
+
+      // High student creates open duel
+      mockCurrentUser = { id: highStudentId };
+      const highDuelRes = await createOrJoinAutoMatchAction();
+      expect(highDuelRes.success).toBe(true);
+      highDuelId = highDuelRes.duelId;
+
+      // Student 1 (Level 1) calls createOrJoinAutoMatchAction -> must NOT match with High Level (Level 10+)
+      mockCurrentUser = { id: student1Id };
+      const s1DuelRes = await createOrJoinAutoMatchAction();
+      expect(s1DuelRes.success).toBe(true);
+      s1DuelId = s1DuelRes.duelId;
+      // Student 1 must get a DIFFERENT duel ID (new open duel created, not matched with high level)
+      expect(s1DuelRes.duelId).not.toBe(highDuelId);
+    } finally {
+      // Guaranteed Cleanup
+      if (highDuelId) {
+        await adminClient.from('duel_questions').delete().eq('duel_id', highDuelId);
+        await adminClient.from('duels').delete().eq('id', highDuelId);
+      }
+      if (s1DuelId) {
+        await adminClient.from('duel_questions').delete().eq('duel_id', s1DuelId);
+        await adminClient.from('duels').delete().eq('id', s1DuelId);
+      }
+      await adminClient.from('xp_events').delete().eq('student_id', highStudentId);
+      await adminClient.from('students').delete().eq('id', highStudentId);
+      await adminClient.from('profiles').delete().eq('id', highStudentId);
+      await adminClient.auth.admin.deleteUser(highStudentId);
+    }
+  });
 });
+

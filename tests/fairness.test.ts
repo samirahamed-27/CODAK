@@ -9,25 +9,32 @@ import { calculateGroupOutcomes, MemberRankInput, DEFAULT_LEAGUE_CONFIG } from '
 
 describe('Phase 3G: Concept Match & Fairness Checkpoint Suite', () => {
   describe('Concept Match Mini-Game Logic', () => {
-    it('generates a round with 4 unique terms and 4 randomized definitions', () => {
+    it('generates a round with 4 unique terms and 4 randomized definitions with opaque IDs', () => {
       const round = generateConceptMatchRound(4);
       expect(round.terms).toHaveLength(4);
       expect(round.definitions).toHaveLength(4);
+      expect(round.mapping).toBeDefined();
 
-      // Verify terms come from valid bank
-      const bankIds = CONCEPT_PAIRS_BANK.map((p) => p.id);
-      round.terms.forEach((t) => expect(bankIds).toContain(t.id));
-      round.definitions.forEach((d) => expect(bankIds).toContain(d.id));
+      // Verify terms have opaque IDs starting with term_ and definitions with def_
+      round.terms.forEach((t) => expect(t.id).toMatch(/^term_/));
+      round.definitions.forEach((d) => expect(d.id).toMatch(/^def_/));
+
+      // IDs must never match each other
+      round.terms.forEach((t) => {
+        round.definitions.forEach((d) => {
+          expect(t.id).not.toBe(d.id);
+        });
+      });
     });
 
-    it('validates a perfect 4/4 match', () => {
+    it('validates a perfect 4/4 match against server mapping', () => {
       const round = generateConceptMatchRound(4);
       const perfectMatches = round.terms.map((t) => ({
         termId: t.id,
-        definitionId: t.id, // Matching identical IDs
+        definitionId: round.mapping![t.id],
       }));
 
-      const outcome = verifyConceptMatches(perfectMatches);
+      const outcome = verifyConceptMatches(perfectMatches, round.mapping);
       expect(outcome.correctCount).toBe(4);
       expect(outcome.totalCount).toBe(4);
       expect(outcome.isPerfect).toBe(true);
@@ -36,15 +43,17 @@ describe('Phase 3G: Concept Match & Fairness Checkpoint Suite', () => {
 
     it('identifies mismatched pairs when student selects wrong definitions', () => {
       const round = generateConceptMatchRound(4);
-      // Swap first two definitions
+      // Swap definitions of first two terms
+      const term0 = round.terms[0].id;
+      const term1 = round.terms[1].id;
       const mismatched = [
-        { termId: round.terms[0].id, definitionId: round.terms[1].id },
-        { termId: round.terms[1].id, definitionId: round.terms[0].id },
-        { termId: round.terms[2].id, definitionId: round.terms[2].id },
-        { termId: round.terms[3].id, definitionId: round.terms[3].id },
+        { termId: term0, definitionId: round.mapping![term1] },
+        { termId: term1, definitionId: round.mapping![term0] },
+        { termId: round.terms[2].id, definitionId: round.mapping![round.terms[2].id] },
+        { termId: round.terms[3].id, definitionId: round.mapping![round.terms[3].id] },
       ];
 
-      const outcome = verifyConceptMatches(mismatched);
+      const outcome = verifyConceptMatches(mismatched, round.mapping);
       expect(outcome.correctCount).toBe(2);
       expect(outcome.totalCount).toBe(4);
       expect(outcome.isPerfect).toBe(false);

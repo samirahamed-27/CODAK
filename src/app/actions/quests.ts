@@ -30,8 +30,8 @@ export async function getStudentQuestsAction(fakeDate?: string): Promise<GetQues
 
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  // Fallback to demo student if not logged in
-  if (!studentId) {
+  // Fallback to demo student if not logged in and demo mode is active
+  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
     const { data: demoStudent } = await adminClient
       .from('students')
       .select('id')

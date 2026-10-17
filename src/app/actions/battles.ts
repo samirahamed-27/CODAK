@@ -42,8 +42,8 @@ async function getRequesterAuth() {
     if (profile?.role) {
       role = profile.role as 'student' | 'faculty' | 'admin';
     }
-  } else {
-    // Demo fallback for local development
+  } else if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+    // Demo fallback for local development only when demo mode is active
     const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
     studentId = demo?.id;
   }

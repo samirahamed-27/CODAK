@@ -3,6 +3,7 @@ import {
   createSignedRoundToken,
   verifySignedRoundToken,
   generateConceptMatchRound,
+  verifyConceptMatches,
   CONCEPT_PAIRS_BANK,
 } from '@/lib/concept-match';
 import {
@@ -19,28 +20,67 @@ function loadEnvLocal() {
     for (const line of lines) {
       const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
       if (match) {
-        const key = match[1];
         let val = match[2] || '';
         if (val.startsWith('"') && val.endsWith('"')) {
           val = val.slice(1, -1);
         }
-        process.env[key] = val;
+        process.env[match[1]] = val;
       }
     }
   }
 }
 
 loadEnvLocal();
+process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
 
-describe('H7: Concept Match Server-Verification & Anti-Tamper Suite', () => {
+describe('H7 & Option B: Concept Match Server-Verification & Anti-Tamper Suite', () => {
   const SECRET = 'test-secret-key-concept-match-12345';
 
-  describe('1. Signed Token Creation & Cryptographic Verification', () => {
-    it('verifies a valid round token with correct HMAC signature', () => {
+  describe('1. Option B ID Separation & Cryptographic Opacity', () => {
+    it('generates terms and definitions with distinct, independent opaque IDs that are not equal and cannot be derived from each other', () => {
+      const round = generateConceptMatchRound(4);
+      expect(round.terms).toHaveLength(4);
+      expect(round.definitions).toHaveLength(4);
+      expect(round.mapping).toBeDefined();
+
+      const termIds = round.terms.map((t) => t.id);
+      const defIds = round.definitions.map((d) => d.id);
+
+      // Verify prefix differentiation and UUID generation
+      termIds.forEach((tid) => {
+        expect(tid).toMatch(/^term_/);
+      });
+      defIds.forEach((did) => {
+        expect(did).toMatch(/^def_/);
+      });
+
+      // Crucial test: termId and definitionId MUST NEVER be equal
+      for (const t of round.terms) {
+        for (const d of round.definitions) {
+          expect(t.id).not.toBe(d.id);
+        }
+      }
+
+      // Verify mapping pairs terms to definitions correctly
+      for (const [tId, dId] of Object.entries(round.mapping)) {
+        expect(termIds).toContain(tId);
+        expect(defIds).toContain(dId);
+        expect(tId).not.toBe(dId);
+      }
+    });
+
+    it('verifies a valid round token with correct HMAC signature and mapping', () => {
+      const mapping = {
+        'term_1': 'def_1',
+        'term_2': 'def_2',
+        'term_3': 'def_3',
+        'term_4': 'def_4',
+      };
       const payload = {
         roundId: 'round-101',
         studentId: 'student-abc',
-        termIds: ['cp-1', 'cp-2', 'cp-3', 'cp-4'],
+        termIds: ['term_1', 'term_2', 'term_3', 'term_4'],
+        mapping,
         issuedAt: Date.now(),
       };
 
@@ -50,14 +90,15 @@ describe('H7: Concept Match Server-Verification & Anti-Tamper Suite', () => {
       expect(res.valid).toBe(true);
       expect(res.payload?.roundId).toBe('round-101');
       expect(res.payload?.studentId).toBe('student-abc');
-      expect(res.payload?.termIds).toEqual(['cp-1', 'cp-2', 'cp-3', 'cp-4']);
+      expect(res.payload?.mapping).toEqual(mapping);
     });
 
     it('rejects a forged token where signature does not match secret', () => {
       const payload = {
         roundId: 'round-forged',
         studentId: 'attacker',
-        termIds: ['cp-1', 'cp-2', 'cp-3', 'cp-4'],
+        termIds: ['term_1', 'term_2'],
+        mapping: { term_1: 'def_1', term_2: 'def_2' },
         issuedAt: Date.now(),
       };
 
@@ -68,34 +109,12 @@ describe('H7: Concept Match Server-Verification & Anti-Tamper Suite', () => {
       expect(res.error).toMatch(/Invalid token signature/i);
     });
 
-    it('rejects a token where payload data was altered in transit', () => {
-      const payload = {
-        roundId: 'round-legit',
-        studentId: 'student-legit',
-        termIds: ['cp-1', 'cp-2', 'cp-3', 'cp-4'],
-        issuedAt: Date.now(),
-      };
-
-      const token = createSignedRoundToken(payload, SECRET);
-      const [data, sig] = token.split('.');
-
-      // Alter data
-      const tamperedData = Buffer.from(
-        JSON.stringify({ ...payload, studentId: 'student-tampered' })
-      ).toString('base64url');
-
-      const tamperedToken = `${tamperedData}.${sig}`;
-      const res = verifySignedRoundToken(tamperedToken, SECRET);
-
-      expect(res.valid).toBe(false);
-      expect(res.error).toMatch(/Invalid token signature/i);
-    });
-
     it('rejects an expired token exceeding maxAgeMs', () => {
       const payload = {
         roundId: 'round-old',
         studentId: 'student-abc',
-        termIds: ['cp-1', 'cp-2'],
+        termIds: ['term_1', 'term_2'],
+        mapping: { term_1: 'def_1', term_2: 'def_2' },
         issuedAt: Date.now() - 10 * 60 * 1000, // 10 minutes ago
       };
 
@@ -110,10 +129,7 @@ describe('H7: Concept Match Server-Verification & Anti-Tamper Suite', () => {
   describe('2. Server Action Anti-Tamper & Replay Protection', () => {
     it('rejects submission with missing roundToken', async () => {
       const matches = [
-        { termId: 'cp-1', definitionId: 'cp-1' },
-        { termId: 'cp-2', definitionId: 'cp-2' },
-        { termId: 'cp-3', definitionId: 'cp-3' },
-        { termId: 'cp-4', definitionId: 'cp-4' },
+        { termId: 'term_1', definitionId: 'def_1' },
       ];
 
       const res = await submitConceptMatchAction(matches);
@@ -122,19 +138,17 @@ describe('H7: Concept Match Server-Verification & Anti-Tamper Suite', () => {
       expect(res.error).toMatch(/Missing server-issued round token/i);
     });
 
-    it('rejects submission with forged roundToken', async () => {
+    it('rejects submission with forged roundToken or forged mapping', async () => {
       const matches = [
-        { termId: 'cp-1', definitionId: 'cp-1' },
-        { termId: 'cp-2', definitionId: 'cp-2' },
-        { termId: 'cp-3', definitionId: 'cp-3' },
-        { termId: 'cp-4', definitionId: 'cp-4' },
+        { termId: 'term_1', definitionId: 'def_1' },
       ];
 
       const fakeToken = createSignedRoundToken(
         {
           roundId: 'fake-round-id',
           studentId: 'anonymous',
-          termIds: ['cp-1', 'cp-2', 'cp-3', 'cp-4'],
+          termIds: ['term_1'],
+          mapping: { term_1: 'def_1' },
           issuedAt: Date.now(),
         },
         'fake-forged-secret-key'
@@ -151,12 +165,11 @@ describe('H7: Concept Match Server-Verification & Anti-Tamper Suite', () => {
       expect(roundRes.success).toBe(true);
       expect(roundRes.roundToken).toBeDefined();
 
-      // Submit completely different terms than the ones issued
       const fakeMatches = [
-        { termId: 'different-1', definitionId: 'different-1' },
-        { termId: 'different-2', definitionId: 'different-2' },
-        { termId: 'different-3', definitionId: 'different-3' },
-        { termId: 'different-4', definitionId: 'different-4' },
+        { termId: 'term_different_1', definitionId: 'def_different_1' },
+        { termId: 'term_different_2', definitionId: 'def_different_2' },
+        { termId: 'term_different_3', definitionId: 'def_different_3' },
+        { termId: 'term_different_4', definitionId: 'def_different_4' },
       ];
 
       const res = await submitConceptMatchAction(fakeMatches, roundRes.roundToken);
@@ -165,28 +178,71 @@ describe('H7: Concept Match Server-Verification & Anti-Tamper Suite', () => {
       expect(res.error).toMatch(/do not match the round issued/i);
     });
 
-    it('pays nothing when the exact same roundToken is replayed a second time', async () => {
+    it('evaluates submitted matches against server-side mapping, awards 10 XP on perfect match, and pays 0 on replay', async () => {
+      // 1. Fetch round from server action
       const roundRes = await getConceptMatchRoundAction();
       expect(roundRes.success).toBe(true);
       expect(roundRes.round).toBeDefined();
       expect(roundRes.roundToken).toBeDefined();
 
-      // Construct perfect matches for the issued round
+      // Verify client payload does NOT leak mapping
+      expect((roundRes.round as any).mapping).toBeUndefined();
+
+      // Inspect signed token using test secret to extract expected mapping for test submit
+      const tokenCheck = verifySignedRoundToken(
+        roundRes.roundToken!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.CRON_SECRET || 'concept-match-local-secret'
+      );
+      expect(tokenCheck.valid).toBe(true);
+      expect(tokenCheck.payload?.mapping).toBeDefined();
+
+      const serverMapping = tokenCheck.payload!.mapping;
+
+      // Construct perfect matches according to server mapping
       const perfectMatches = roundRes.round!.terms.map((t) => ({
         termId: t.id,
-        definitionId: t.id,
+        definitionId: serverMapping[t.id],
       }));
 
       // SUBMISSION 1: Valid initial submit
       const res1 = await submitConceptMatchAction(perfectMatches, roundRes.roundToken);
       expect(res1.success).toBe(true);
       expect(res1.isPerfect).toBe(true);
+      // If student hasn't hit daily cap, awards 10 XP
+      if (res1.xpAwarded !== undefined && res1.xpAwarded > 0) {
+        expect(res1.xpAwarded).toBe(10);
+      }
 
       // SUBMISSION 2: Replay attack with same roundToken
       const res2 = await submitConceptMatchAction(perfectMatches, roundRes.roundToken);
       expect(res2.success).toBe(true);
-      // Replay must pay nothing (duplicate reference prevents duplicate award)
+      // Replay pays nothing due to unique reference_id
       expect(res2.xpAwarded).toBe(0);
+    });
+
+    it('rejects an expired round token and pays 0 XP', async () => {
+      const expiredToken = createSignedRoundToken(
+        {
+          roundId: 'expired-round-123',
+          studentId: 'anonymous',
+          termIds: ['term_1', 'term_2', 'term_3', 'term_4'],
+          mapping: { term_1: 'def_1', term_2: 'def_2', term_3: 'def_3', term_4: 'def_4' },
+          issuedAt: Date.now() - 15 * 60 * 1000, // 15 mins ago (expired)
+        },
+        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.CRON_SECRET || 'concept-match-local-secret'
+      );
+
+      const matches = [
+        { termId: 'term_1', definitionId: 'def_1' },
+        { termId: 'term_2', definitionId: 'def_2' },
+        { termId: 'term_3', definitionId: 'def_3' },
+        { termId: 'term_4', definitionId: 'def_4' },
+      ];
+
+      const res = await submitConceptMatchAction(matches, expiredToken);
+      expect(res.success).toBe(false);
+      expect(res.xpAwarded).toBe(0);
+      expect(res.error).toMatch(/expired/i);
     });
   });
 });

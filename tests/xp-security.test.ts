@@ -146,6 +146,34 @@ describe.runIf(isDevProject)('XP Security & Tamper Resistance Suite', () => {
       expect(error?.code).toBe('42501');
       expect(data).toBeNull();
     });
+
+    it('AUDIT-SEC-01: Authenticated student calling submit_battle_answer directly is denied permission (42501 or PGRST202)', async () => {
+      const fakeUuid = '00000000-0000-0000-0000-000000000000';
+      const { data, error } = await (studentAClient as any).rpc('submit_battle_answer', {
+        p_battle_id: fakeUuid,
+        p_question_id: fakeUuid,
+        p_selected_choice: 'A',
+        p_time_spent_seconds: 5,
+      });
+
+      expect(error).toBeDefined();
+      expect(['42501', 'PGRST202']).toContain(error?.code);
+      expect(data).toBeNull();
+    });
+
+    it('AUDIT-SEC-01: Anonymous user calling submit_battle_answer directly is denied permission (42501 or PGRST202)', async () => {
+      const fakeUuid = '00000000-0000-0000-0000-000000000000';
+      const { data, error } = await (anonClient as any).rpc('submit_battle_answer', {
+        p_battle_id: fakeUuid,
+        p_question_id: fakeUuid,
+        p_selected_choice: 'A',
+        p_time_spent_seconds: 5,
+      });
+
+      expect(error).toBeDefined();
+      expect(['42501', 'PGRST202']).toContain(error?.code);
+      expect(data).toBeNull();
+    });
   });
 
   describe('2. Direct Table RLS Restrictions', () => {

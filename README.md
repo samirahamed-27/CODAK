@@ -54,20 +54,33 @@ graph TD
     end
 ```
 
-### 1. 🎓 Learn & Daily Quiz
+### 1. 🎓 Learn, Daily Quiz & Concept Match
 - **Verified Academic Progression**: Daily concept quizzes drawn from reviewed faculty question banks.
-- **Streak Multipliers**: Fire streak counter with server-enforced recovery and streak freeze tokens.
+- **Option B Concept Match**: Real-time term-definition matching using cryptographically separated opaque IDs (`term_...` vs `def_...`), HMAC-signed expiring round tokens, and strict server-side evaluation.
+- **Streak Multipliers**: Fire streak counter with server-enforced recovery, calendar boundaries in `Asia/Kolkata` time, and streak freeze tokens.
 - **Anti-Cheat Validation**: Server-side answer evaluation preventing client-side inspection or tampering.
 
-### 2. ⚔️ Codemons Battle Arena
-- **In-Browser Code Duel**: Real-time turn-based battle where code correctness and test suites dictate attack power and elemental advantages.
-- **Safe Sandbox Execution**: In-browser sandboxed evaluation with timeout limits, syntax highlighting, and live battle terminal output.
-- **Dynamic Challenges**: Algorithmic problem bank ranging from string parsers to dynamic programming.
+### 2. ⚔️ Code Duels & Battle Arena
+- **Real-Time Duels**: Exactly 5 questions per duel (`DUEL_QUESTIONS_COUNT = 5`). Both players solve the exact same questions with zero answer key leakage. Fair level-band matchmaking and daily pair limits (max 3 duels between same pair).
+- **Battle Arena**: Balanced multi-team snake drafting based on student level. Submissions evaluated atomically via backend RPC with live score broadcasting over Supabase Realtime.
 
-### 3. 🏆 Compete & Ranked Leagues
-- **Weekly League Resets**: Bronze, Silver, Gold, Platinum, Diamond, and Champion tiers.
-- **Zero-Sum Immunity**: Zero-penalty casual play to encourage learning without exam fatigue.
-- **Anonymous Mode**: Server-enforced privacy toggle replacing student identities with anonymous gamer handles.
+### 3. 🏆 Compete, Ranked Leagues & Quests
+- **Weekly Ranked Leagues**: 4 tiers (Bronze, Silver, Gold, Diamond). Target group size 20, min group size for relegation 10. Top 5 promoted, bottom 5 relegated (groups with <10 students relegate 0).
+- **Weekly League Rollover Cron**: Scheduled at `30 18 * * 0` (Sunday 18:30 UTC = Monday 00:00:00 IST). Idempotent execution skips already finalized groups.
+- **Learning Quests**: Weekly quests reset on Monday 00:00:00 IST; One-time quests reward milestone progress. Capped at 5 claims per day.
+- **Mathematical Level Curve**: Piecewise threshold progression:
+  - Level 1: 0 XP
+  - Level 2: 100 XP
+  - Level 3: 250 XP
+  - Level 4: 450 XP
+  - Level 5: 700 XP
+  - Level 6: 1000 XP
+  - Level 7+: `1000 + (level - 6) * 350` XP (Level 7 = 1350, Level 8 = 1700, etc.)
+- **6 Canonical Badges**:
+  - *Milestone*: `first_quiz` (First Step), `streak_7` (Week of Fire)
+  - *Quest*: `quest_first` (Adventurer), `quest_trio` (Quest Master)
+  - *Self-Improvement*: `improvement_score` (Leveling Up - vs own 7-day average), `comeback_kid` (Phoenix - streak rebuild)
+- **Anonymous Mode**: Server-enforced privacy toggle replacing student identities with anonymous gamer handles across public leaderboards, league standings, and duel histories.
 
 ---
 
@@ -75,12 +88,46 @@ graph TD
 
 | Domain | Technology | Description |
 |---|---|---|
-| **Framework** | Next.js 16 (App Router) | Turbopack compilation, React 19, Server Actions |
+| **Framework** | Next.js 16 (App Router) | Version 16.4.0 (Turbopack canary), React 19, Server Actions |
 | **Language** | TypeScript 5 | Strict typing across schema, payloads, and components |
 | **Styling** | Tailwind CSS v4 & Vanilla CSS | Custom design tokens, glassmorphism, responsive grid |
 | **Animations** | Motion, GSAP, WebGL | Gaussian dock physics, staggered menus, shader waves |
-| **Database** | Supabase (PostgreSQL) | RLS policies, atomic XP transactions, auth sessions |
+| **Database** | Supabase (PostgreSQL) | 35 RLS tables, atomic XP ledger (`award_xp`), Realtime |
 | **Testing** | Vitest | Integration test suites for XP math, streaks, and RLS |
+
+---
+
+## 📖 Operations Runbook & System Configuration
+
+### 1. Database Migrations
+> **MIGRATION RULE**: Always apply database migrations using `npm run migrate`. NEVER execute SQL migrations directly in the Supabase web dashboard, as that bypasses `schema_migrations` tracking.
+
+- Migration runner: `scripts/run-migration.ts`
+- Tracking table: `public.schema_migrations`
+- `DATABASE_URL`: Must only be set in `.env.local` for local terminal migrations. **NEVER** expose `DATABASE_URL` in production hosting environments (e.g. Vercel dashboard).
+
+```bash
+# Check status of applied vs pending migrations
+npm run migrate -- --status
+
+# Apply pending migrations sequentially
+npm run migrate
+```
+
+### 2. Cron Endpoints & Scheduling
+- **Endpoint**: `/api/cron/weekly-leagues` (Supports `GET` and `POST`)
+- **Authentication**: Secured via `CRON_SECRET`. The request must include either:
+  - Header `Authorization: Bearer <CRON_SECRET>` (standard Vercel Cron format)
+  - Header `x-cron-secret: <CRON_SECRET>`
+- **Cron Schedule**: `30 18 * * 0` (Every Sunday at 18:30 UTC, which corresponds exactly to Monday 00:00:00 IST).
+- **Idempotency Guarantee**: Rollover detects already-completed groups (`status = 'completed'`) and safely skips them, ensuring duplicate executions never create duplicate XP or recalculate ranks.
+
+```bash
+# Manual trigger example with curl:
+curl -X POST https://your-domain.com/api/cron/weekly-leagues \
+  -H "Authorization: Bearer your-cron-secret-token" \
+  -H "Content-Type: application/json"
+```
 
 ---
 
@@ -109,8 +156,6 @@ NEXT_PUBLIC_DEMO_MODE="true"
 ```
 
 ### 3. Database Migration & Seed
-> **Migration Rule**: ALWAYS apply database migrations with `npm run migrate`. Never paste migration files directly into the Supabase SQL Editor, as that bypasses `schema_migrations` version tracking.
-
 ```bash
 # Apply pending migrations and update schema_migrations
 npm run migrate

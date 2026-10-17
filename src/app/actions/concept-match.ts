@@ -33,7 +33,7 @@ export async function getConceptMatchRoundAction(): Promise<{
 
     let studentId = user?.id;
 
-    if (!studentId) {
+    if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
       const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
       if (supabaseUrl && serviceRoleKey) {
@@ -50,12 +50,19 @@ export async function getConceptMatchRoundAction(): Promise<{
         roundId,
         studentId: studentId || 'anonymous',
         termIds: round.terms.map((t) => t.id),
+        mapping: round.mapping,
         issuedAt: Date.now(),
       },
       getSigningSecret()
     );
 
-    return { success: true, round, roundToken };
+    // Strip server-side mapping before delivering to client (Option B: pairing never reaches browser)
+    const clientRound = {
+      terms: round.terms,
+      definitions: round.definitions,
+    };
+
+    return { success: true, round: clientRound, roundToken };
   } catch (err: any) {
     return { success: false, error: err.message || 'Failed to generate round' };
   }
@@ -115,13 +122,13 @@ export async function submitConceptMatchAction(
 
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  if (!studentId) {
+  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
     const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
     studentId = demo?.id;
   }
 
   if (!studentId) {
-    return { success: false, correctCount: 0, totalCount: 0, isPerfect: false, error: 'Student not found' };
+    return { success: false, correctCount: 0, totalCount: 0, isPerfect: false, xpAwarded: 0, error: 'Unauthorized: login required' };
   }
 
   // Verify token matches current student if authenticated
@@ -154,8 +161,8 @@ export async function submitConceptMatchAction(
     };
   }
 
-  // 4. Verify match correctness on server
-  const outcome = verifyConceptMatches(matches);
+  // 4. Verify match correctness on server against signed server-side mapping (Option B)
+  const outcome = verifyConceptMatches(matches, payload.mapping);
 
   let xpAwarded = 0;
 

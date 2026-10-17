@@ -56,34 +56,51 @@ export const CONCEPT_PAIRS_BANK: ConceptPair[] = [
   },
 ];
 
+import crypto from 'crypto';
+
 export interface ConceptMatchRound {
   terms: { id: string; term: string }[];
   definitions: { id: string; definition: string }[];
+  mapping?: Record<string, string>; // termId -> definitionId (kept on server)
 }
 
 /**
  * Pure function: Generates a randomized concept match round.
+ * Option B: Generates separate, independent opaque random IDs for terms and definitions
+ * so the client cannot derive or inspect pairings from the token IDs.
  */
 export function generateConceptMatchRound(
   count = 4,
   bank = CONCEPT_PAIRS_BANK
-): ConceptMatchRound {
+): ConceptMatchRound & { mapping: Record<string, string> } {
   const safeCount = Math.min(count, bank.length);
   const shuffledBank = [...bank].sort(() => 0.5 - Math.random()).slice(0, safeCount);
 
-  const terms = shuffledBank.map((pair) => ({ id: pair.id, term: pair.term }));
-  const definitions = shuffledBank
-    .map((pair) => ({ id: pair.id, definition: pair.definition }))
-    .sort(() => 0.5 - Math.random());
+  const mapping: Record<string, string> = {};
+  const terms: { id: string; term: string }[] = [];
+  const definitions: { id: string; definition: string }[] = [];
 
-  return { terms, definitions };
+  for (const pair of shuffledBank) {
+    // Generate separate, uncorrelatable opaque random IDs
+    const termId = `term_${crypto.randomUUID()}`;
+    const defId = `def_${crypto.randomUUID()}`;
+    mapping[termId] = defId;
+    terms.push({ id: termId, term: pair.term });
+    definitions.push({ id: defId, definition: pair.definition });
+  }
+
+  // Shuffle definitions so visual order does not correlate with terms
+  const shuffledDefs = [...definitions].sort(() => 0.5 - Math.random());
+
+  return { terms, definitions: shuffledDefs, mapping };
 }
 
 /**
- * Pure function: Evaluates student's matches on the server.
+ * Pure function: Evaluates student's matches on the server against server-side mapping.
  */
 export function verifyConceptMatches(
-  matches: { termId: string; definitionId: string }[]
+  matches: { termId: string; definitionId: string }[],
+  mapping?: Record<string, string>
 ): {
   correctCount: number;
   totalCount: number;
@@ -93,28 +110,40 @@ export function verifyConceptMatches(
   let correctCount = 0;
   const incorrectPairs: { termId: string; definitionId: string }[] = [];
 
+  if (!mapping || Object.keys(mapping).length === 0) {
+    return {
+      correctCount: 0,
+      totalCount: matches.length,
+      isPerfect: false,
+      incorrectPairs: matches,
+    };
+  }
+
+  const expectedCount = Object.keys(mapping).length;
+
   for (const match of matches) {
-    if (match.termId === match.definitionId) {
+    if (mapping[match.termId] && mapping[match.termId] === match.definitionId) {
       correctCount++;
     } else {
       incorrectPairs.push(match);
     }
   }
 
+  const isPerfect = matches.length >= expectedCount && correctCount === expectedCount;
+
   return {
     correctCount,
     totalCount: matches.length,
-    isPerfect: matches.length >= 4 && correctCount === matches.length,
+    isPerfect,
     incorrectPairs,
   };
 }
-
-import crypto from 'crypto';
 
 export interface ConceptMatchTokenPayload {
   roundId: string;
   studentId: string;
   termIds: string[];
+  mapping: Record<string, string>; // termId -> expected defId
   issuedAt: number;
 }
 
@@ -165,7 +194,13 @@ export function verifySignedRoundToken(
       return { valid: false, error: 'Token expired' };
     }
 
-    if (!payload.roundId || !Array.isArray(payload.termIds) || payload.termIds.length === 0) {
+    if (
+      !payload.roundId ||
+      !Array.isArray(payload.termIds) ||
+      payload.termIds.length === 0 ||
+      !payload.mapping ||
+      typeof payload.mapping !== 'object'
+    ) {
       return { valid: false, error: 'Invalid payload contents' };
     }
 

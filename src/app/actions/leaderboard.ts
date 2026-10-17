@@ -46,8 +46,8 @@ export async function getLeaderboardAction(options: {
     if (profile?.role) {
       requesterRole = profile.role as 'student' | 'faculty' | 'admin';
     }
-  } else {
-    // Demo student fallback
+  } else if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+    // Demo student fallback when demo mode is active
     const { data: demoStudent } = await adminClient
       .from('students')
       .select('id')
@@ -102,7 +102,7 @@ export async function updateAnonymousPreferenceAction(isAnonymous: boolean): Pro
     ? createAdminClient(supabaseUrl, serviceRoleKey)
     : supabaseServer;
 
-  if (!studentId) {
+  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
     const { data: demoStudent } = await adminClient
       .from('students')
       .select('id')

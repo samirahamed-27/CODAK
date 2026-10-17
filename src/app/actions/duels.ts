@@ -67,7 +67,7 @@ export async function createOrJoinAutoMatchAction(): Promise<{
 
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  if (!studentId) {
+  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
     const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
     studentId = demo?.id;
   }
@@ -200,7 +200,7 @@ export async function challengeDirectStudentAction(targetStudentId: string): Pro
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  if (!studentId) {
+  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
     const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
     studentId = demo?.id;
   }
@@ -274,7 +274,7 @@ export async function getDuelSessionAction(duelId: string): Promise<{
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  if (!studentId) {
+  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
     const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
     studentId = demo?.id;
   }
@@ -358,7 +358,7 @@ export async function submitDuelAnswersAction(input: DuelSubmissionInput): Promi
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  if (!studentId) {
+  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
     const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
     studentId = demo?.id;
   }
@@ -546,7 +546,7 @@ export async function getMyDuelsAction(): Promise<{
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  if (!studentId) {
+  if (!studentId && process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
     const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
     studentId = demo?.id;
   }
