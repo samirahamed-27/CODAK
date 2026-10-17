@@ -1,186 +1,210 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import {
-  SubjectProgress,
-  INITIAL_SUBJECTS,
-  INITIAL_EXAMS,
-} from '@/lib/course-progression-data';
-import { StatusBadge } from '@/components/progression/StatusBadge';
-import {
-  GraduationCap,
-  BookOpen,
-  Calendar,
-  Clock,
-  ArrowRight,
-  CheckCircle2,
-  AlertCircle,
-  Sparkles,
-  Layers,
-} from 'lucide-react';
+import { Flame, Snowflake, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { AcademySidebar } from '@/components/academy/AcademySidebar';
+import { AcademyHeader } from '@/components/academy/AcademyHeader';
+import { ProfileCard } from '@/components/academy/ProfileCard';
+import { WorkReportCard } from '@/components/academy/WorkReportCard';
+import { ToDoCard } from '@/components/academy/ToDoCard';
+import { DeadlinesCard } from '@/components/academy/DeadlinesCard';
+import { ScoreCard } from '@/components/academy/ScoreCard';
+import { initialStudentProfile, StudentProfile } from '@/data/studentDashboardData';
+import { levelFromXp } from '@/lib/levels';
+import { getStudentStreakAction } from '@/app/actions/quiz';
 
-export default function StudentScopePage() {
-  const [selectedBatch, setSelectedBatch] = useState('2026-Batch-A');
-  const subjects = INITIAL_SUBJECTS.filter((s) => s.campus === 'HI-Tech');
-  const exams = INITIAL_EXAMS;
+export default function StudentDashboardPage() {
+  const [profile, setProfile] = useState<StudentProfile>(initialStudentProfile);
+  const [streakInfo, setStreakInfo] = useState<{
+    currentStreak: number;
+    longestStreak: number;
+    freezeDaysRemaining: number;
+    lastQuizDate: string | null;
+    isTodayCompleted: boolean;
+    maxDailyQuizXp: number;
+    loading: boolean;
+  }>({
+    currentStreak: 0,
+    longestStreak: 0,
+    freezeDaysRemaining: 2,
+    lastQuizDate: null,
+    isTodayCompleted: false,
+    maxDailyQuizXp: 40,
+    loading: true,
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    getStudentStreakAction().then((data) => {
+      if (mounted) {
+        setStreakInfo({
+          ...data,
+          loading: false,
+        });
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Dynamic XP reward handler (e.g. completing a quest adds +10 XP)
+  const handleQuestCompleted = (xpEarned: number) => {
+    setProfile((prev) => {
+      const newTotalXp = prev.totalXp + xpEarned;
+      const newLevel = levelFromXp(newTotalXp).level;
+      return {
+        ...prev,
+        totalXp: newTotalXp,
+        level: newLevel,
+      };
+    });
+  };
+
+  const handleUpdateAvatar = (newUrl: string | null) => {
+    setProfile((prev) => ({
+      ...prev,
+      avatarUrl: newUrl,
+    }));
+  };
 
   return (
-    <div className="min-h-screen bg-[#07080B] text-slate-100 flex flex-col font-sans">
-      {/* Top Navbar */}
-      <header className="border-b border-white/[0.08] bg-[#090A0F]/90 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Link
-              href="/"
-              className="text-xs text-zinc-400 hover:text-white px-2 py-1 rounded-lg hover:bg-white/5 transition-colors"
-            >
-              ← Back to Executive Hub
-            </Link>
-            <span className="text-zinc-600">/</span>
-            <span className="text-xs font-semibold text-white">Student Course & Exam Scope</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase font-mono px-2.5 py-1 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30">
-              Batch: 2026-Batch-A
-            </span>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#07080B] game-bg-grid text-white flex flex-col font-body selection:bg-sky-400 selection:text-[#07080B]">
+      {/* Sleek Floating Menu Button */}
+      <AcademySidebar totalXp={profile.totalXp} />
 
-      {/* Main Container */}
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-8 flex-1 w-full">
-        {/* Banner */}
-        <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-mono text-purple-400">
-              <GraduationCap className="w-4 h-4" />
-              <span>STUDENT SYLLABUS TRANSPARENCY</span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white mt-1">
-              What was covered & what is coming next
-            </h1>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Live syllabus progress for your enrolled subjects and exact topic scope for upcoming exams.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-xs font-mono text-zinc-300 bg-black/40 p-2.5 rounded-xl border border-white/5">
-            <Calendar className="w-4 h-4 text-purple-400" />
-            <span>Next Exam: Mid-Term (in 14 days)</span>
-          </div>
-        </div>
+      {/* Main Dashboard Area */}
+      <div className="flex-1 w-full min-h-screen flex flex-col">
+        <main className="flex-1 w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8 lg:pl-32 flex flex-col gap-6">
+          {/* Main Top Header */}
+          <AcademyHeader profile={profile} />
 
-        {/* Upcoming Exam Scope Radar for Students */}
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-sky-400" />
-            <span>Upcoming Exam Windows & Syllabus Scope</span>
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {exams.map((exam) => (
+          {/* PHASE 2 HERO: Today's Daily Quiz & Streak Card */}
+          <div className="p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-indigo-500/30 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+            <div className="flex items-center gap-5 z-10">
               <div
-                key={exam.id}
-                className="p-4 rounded-2xl bg-[#090A0F] border border-white/[0.08] space-y-3"
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg shrink-0 ${
+                  streakInfo.isTodayCompleted
+                    ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/25'
+                    : 'bg-gradient-to-br from-amber-500 to-rose-500 shadow-rose-500/25'
+                }`}
               >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="text-[10px] font-mono uppercase text-sky-400">
-                      {exam.type}
-                    </span>
-                    <h3 className="font-semibold text-white text-sm mt-0.5">
-                      {exam.name}
-                    </h3>
-                  </div>
-                  <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-zinc-300">
-                    {exam.daysRemaining} days left
+                {streakInfo.isTodayCompleted ? (
+                  <CheckCircle2 className="w-8 h-8 text-white" />
+                ) : (
+                  <Flame className="w-8 h-8 animate-pulse text-amber-200" />
+                )}
+              </div>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      streakInfo.isTodayCompleted
+                        ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+                        : 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
+                    }`}
+                  >
+                    {streakInfo.isTodayCompleted ? 'Completed for Today' : 'Daily Study Routine'}
+                  </span>
+                  <span className="text-xs text-slate-400">Asia/Kolkata Calendar</span>
+                </div>
+                <h2 className="text-xl font-extrabold text-white tracking-tight">
+                  {streakInfo.isTodayCompleted
+                    ? "Today's Daily Quiz Completed! (CS101)"
+                    : "Today's Daily Quiz (CS101)"}
+                </h2>
+                <p className="text-xs text-slate-300 max-w-lg">
+                  {streakInfo.isTodayCompleted
+                    ? 'Awesome job! You earned your daily quiz XP and maintained your streak. Feel free to practice more to sharpen your skills.'
+                    : `Answer 5 concept questions to reinforce your learning, earn up to ${streakInfo.maxDailyQuizXp || 40} XP towards your level, and extend your study streak.`}
+                </p>
+              </div>
+            </div>
+
+            {/* Streak Counter & CTA Actions */}
+            <div className="flex items-center gap-3 w-full md:w-auto shrink-0 z-10">
+              <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-950/70 border border-slate-800 text-xs">
+                <div className="flex items-center gap-1.5 text-amber-400 font-bold">
+                  <Flame className="w-4 h-4 text-rose-500 fill-rose-500" />
+                  <span>
+                    {streakInfo.loading
+                      ? '...'
+                      : streakInfo.currentStreak > 0
+                      ? `${streakInfo.currentStreak} Day Streak`
+                      : '0 Day Streak'}
                   </span>
                 </div>
-                <div className="text-xs font-mono text-zinc-400">
-                  <div>Scope: {exam.totalInScopeHours} hours of curriculum</div>
-                  <div className="text-emerald-400 mt-0.5">{exam.coveredHours} hours taught in class</div>
-                </div>
-                <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                  <div
-                    className="bg-sky-400 h-full rounded-full"
-                    style={{ width: `${Math.round((exam.coveredHours / exam.totalInScopeHours) * 100)}%` }}
-                  />
+                <span className="text-slate-600">|</span>
+                <div className="flex items-center gap-1 text-cyan-300">
+                  <Snowflake className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>
+                    {streakInfo.loading
+                      ? '...'
+                      : `${streakInfo.freezeDaysRemaining} Freezes Left`}
+                  </span>
                 </div>
               </div>
-            ))}
+
+              <Link
+                href="/student/play"
+                className={`flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl text-white text-xs font-extrabold shadow-lg transition-all hover:scale-[1.02] ${
+                  streakInfo.isTodayCompleted
+                    ? 'bg-slate-800 hover:bg-slate-700 border border-slate-700 shadow-slate-900/50'
+                    : 'bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 shadow-rose-500/25'
+                }`}
+              >
+                <span>
+                  {streakInfo.isTodayCompleted
+                    ? 'Practice Mode'
+                    : `Start Today's Quiz (earn up to ${streakInfo.maxDailyQuizXp || 40} XP)`}
+                </span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
           </div>
-        </div>
 
-        {/* Enrolled Subjects Syllabus Breakdown */}
-        <div className="space-y-4">
-          <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-sky-400" />
-            <span>Enrolled Subjects & Pacing Status</span>
-          </h2>
+          {/* ROW 1: Three Cards (Profile Pic, Work Report [widest], To do) */}
+          <section
+            aria-label="Student Overview and Daily Quests"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 items-stretch"
+          >
+            {/* Card 1: Profile Pic Card (Left, 3 cols) */}
+            <div className="lg:col-span-3 flex flex-col">
+              <ProfileCard
+                profile={profile}
+                onUpdateAvatar={handleUpdateAvatar}
+              />
+            </div>
 
-          <div className="space-y-3">
-            {subjects.map((s) => {
-              const pct = Math.round((s.coveredHours / s.plannedHours) * 100);
-              return (
-                <div
-                  key={s.id}
-                  className="p-5 rounded-2xl bg-[#090A0F] border border-white/[0.08] hover:border-white/15 transition-all space-y-4"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-sky-400">{s.code}</span>
-                        <span className="text-zinc-600">•</span>
-                        <span className="text-xs text-zinc-400">{s.facultyName}</span>
-                      </div>
-                      <h3 className="font-semibold text-white text-base mt-0.5">
-                        {s.name}
-                      </h3>
-                    </div>
-                    <StatusBadge status={s.status} size="sm" />
-                  </div>
+            {/* Card 2: Work Report Card (Middle, Widest, 5 cols) */}
+            <div className="lg:col-span-5 flex flex-col">
+              <WorkReportCard />
+            </div>
 
-                  {/* Progress bar */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-mono">
-                      <span className="text-zinc-400">Overall Syllabus Covered</span>
-                      <span className="text-white font-bold">{pct}% ({s.coveredHours}h / {s.plannedHours}h)</span>
-                    </div>
-                    <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${s.status === 'DANGER' ? 'bg-rose-500' : 'bg-sky-400'}`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
+            {/* Card 3: To do Card (Right, 4 cols) */}
+            <div className="md:col-span-2 lg:col-span-4 flex flex-col">
+              <ToDoCard onQuestCompleted={handleQuestCompleted} />
+            </div>
+          </section>
 
-                  {/* What was covered vs what is coming next */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
-                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] space-y-1">
-                      <div className="flex items-center gap-1.5 text-emerald-400 font-mono text-[10px] uppercase font-semibold">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Last Session Covered</span>
-                      </div>
-                      <p className="text-zinc-200">
-                        {s.topicsCovered} topics covered • Last logged {s.lastLoggedAt}
-                      </p>
-                    </div>
+          {/* ROW 2: Two Cards (Summary/deadlines [narrower], Score [wider]) */}
+          <section
+            aria-label="Coursework and Academic Performance"
+            className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch pb-10"
+          >
+            {/* Card 4: Summary/deadlines Card (Left, Narrower, 4 cols) */}
+            <div className="lg:col-span-4 flex flex-col">
+              <DeadlinesCard />
+            </div>
 
-                    <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] space-y-1">
-                      <div className="flex items-center gap-1.5 text-sky-400 font-mono text-[10px] uppercase font-semibold">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>Coming Up Next in Class</span>
-                      </div>
-                      <p className="text-zinc-200 font-medium">
-                        {s.nextTopic}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </main>
+            {/* Card 5: Score Card (Right, Wider, 8 cols) */}
+            <div className="lg:col-span-8 flex flex-col">
+              <ScoreCard />
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }
