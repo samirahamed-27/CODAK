@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Sparkles, Trophy, BookOpen, Gamepad2, ArrowRight } from 'lucide-react';
+import { Trophy, BookOpen, Gamepad2, ArrowRight } from 'lucide-react';
 import Shuffle from '@/components/Shuffle';
 
 export default function HomePage() {
@@ -35,11 +35,6 @@ export default function HomePage() {
 
         {/* Hero Content */}
         <div className="py-12 sm:py-20 flex flex-col items-center text-center max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-sky-500/10 border border-sky-500/25 text-sky-300 mb-6 shadow-[0_0_12px_rgba(125,211,252,0.15)]">
-            <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-            MSOT Challenge #4: Gamified Learning
-          </div>
-
           <div className="mb-3">
             <Shuffle
               text="GAMIFY"
@@ -63,7 +58,7 @@ export default function HomePage() {
 
           <div className="mb-6">
             <Shuffle
-              text="DUOLINGO FOR COLLEGE"
+              text="NEXT-GEN LEARNING PLATFORM"
               tag="h2"
               effect="slide"
               shuffleDirection="down"
@@ -78,7 +73,7 @@ export default function HomePage() {
               hoverRadius={60}
               color="#E2E8F0"
               accentColor="#7DD3FC"
-              style={{ fontSize: 'clamp(1.25rem, 3.5vw, 2.25rem)', letterSpacing: '0.05em' }}
+              style={{ fontSize: 'clamp(1.1rem, 3vw, 2rem)', letterSpacing: '0.05em' }}
             />
           </div>
 

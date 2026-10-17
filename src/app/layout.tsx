@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Gamify - Gamified Learning Platform',
-  description: 'Duolingo for college: Learn, Play, and Compete.',
+  description: 'Next-Gen Gamified Academic Platform: Learn, Play, and Compete.',
 };
 
 export default function RootLayout({

@@ -1,7 +1,7 @@
 <div align="center">
 
 # 🎮 GAMIFY // CODEMONS
-### *The "Duolingo for College" + Real-Time Code Battle Arena*
+### *Next-Gen Academic Learning Platform + Real-Time Code Battle Arena*
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.4-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
