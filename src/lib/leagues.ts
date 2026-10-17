@@ -337,6 +337,7 @@ export async function executeWeeklyLeagueRollover(
     return { groupsProcessed: 0, promotedCount: 0, relegatedCount: 0, retainedCount: 0 };
   }
 
+  let totalProcessed = 0;
   let totalPromoted = 0;
   let totalRelegated = 0;
   let totalRetained = 0;
@@ -344,6 +345,8 @@ export async function executeWeeklyLeagueRollover(
   for (const group of groups) {
     // If already completed, skip to guarantee idempotency
     if (group.status === 'completed') continue;
+
+    totalProcessed++;
 
     // Fetch members of this group
     const { data: members } = await adminClient
@@ -420,7 +423,7 @@ export async function executeWeeklyLeagueRollover(
   }
 
   return {
-    groupsProcessed: groups.length,
+    groupsProcessed: totalProcessed,
     promotedCount: totalPromoted,
     relegatedCount: totalRelegated,
     retainedCount: totalRetained,
