@@ -102,11 +102,22 @@ Configure your Supabase credentials in `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-public-key"
 SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+# Direct Postgres Connection URI (Local .env.local only, NEVER in hosting/Vercel env)
+DATABASE_URL="postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres"
+CRON_SECRET="your-cron-secret-token"
 NEXT_PUBLIC_DEMO_MODE="true"
 ```
 
 ### 3. Database Migration & Seed
+> **Migration Rule**: ALWAYS apply database migrations with `npm run migrate`. Never paste migration files directly into the Supabase SQL Editor, as that bypasses `schema_migrations` version tracking.
+
 ```bash
+# Apply pending migrations and update schema_migrations
+npm run migrate
+
+# Inspect migration status
+npm run migrate -- --status
+
 # Seed initial student, faculty, admin accounts and question bank
 npm run seed
 ```
