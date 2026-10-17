@@ -376,7 +376,7 @@ export default function StudentProfilePage() {
 
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400 leading-relaxed">
             <strong className="text-slate-300 block mb-0.5">Server-Enforced Privacy:</strong>
-            When enabled, your name is replaced by a fun avatar on the server before reaching any API responses.
+            When enabled, your name is replaced by a fun avatar on the server before reaching any API responses. Faculty and admins can always see your real identity.
           </div>
         </section>
       </main>

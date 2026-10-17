@@ -61,7 +61,7 @@ graph TD
 - **Anti-Cheat Validation**: Server-side answer evaluation preventing client-side inspection or tampering.
 
 ### 2. ⚔️ Code Duels & Battle Arena
-- **Real-Time Duels**: Exactly 5 questions per duel (`DUEL_QUESTIONS_COUNT = 5`). Both players solve the exact same questions with zero answer key leakage. Fair level-band matchmaking and daily pair limits (max 3 duels between same pair).
+- **Real-Time Duels**: Exactly 5 questions per duel (`DUEL_QUESTIONS_COUNT = 5`). Both players solve the exact same questions with zero answer key leakage. Fair level-band matchmaking and daily pair limits (max 2 duels between same pair).
 - **Battle Arena**: Balanced multi-team snake drafting based on student level. Submissions evaluated atomically via backend RPC with live score broadcasting over Supabase Realtime.
 
 ### 3. 🏆 Compete, Ranked Leagues & Quests
@@ -115,12 +115,24 @@ npm run migrate
 ```
 
 ### 2. Cron Endpoints & Scheduling
-- **Endpoint**: `/api/cron/weekly-leagues` (Supports `GET` and `POST`)
+- **Endpoint**: `/api/cron/weekly-leagues` (Supports `GET` with Bearer auth and `POST` with `x-cron-secret`)
 - **Authentication**: Secured via `CRON_SECRET`. The request must include either:
   - Header `Authorization: Bearer <CRON_SECRET>` (standard Vercel Cron format)
   - Header `x-cron-secret: <CRON_SECRET>`
 - **Cron Schedule**: `30 18 * * 0` (Every Sunday at 18:30 UTC, which corresponds exactly to Monday 00:00:00 IST).
+- **Vercel Hobby Timing Note**: Vercel Hobby cron timing is not exact and may trigger with a slight delay or variance.
 - **Idempotency Guarantee**: Rollover detects already-completed groups (`status = 'completed'`) and safely skips them, ensuring duplicate executions never create duplicate XP or recalculate ranks.
+- **Vercel Cron Configuration (`vercel.json`)**:
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/weekly-leagues",
+      "schedule": "30 18 * * 0"
+    }
+  ]
+}
+```
 
 ```bash
 # Manual trigger example with curl:
@@ -128,6 +140,26 @@ curl -X POST https://your-domain.com/api/cron/weekly-leagues \
   -H "Authorization: Bearer your-cron-secret-token" \
   -H "Content-Type: application/json"
 ```
+
+### 3. Production Server Actions Inventory
+All state mutations are encapsulated in secure server actions reading caller sessions via `supabaseServer.auth.getUser()`:
+
+| Module | Exported Actions | Access / Role Guard |
+|---|---|---|
+| `auth.ts` | `signOutAction` | Public (clears session and auth cookies) |
+| `badges.ts` | `evaluateMyBadgesAction`, `getStudentBadgesAction` | Student / Authenticated |
+| `battles.ts` | `autoSplitTeamsAction`, `createBattleAction`, `startBattleAction`, `submitBattleAnswerAction`, `finishBattleEarlyAction`, `getMyBattlesAction`, `getBattleDetailsAction` | Faculty/Admin (creation/start) & Student (submit/view) |
+| `concept-match.ts` | `getConceptMatchRoundAction`, `submitConceptMatchAction` | Student / Authenticated (HMAC token validated) |
+| `duels.ts` | `createOrJoinAutoMatchAction`, `challengeStudentAction`, `submitDuelAnswerAction`, `getDuelDetailsAction`, `getMyDuelsAction`, `getOpenDuelsAction`, `acceptDuelAction`, `declineDuelAction` | Student / Authenticated |
+| `faculty-analytics.ts` | `getFacultyAnalyticsAction` | Faculty & Admin Only (403 for students) |
+| `faculty-questions.ts` | `submitManualQuestionAction`, `editQuestionAction`, `getFacultyQuestionsAction`, `reviewQuestionAction`, `uploadQuestionsCsvAction` | Faculty & Admin Only (403 for students) |
+| `leaderboard.ts` | `updateAnonymousPreferenceAction` | Student / Authenticated |
+| `leagues.ts` | `getStudentLeagueAction`, `getWeeklyLeagueStandingsAction` | Student / Authenticated |
+| `practice.ts` | `getPracticeLinksAction` | Authenticated |
+| `quests.ts` | `getStudentQuestsAction`, `claimQuestRewardAction` | Student / Authenticated |
+| `quiz.ts` | `getDailyQuizSessionAction`, `submitQuizAnswerAction`, `finalizeQuizAction`, `getPracticeQuizSessionAction`, `submitPracticeAnswerAction`, `getStudentStreakAction` | Student / Authenticated |
+| `student-search.ts` | `searchStudentsAction` | Faculty & Admin Only (403 for students) |
+| `xp.ts` | `awardXpAction` | Faculty & Admin Only (403 for students) |
 
 ---
 
