@@ -9,7 +9,10 @@ import {
   validateDuelChallenge,
   validateDuelSubmission,
   formatDuelSummaries,
+  isWithinLevelBand,
+  canEarnPairDuelXp,
 } from '@/lib/duels';
+import { levelFromXp } from '@/lib/levels';
 
 export interface DuelSubmissionInput {
   duelId: string;
@@ -75,7 +78,25 @@ export async function createOrJoinAutoMatchAction(): Promise<{
 
   const now = new Date().toISOString();
 
-  // 1. Check for open duel created by another student that is not expired
+  // 1. Fetch current student's level
+  const { data: xpData } = await adminClient
+    .from('student_xp_totals')
+    .select('total_xp')
+    .eq('student_id', studentId)
+    .single();
+
+  const myLevel = levelFromXp(xpData?.total_xp || 0).level;
+
+  // 2. Fetch level band configuration from app_settings (default +/- 2 levels)
+  const { data: bandSetting } = await adminClient
+    .from('app_settings')
+    .select('value')
+    .eq('key', 'duel_matchmaking_level_band')
+    .single();
+
+  const levelBand = typeof bandSetting?.value === 'number' ? bandSetting.value : 2;
+
+  // 3. Check for open duels created by another student within level band
   const { data: openDuels } = await adminClient
     .from('duels')
     .select('id, challenger_id')
@@ -84,20 +105,38 @@ export async function createOrJoinAutoMatchAction(): Promise<{
     .neq('challenger_id', studentId)
     .gt('expires_at', now)
     .order('created_at', { ascending: true })
-    .limit(1);
+    .limit(20);
 
   if (openDuels && openDuels.length > 0) {
-    const matchedDuel = openDuels[0];
-    const { error: joinErr } = await adminClient
-      .from('duels')
-      .update({
-        challenged_id: studentId,
-        status: 'active',
-      })
-      .eq('id', matchedDuel.id);
+    const challengerIds = openDuels.map((d) => d.challenger_id);
+    const { data: challengerXpRows } = await adminClient
+      .from('student_xp_totals')
+      .select('student_id, total_xp')
+      .in('student_id', challengerIds);
 
-    if (!joinErr) {
-      return { success: true, duelId: matchedDuel.id, isNew: false };
+    const levelMap = new Map<string, number>();
+    (challengerXpRows || []).forEach((row) => {
+      levelMap.set(row.student_id, levelFromXp(row.total_xp || 0).level);
+    });
+
+    // Find the first open duel where challenger is within level band
+    const matchedDuel = openDuels.find((od) => {
+      const challengerLevel = levelMap.get(od.challenger_id) ?? 1;
+      return isWithinLevelBand(myLevel, challengerLevel, levelBand);
+    });
+
+    if (matchedDuel) {
+      const { error: joinErr } = await adminClient
+        .from('duels')
+        .update({
+          challenged_id: studentId,
+          status: 'active',
+        })
+        .eq('id', matchedDuel.id);
+
+      if (!joinErr) {
+        return { success: true, duelId: matchedDuel.id, isNew: false };
+      }
     }
   }
 
@@ -426,23 +465,49 @@ export async function submitDuelAnswersAction(input: DuelSubmissionInput): Promi
       })
       .eq('id', input.duelId);
 
-    // Award XP to Challenger
-    await adminClient.rpc('award_xp', {
-      p_student_id: updatedDuel.challenger_id,
-      p_action_type: outcome.challengerXpAction,
-      p_reference_id: `duel:${input.duelId}`,
-      p_extra_units: 0,
-      p_actor: null,
-    });
+    // Check anti-win-trading per-pair daily cap (default 2 per pair per day in Asia/Kolkata)
+    const { data: pairLimitSetting } = await adminClient
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'max_duel_xp_per_pair_daily')
+      .single();
 
-    // Award XP to Challenged
-    await adminClient.rpc('award_xp', {
-      p_student_id: updatedDuel.challenged_id,
-      p_action_type: outcome.challengedXpAction,
-      p_reference_id: `duel:${input.duelId}`,
-      p_extra_units: 0,
-      p_actor: null,
-    });
+    const maxPairDaily = typeof pairLimitSetting?.value === 'number' ? pairLimitSetting.value : 2;
+
+    const todayKolkataStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    const istStartOfDay = new Date(`${todayKolkataStr}T00:00:00+05:30`).toISOString();
+
+    const { count: completedPairDuelsToday } = await adminClient
+      .from('duels')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'completed')
+      .or(
+        `and(challenger_id.eq.${updatedDuel.challenger_id},challenged_id.eq.${updatedDuel.challenged_id}),and(challenger_id.eq.${updatedDuel.challenged_id},challenged_id.eq.${updatedDuel.challenger_id})`
+      )
+      .gte('created_at', istStartOfDay)
+      .neq('id', input.duelId);
+
+    const canAwardPairXp = canEarnPairDuelXp(completedPairDuelsToday ?? 0, maxPairDaily);
+
+    if (canAwardPairXp) {
+      // Award XP to Challenger
+      await adminClient.rpc('award_xp', {
+        p_student_id: updatedDuel.challenger_id,
+        p_action_type: outcome.challengerXpAction,
+        p_reference_id: `duel:${input.duelId}`,
+        p_extra_units: 0,
+        p_actor: null,
+      });
+
+      // Award XP to Challenged
+      await adminClient.rpc('award_xp', {
+        p_student_id: updatedDuel.challenged_id,
+        p_action_type: outcome.challengedXpAction,
+        p_reference_id: `duel:${input.duelId}`,
+        p_extra_units: 0,
+        p_actor: null,
+      });
+    }
   }
 
   return {

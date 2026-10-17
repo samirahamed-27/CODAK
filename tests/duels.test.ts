@@ -5,9 +5,11 @@ import {
   isDuelExpired,
   validateDuelChallenge,
   validateDuelSubmission,
+  isWithinLevelBand,
+  canEarnPairDuelXp,
 } from '@/lib/duels';
 
-describe('Phase 3E: Async Quiz Duels Suite', () => {
+describe('Phase 3E & H8: Async Quiz Duels & Anti-Win-Trading Suite', () => {
   describe('Question Sanitization (Answer Key & Explanation Protection)', () => {
     it('completely strips correct_answer and explanation before serving questions to client', () => {
       const rawBank = [
@@ -262,6 +264,51 @@ describe('Phase 3E: Async Quiz Duels Suite', () => {
 
       const res = validateDuelSubmission(duel, 'student-1');
       expect(res.valid).toBe(true);
+    });
+  });
+
+  describe('H8: Auto-Match Level Band Matching (+/- 2 Levels by Default)', () => {
+    it('matches students who are at the exact same level', () => {
+      expect(isWithinLevelBand(3, 3, 2)).toBe(true);
+    });
+
+    it('matches students within +/- 1 level', () => {
+      expect(isWithinLevelBand(3, 4, 2)).toBe(true);
+      expect(isWithinLevelBand(4, 3, 2)).toBe(true);
+    });
+
+    it('matches students at the boundary (+/- 2 levels)', () => {
+      expect(isWithinLevelBand(2, 4, 2)).toBe(true);
+      expect(isWithinLevelBand(5, 3, 2)).toBe(true);
+    });
+
+    it('rejects matching students outside the level band (> 2 levels apart)', () => {
+      expect(isWithinLevelBand(1, 4, 2)).toBe(false);
+      expect(isWithinLevelBand(2, 5, 2)).toBe(false);
+      expect(isWithinLevelBand(6, 2, 2)).toBe(false);
+    });
+
+    it('respects a custom configured level band', () => {
+      expect(isWithinLevelBand(1, 4, 3)).toBe(true);
+      expect(isWithinLevelBand(1, 4, 1)).toBe(false);
+    });
+  });
+
+  describe('H8: Anti-Win-Trading Per-Pair Daily Cap (Default 2 Duels/Day)', () => {
+    it('allows earning XP for the 1st and 2nd duel between the same pair on a calendar day', () => {
+      expect(canEarnPairDuelXp(0, 2)).toBe(true);
+      expect(canEarnPairDuelXp(1, 2)).toBe(true);
+    });
+
+    it('blocks earning XP on the 3rd and subsequent duels between the same pair on the same day', () => {
+      expect(canEarnPairDuelXp(2, 2)).toBe(false);
+      expect(canEarnPairDuelXp(3, 2)).toBe(false);
+      expect(canEarnPairDuelXp(10, 2)).toBe(false);
+    });
+
+    it('respects custom configured pair limit', () => {
+      expect(canEarnPairDuelXp(2, 3)).toBe(true);
+      expect(canEarnPairDuelXp(3, 3)).toBe(false);
     });
   });
 });

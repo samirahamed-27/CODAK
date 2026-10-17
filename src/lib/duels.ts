@@ -235,3 +235,19 @@ export function validateDuelSubmission(
 
   return { valid: true };
 }
+
+/**
+ * Checks whether two levels are within the configured matchmaking band (+/- band, default 2).
+ */
+export function isWithinLevelBand(levelA: number, levelB: number, band = 2): boolean {
+  return Math.abs(levelA - levelB) <= band;
+}
+
+/**
+ * Anti-win-trading: Checks whether a pair of students can earn duel XP from each other.
+ * Limits XP-earning duels between the same two students to N times per calendar day (default 2).
+ */
+export function canEarnPairDuelXp(completedCountToday: number, maxDaily = 2): boolean {
+  return completedCountToday < maxDaily;
+}
+
