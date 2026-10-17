@@ -2727,11 +2727,253 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // -------------------------------------------------------------------------
+  // RESIZABLE CARDS & SECTIONS (Horizontal / Vertical Splitters & Maximize)
+  // -------------------------------------------------------------------------
+  function initResizablePanels() {
+    const appEl = document.getElementById('app');
+    const panelResizerCol = document.getElementById('panel-resizer-col');
+    const resizerPickerEditor = document.getElementById('resizer-picker-editor');
+    const resizerEditorConsole = document.getElementById('resizer-editor-console');
+    const questionPickerSec = document.getElementById('question-picker');
+    const editorAreaSec = document.getElementById('editor-area');
+    const outputConsoleSec = document.getElementById('output-console');
+    const codePanelSections = document.querySelector('.code-panel-sections');
+
+    // 1. Restore saved layout dimensions from localStorage
+    try {
+      const savedColWidth = localStorage.getItem('codemons_panel_width');
+      if (savedColWidth && gamePanel) {
+        gamePanel.style.width = savedColWidth;
+      }
+      const savedPickerHeight = localStorage.getItem('codemons_picker_height');
+      if (savedPickerHeight && questionPickerSec) {
+        questionPickerSec.style.height = savedPickerHeight;
+        questionPickerSec.style.flex = `0 0 ${savedPickerHeight}`;
+      }
+      const savedConsoleHeight = localStorage.getItem('codemons_console_height');
+      if (savedConsoleHeight && outputConsoleSec) {
+        outputConsoleSec.style.height = savedConsoleHeight;
+        outputConsoleSec.style.flex = `0 0 ${savedConsoleHeight}`;
+      }
+    } catch (e) {
+      console.warn('LocalStorage layout retrieval error:', e);
+    }
+
+    // 2. Horizontal Split Resizer (Between Game Panel and Code Panel)
+    if (panelResizerCol && gamePanel && appEl) {
+      let isDraggingCol = false;
+
+      function onColPointerDown(e) {
+        e.preventDefault();
+        isDraggingCol = true;
+        document.body.classList.add('resizing-col');
+        window.addEventListener('pointermove', onColPointerMove);
+        window.addEventListener('pointerup', onColPointerUp);
+        window.addEventListener('pointercancel', onColPointerUp);
+      }
+
+      function onColPointerMove(e) {
+        if (!isDraggingCol) return;
+        const appRect = appEl.getBoundingClientRect();
+        
+        if (window.innerWidth > 900) {
+          // Desktop: horizontal resizing
+          const clientX = e.clientX;
+          const minW = 320;
+          const maxW = appRect.width - 340;
+          let newW = clientX - appRect.left;
+          if (newW < minW) newW = minW;
+          if (newW > maxW) newW = maxW;
+
+          const pct = ((newW / appRect.width) * 100).toFixed(2) + '%';
+          gamePanel.style.width = pct;
+          try {
+            localStorage.setItem('codemons_panel_width', pct);
+          } catch (_) {}
+        } else {
+          // Mobile / Tablet (< 900px): vertical stacked resizing
+          const clientY = e.clientY;
+          const minH = 220;
+          const maxH = appRect.height - 240;
+          let newH = clientY - appRect.top;
+          if (newH < minH) newH = minH;
+          if (newH > maxH) newH = maxH;
+
+          const hPx = Math.round(newH) + 'px';
+          gamePanel.style.setProperty('--game-panel-height', hPx);
+          gamePanel.style.height = hPx;
+        }
+
+        window.dispatchEvent(new Event('resize'));
+      }
+
+      function onColPointerUp() {
+        if (!isDraggingCol) return;
+        isDraggingCol = false;
+        document.body.classList.remove('resizing-col');
+        window.removeEventListener('pointermove', onColPointerMove);
+        window.removeEventListener('pointerup', onColPointerUp);
+        window.removeEventListener('pointercancel', onColPointerUp);
+        window.dispatchEvent(new Event('resize'));
+      }
+
+      panelResizerCol.addEventListener('pointerdown', onColPointerDown);
+
+      // Double-click resets back to default 55% / 45%
+      panelResizerCol.addEventListener('dblclick', () => {
+        gamePanel.style.width = '55%';
+        gamePanel.style.height = '';
+        gamePanel.style.removeProperty('--game-panel-height');
+        try {
+          localStorage.removeItem('codemons_panel_width');
+        } catch (_) {}
+        window.dispatchEvent(new Event('resize'));
+      });
+    }
+
+    // 3. Section Resizer 1 (Question Picker <-> Code Editor)
+    if (resizerPickerEditor && questionPickerSec && codePanel) {
+      let isDraggingRow1 = false;
+      let startY = 0;
+      let startHeight = 0;
+
+      function onRow1PointerDown(e) {
+        e.preventDefault();
+        isDraggingRow1 = true;
+        startY = e.clientY;
+        startHeight = questionPickerSec.getBoundingClientRect().height;
+        document.body.classList.add('resizing-row');
+        window.addEventListener('pointermove', onRow1PointerMove);
+        window.addEventListener('pointerup', onRow1PointerUp);
+        window.addEventListener('pointercancel', onRow1PointerUp);
+      }
+
+      function onRow1PointerMove(e) {
+        if (!isDraggingRow1) return;
+        const delta = e.clientY - startY;
+        const containerH = codePanel.getBoundingClientRect().height;
+        let newH = startHeight + delta;
+        if (newH < 100) newH = 100;
+        if (newH > containerH - 240) newH = containerH - 240;
+
+        const hPx = Math.round(newH) + 'px';
+        questionPickerSec.style.height = hPx;
+        questionPickerSec.style.flex = `0 0 ${hPx}`;
+        try {
+          localStorage.setItem('codemons_picker_height', hPx);
+        } catch (_) {}
+      }
+
+      function onRow1PointerUp() {
+        if (!isDraggingRow1) return;
+        isDraggingRow1 = false;
+        document.body.classList.remove('resizing-row');
+        window.removeEventListener('pointermove', onRow1PointerMove);
+        window.removeEventListener('pointerup', onRow1PointerUp);
+        window.removeEventListener('pointercancel', onRow1PointerUp);
+      }
+
+      resizerPickerEditor.addEventListener('pointerdown', onRow1PointerDown);
+
+      resizerPickerEditor.addEventListener('dblclick', () => {
+        questionPickerSec.style.height = '';
+        questionPickerSec.style.flex = '';
+        try {
+          localStorage.removeItem('codemons_picker_height');
+        } catch (_) {}
+      });
+    }
+
+    // 4. Section Resizer 2 (Code Editor <-> Output Console)
+    if (resizerEditorConsole && outputConsoleSec && codePanel) {
+      let isDraggingRow2 = false;
+      let startY = 0;
+      let startHeight = 0;
+
+      function onRow2PointerDown(e) {
+        e.preventDefault();
+        isDraggingRow2 = true;
+        startY = e.clientY;
+        startHeight = outputConsoleSec.getBoundingClientRect().height;
+        document.body.classList.add('resizing-row');
+        window.addEventListener('pointermove', onRow2PointerMove);
+        window.addEventListener('pointerup', onRow2PointerUp);
+        window.addEventListener('pointercancel', onRow2PointerUp);
+      }
+
+      function onRow2PointerMove(e) {
+        if (!isDraggingRow2) return;
+        const delta = startY - e.clientY; // Dragging upward increases console height
+        const containerH = codePanel.getBoundingClientRect().height;
+        let newH = startHeight + delta;
+        if (newH < 80) newH = 80;
+        if (newH > containerH - 240) newH = containerH - 240;
+
+        const hPx = Math.round(newH) + 'px';
+        outputConsoleSec.style.height = hPx;
+        outputConsoleSec.style.flex = `0 0 ${hPx}`;
+        try {
+          localStorage.setItem('codemons_console_height', hPx);
+        } catch (_) {}
+      }
+
+      function onRow2PointerUp() {
+        if (!isDraggingRow2) return;
+        isDraggingRow2 = false;
+        document.body.classList.remove('resizing-row');
+        window.removeEventListener('pointermove', onRow2PointerMove);
+        window.removeEventListener('pointerup', onRow2PointerUp);
+        window.removeEventListener('pointercancel', onRow2PointerUp);
+      }
+
+      resizerEditorConsole.addEventListener('pointerdown', onRow2PointerDown);
+
+      resizerEditorConsole.addEventListener('dblclick', () => {
+        outputConsoleSec.style.height = '';
+        outputConsoleSec.style.flex = '';
+        try {
+          localStorage.removeItem('codemons_console_height');
+        } catch (_) {}
+      });
+    }
+
+    // 5. Maximize / Restore Section Buttons ("⤢")
+    document.querySelectorAll('.btn-section-toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const targetId = btn.getAttribute('data-section');
+        const targetSec = document.getElementById(targetId);
+        if (!targetSec || !codePanelSections) return;
+
+        const isCurrentlyMaximized = targetSec.classList.contains('maximized');
+        document.querySelectorAll('.code-section').forEach(s => s.classList.remove('maximized'));
+        document.querySelectorAll('.btn-section-toggle').forEach(b => {
+          b.textContent = '⤢';
+          b.title = 'Maximize Section';
+        });
+
+        if (!isCurrentlyMaximized) {
+          targetSec.classList.add('maximized');
+          codePanelSections.classList.add('has-maximized');
+          btn.textContent = '✕';
+          btn.title = 'Restore Normal Sections';
+          playSound('click');
+        } else {
+          codePanelSections.classList.remove('has-maximized');
+          playSound('click');
+        }
+      });
+    });
+  }
+
   // Expose methods for BattleEngine in battle.js and external integration
   window.startPlayerTurn = startPlayerTurn;
   window.appendConsoleLine = appendConsoleLine;
   window.handleBattleOutcome = handleBattleOutcome;
+  window.initResizablePanels = initResizablePanels;
 
   // Initial setup
   renderStarters();
+  initResizablePanels();
 });

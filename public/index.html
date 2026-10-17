@@ -294,7 +294,16 @@
     </main>
 
     <!-- ===================================================================
-         RIGHT COLUMN: CODE PANEL (45% Width, Full Height)
+         PANEL SPLIT RESIZER (Draggable Divider: Game Panel <-> Code Panel)
+         =================================================================== -->
+    <div id="panel-resizer-col" class="split-resizer-col font-pixel" title="Drag left/right to resize panels (Double-click to reset 55/45)" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize game and code panels">
+      <div class="resizer-col-handle" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         RIGHT COLUMN: CODE PANEL (Resizable, Full Height)
          =================================================================== -->
     <aside id="code-panel" role="region" aria-label="Codemons Code Lab Shell">
       <!-- Locked State Overlay: Visible until a battle starts -->
@@ -312,7 +321,10 @@
         <section id="question-picker" class="code-section" aria-label="Question Picker">
           <div class="section-header font-pixel">
             <span class="section-title">■ [01] QUESTION_PICKER</span>
-            <span id="picker-status-badge" class="section-badge font-code">SELECT DIFFICULTY TO ATTACK</span>
+            <div class="section-header-actions">
+              <span id="picker-status-badge" class="section-badge font-code">SELECT DIFFICULTY TO ATTACK</span>
+              <button type="button" class="btn-section-toggle font-pixel" data-section="question-picker" title="Maximize / Restore Question Picker" aria-label="Maximize / Restore Question Picker">⤢</button>
+            </div>
           </div>
           <div class="section-body picker-body" id="picker-body">
             <!-- 3 Challenge Cards: Easy, Medium, Hard -->
@@ -332,6 +344,13 @@
           </div>
         </section>
 
+        <!-- RESIZER 1: Between Question Picker and Code Editor -->
+        <div id="resizer-picker-editor" class="split-resizer-row font-pixel" title="Drag up/down to resize sections (Double-click to reset)" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Resize question picker and editor">
+          <div class="resizer-row-handle" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+
         <!-- Section 2: Editor Area (Middle) -->
         <section id="editor-area" class="code-section" aria-label="Code Editor">
           <div class="section-header font-pixel">
@@ -339,12 +358,15 @@
               <span class="section-title">■ [02] CODE_EDITOR.JS</span>
               <span id="current-challenge-badge" class="badge-difficulty font-pixel">NO MOVE SELECTED</span>
             </div>
-            <!-- Turn Timer Bar (60s easy, 90s medium, 120s hard) -->
-            <div id="turn-timer-container" class="turn-timer-container font-pixel">
-              <span id="turn-timer-text" class="turn-timer-text">TIME: --</span>
-              <div class="turn-timer-track">
-                <div id="turn-timer-fill" class="turn-timer-fill"></div>
+            <div class="editor-header-right">
+              <!-- Turn Timer Bar (60s easy, 90s medium, 120s hard) -->
+              <div id="turn-timer-container" class="turn-timer-container font-pixel">
+                <span id="turn-timer-text" class="turn-timer-text">TIME: --</span>
+                <div class="turn-timer-track">
+                  <div id="turn-timer-fill" class="turn-timer-fill"></div>
+                </div>
               </div>
+              <button type="button" class="btn-section-toggle font-pixel" data-section="editor-area" title="Maximize / Restore Code Editor" aria-label="Maximize / Restore Code Editor">⤢</button>
             </div>
           </div>
 
@@ -428,13 +450,23 @@
           </div>
         </section>
 
+        <!-- RESIZER 2: Between Code Editor and Output Console -->
+        <div id="resizer-editor-console" class="split-resizer-row font-pixel" title="Drag up/down to resize sections (Double-click to reset)" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Resize editor and output console">
+          <div class="resizer-row-handle" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+
         <!-- Section 3: Output Console (Bottom) -->
         <section id="output-console" class="code-section" aria-label="Output Console">
           <div class="section-header font-pixel">
             <div class="console-header-left">
               <span class="section-title">■ [03] OUTPUT_CONSOLE</span>
             </div>
-            <span id="console-status-badge" class="section-badge font-code text-green">SYS: READY</span>
+            <div class="console-header-right">
+              <span id="console-status-badge" class="section-badge font-code text-green">SYS: READY</span>
+              <button type="button" class="btn-section-toggle font-pixel" data-section="output-console" title="Maximize / Restore Output Console" aria-label="Maximize / Restore Output Console">⤢</button>
+            </div>
           </div>
           <div id="console-output" class="section-body console-body font-code" role="log" aria-live="polite">
             <div class="console-line text-green">&gt; Codemons Sandbox Kernel v2.4 initialized.</div>

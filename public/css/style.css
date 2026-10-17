@@ -94,30 +94,97 @@ html, body {
 }
 
 /* --------------------------------------------------------------------------
-   ROOT #APP GRID LAYOUT (55% Game Panel, 45% Code Panel)
+   ROOT #APP FLEX LAYOUT (Resizable Game Panel & Code Panel)
    -------------------------------------------------------------------------- */
 #app {
-  display: grid;
-  grid-template-columns: 55% 45%;
+  display: flex;
+  flex-direction: row;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
   background-color: var(--pixel-black);
+  position: relative;
+}
+
+/* Cursor locks during dragging */
+body.resizing-col {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+body.resizing-col * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+body.resizing-row {
+  cursor: row-resize !important;
+  user-select: none !important;
+}
+body.resizing-row * {
+  cursor: row-resize !important;
+  user-select: none !important;
 }
 
 /* --------------------------------------------------------------------------
-   LEFT COLUMN: #GAME-PANEL (55% Width, Full Height)
+   LEFT COLUMN: #GAME-PANEL (Resizable Width, Full Height)
    -------------------------------------------------------------------------- */
 #game-panel {
   position: relative;
   height: 100vh;
-  width: 100%;
+  width: var(--game-panel-width, 55%);
+  min-width: 320px;
+  max-width: calc(100vw - 340px);
+  flex-shrink: 0;
   overflow-y: auto;
   overflow-x: hidden;
   background-color: var(--pixel-dark);
-  border-right: 4px solid var(--pixel-mid); /* Thick 4px prominent pixel divider */
+  border-right: none;
   display: flex;
   flex-direction: column;
+}
+
+/* Vertical Split Resizer between Game Panel and Code Panel */
+.split-resizer-col {
+  width: 10px;
+  height: 100vh;
+  background-color: #0c1015;
+  border-left: 2px solid #1f2b38;
+  border-right: 2px solid #1f2b38;
+  cursor: col-resize;
+  flex-shrink: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  touch-action: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.split-resizer-col:hover,
+.split-resizer-col:focus-visible,
+body.resizing-col .split-resizer-col {
+  background-color: #38bdf8;
+  border-color: #0c1015;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+}
+
+.resizer-col-handle {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.resizer-col-handle span {
+  width: 4px;
+  height: 4px;
+  background-color: var(--gb-lightest);
+  display: block;
+}
+
+.split-resizer-col:hover .resizer-col-handle span,
+body.resizing-col .split-resizer-col .resizer-col-handle span {
+  background-color: #0c1015;
 }
 
 /* Scanline Overlay on #game-panel - Disabled to eliminate text blurriness */
@@ -133,7 +200,7 @@ html, body {
   padding: 14px 22px;
   background-color: var(--pixel-black);
   color: var(--pixel-yellow);
-  font-size: 13px;
+  font-size: 14px;
   border-bottom: 4px solid var(--pixel-mid);
   flex-shrink: 0;
   z-index: 25;
@@ -168,7 +235,7 @@ html, body {
   background-color: var(--gb-dark);
   border-bottom: 3px solid var(--pixel-mid);
   color: var(--pixel-white);
-  font-size: 12px;
+  font-size: 14px;
   flex-shrink: 0;
   z-index: 24;
   letter-spacing: 0.06em;
@@ -255,21 +322,21 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.08em;
 }
 
 #arena-name-display {
   display: inline-block;
   white-space: nowrap;
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 0.06em;
   transition: color 0.2s ease;
 }
 
 #btn-switch-arena {
-  font-size: 9px;
-  padding: 3px 6px;
+  font-size: 11px;
+  padding: 4px 8px;
   background-color: var(--gb-dark);
   color: var(--gb-cyan);
   border: 1px solid var(--gb-cyan);
@@ -336,8 +403,8 @@ html, body {
 
 .result-badge {
   display: inline-block;
-  padding: 4px 12px;
-  font-size: 11px;
+  padding: 5px 14px;
+  font-size: 13px;
   letter-spacing: 0.08em;
   margin-bottom: 12px;
   background-color: var(--gb-darkest);
@@ -361,14 +428,14 @@ html, body {
 }
 
 .result-title {
-  font-size: 20px;
+  font-size: 22px;
   color: var(--gb-lightest);
   margin-bottom: 8px;
   letter-spacing: 0.06em;
 }
 
 .result-subtitle {
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.5;
   color: var(--gb-light);
   margin-bottom: 20px;
@@ -382,7 +449,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  font-size: 13px;
+  font-size: 15px;
   text-align: left;
 }
 
@@ -390,6 +457,8 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-size: 20px;
+  font-family: var(--font-code);
 }
 
 .result-actions {
@@ -584,21 +653,21 @@ html, body {
 }
 
 .preview-name {
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.08em;
 }
 
 .preview-tag {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--gb-lightest);
   background-color: var(--gb-mid);
-  padding: 3px 8px;
+  padding: 4px 9px;
   box-shadow: 0 0 0 1px var(--gb-darkest);
   letter-spacing: 0.06em;
 }
 
 .preview-vs {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: 0.12em;
 }
 
@@ -606,7 +675,7 @@ html, body {
   display: inline-block;
   background-color: var(--pixel-black);
   color: var(--pixel-yellow);
-  font-size: 11px;
+  font-size: 12px;
   padding: 8px 14px;
   margin-bottom: 16px;
   box-shadow: var(--pixel-border-sm);
@@ -792,7 +861,7 @@ html, body {
   align-items: center;
   padding: 10px 16px;
   font-family: var(--font-game);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.4;
   color: var(--pixel-white);
   background-color: var(--pixel-mid);
@@ -889,14 +958,14 @@ html, body {
   display: inline-block;
   background-color: var(--gb-darkest);
   color: var(--gb-blue);
-  font-size: 11px;
+  font-size: 12px;
   padding: 5px 10px;
   box-shadow: var(--pixel-border-sm);
   letter-spacing: 0.06em;
 }
 
 .starter-pixel-stats {
-  font-size: 12px;
+  font-size: 13px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -916,7 +985,7 @@ html, body {
 }
 
 .starter-pixel-desc {
-  font-size: 21px;
+  font-size: 22px;
   line-height: 1.35;
   color: var(--gb-lightest);
   margin: 0;
@@ -925,7 +994,7 @@ html, body {
 }
 
 .select-keyboard-hint {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--gb-yellow);
   text-align: center;
   margin-top: 14px;
@@ -998,16 +1067,62 @@ html, body {
 }
 
 /* --------------------------------------------------------------------------
-   RIGHT COLUMN: #CODE-PANEL (45% Width, Full Height)
+   RIGHT COLUMN: #CODE-PANEL (Resizable Width, Full Height)
    -------------------------------------------------------------------------- */
 #code-panel {
   position: relative;
   height: 100vh;
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 340px;
   background-color: var(--pixel-black);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/* Horizontal Split Resizers inside #code-panel */
+.split-resizer-row {
+  height: 8px;
+  width: 100%;
+  background-color: var(--pixel-dark);
+  border-top: 1px solid #1f2b38;
+  border-bottom: 1px solid #1f2b38;
+  cursor: row-resize;
+  flex-shrink: 0;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  touch-action: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.split-resizer-row:hover,
+.split-resizer-row:focus-visible,
+body.resizing-row .split-resizer-row {
+  background-color: var(--pixel-yellow);
+  border-color: #ffd043;
+  box-shadow: 0 0 8px rgba(244, 180, 27, 0.4);
+}
+
+.resizer-row-handle {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.resizer-row-handle span {
+  width: 4px;
+  height: 4px;
+  background-color: var(--gb-lightest);
+  display: block;
+}
+
+.split-resizer-row:hover .resizer-row-handle span,
+body.resizing-row .split-resizer-row .resizer-row-handle span {
+  background-color: #0c1015;
 }
 
 /* Code Panel Locked State Overlay */
@@ -1042,7 +1157,7 @@ html, body {
 }
 
 .locked-msg {
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.7;
   color: var(--pixel-yellow);
   margin-bottom: 20px;
@@ -1055,12 +1170,13 @@ html, body {
   color: var(--gb-lightest);
 }
 
-/* Code Panel Stacked Sections (Top ~25%, Middle ~50%, Bottom ~25%) */
+/* Code Panel Stacked Sections (Resizable Top, Middle, Bottom) */
 .code-panel-sections {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
+  position: relative;
 }
 
 .code-section {
@@ -1068,14 +1184,86 @@ html, body {
   display: flex;
   flex-direction: column;
   background-color: var(--pixel-black);
+  position: relative;
+  overflow: hidden;
 }
 
-/* 1. #question-picker (~25% height) */
+/* Maximize / Restore Section Styling */
+.code-section.maximized {
+  flex: 1 1 100% !important;
+  height: 100% !important;
+  max-height: none !important;
+  z-index: 14;
+}
+
+.code-panel-sections.has-maximized .code-section:not(.maximized) {
+  display: none !important;
+}
+
+.code-panel-sections.has-maximized .split-resizer-row {
+  display: none !important;
+}
+
+/* Section Header Styles & Toggle Button */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  background-color: #121820;
+  border-bottom: 2px solid #1f2b38;
+  min-height: 38px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.section-title {
+  font-family: var(--font-game);
+  font-size: 13px;
+  color: #eef5fc;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.section-badge {
+  font-family: var(--font-code);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+.section-header-actions,
+.editor-header-right,
+.console-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-section-toggle {
+  background-color: #1b2632;
+  color: #38bdf8;
+  border: 1px solid #2c3e50;
+  padding: 3px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  line-height: 1;
+  border-radius: 2px;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.btn-section-toggle:hover {
+  background-color: #38bdf8;
+  color: #0c1015;
+  border-color: #38bdf8;
+}
+
+/* 1. #question-picker (Resizable height) */
 #question-picker {
-  flex: 0 0 25%;
-  height: 25%;
-  min-height: 160px;
-  border-bottom: 4px solid var(--pixel-dark);
+  height: var(--picker-height, 25%);
+  min-height: 110px;
+  max-height: calc(100% - 240px);
+  flex: 0 0 auto;
+  border-bottom: none;
   display: flex;
   flex-direction: column;
 }
@@ -1084,7 +1272,8 @@ html, body {
   padding: 10px 14px;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   background-color: var(--pixel-black);
   position: relative;
 }
@@ -1101,7 +1290,7 @@ html, body {
 .picker-card {
   background-color: var(--pixel-dark);
   border: 2px solid var(--gb-mid);
-  padding: 8px 10px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1110,6 +1299,7 @@ html, body {
   user-select: none;
   position: relative;
   outline: none;
+  min-height: 0;
 }
 
 .picker-card:hover:not(.locked) {
@@ -1159,8 +1349,8 @@ html, body {
 
 .picker-badge {
   font-family: var(--font-game);
-  font-size: 9px;
-  padding: 2px 6px;
+  font-size: 11px;
+  padding: 3px 8px;
   letter-spacing: 0.05em;
   display: inline-block;
   white-space: nowrap;
@@ -1168,7 +1358,7 @@ html, body {
 
 .picker-card-dmg {
   font-family: var(--font-game);
-  font-size: 9px;
+  font-size: 12px;
   color: var(--pixel-yellow);
   white-space: nowrap;
 }
@@ -1176,7 +1366,7 @@ html, body {
 /* Card Content */
 .picker-card-title {
   font-family: var(--font-game);
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.35;
   color: var(--pixel-white);
   margin-bottom: 4px;
@@ -1185,8 +1375,8 @@ html, body {
 
 .picker-card-desc {
   font-family: var(--font-code);
-  font-size: 18px;
-  line-height: 1.25;
+  font-size: 21px;
+  line-height: 1.3;
   color: var(--gb-lightest);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1197,7 +1387,7 @@ html, body {
 
 .picker-card-topic {
   font-family: var(--font-game);
-  font-size: 8px;
+  font-size: 11px;
   color: var(--pixel-blue);
   letter-spacing: 0.05em;
   margin-top: 4px;
@@ -1261,12 +1451,12 @@ html, body {
 .picker-tab {
   background-color: var(--pixel-dark);
   border: 2px solid var(--gb-mid);
-  padding: 4px 8px;
+  padding: 5px 8px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
   transition: background-color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
   user-select: none;
@@ -1320,13 +1510,13 @@ html, body {
 
 .picker-tab-dmg {
   font-family: var(--font-game);
-  font-size: 8px;
+  font-size: 11px;
   color: var(--pixel-yellow);
 }
 
 .picker-tab-title {
   font-family: var(--font-game);
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.25;
   color: var(--pixel-white);
   white-space: nowrap;
@@ -1387,33 +1577,28 @@ html, body {
 
 .picker-expanded-dmg {
   font-family: var(--font-game);
-  font-size: 9px;
+  font-size: 12px;
   color: var(--pixel-yellow);
 }
 
 .picker-expanded-topic {
   font-family: var(--font-game);
-  font-size: 8px;
+  font-size: 11px;
   color: var(--pixel-blue);
   letter-spacing: 0.04em;
 }
 
 .picker-expanded-cta {
   font-family: var(--font-game);
-  font-size: 8px;
+  font-size: 11px;
   color: var(--pixel-yellow);
   letter-spacing: 0.05em;
   animation: pulseActionText 1.6s infinite ease-in-out;
 }
 
-@keyframes pulseActionText {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(0.98); }
-}
-
 .picker-expanded-title {
   font-family: var(--font-game);
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.35;
   color: var(--pixel-white);
   letter-spacing: 0.03em;
@@ -1422,7 +1607,7 @@ html, body {
 
 .picker-expanded-desc {
   font-family: var(--font-code);
-  font-size: 14px;
+  font-size: 20px;
   line-height: 1.4;
   color: var(--gb-lightest);
   overflow-y: auto;
@@ -1438,11 +1623,11 @@ html, body {
   background-color: var(--gb-mid);
 }
 
-/* 2. #editor-area (~50% height) */
+/* 2. #editor-area (Middle resizable flex section) */
 #editor-area {
-  flex: 1 1 50%;
-  min-height: 260px;
-  border-bottom: 4px solid var(--pixel-dark);
+  flex: 1 1 auto;
+  min-height: 160px;
+  border-bottom: none;
   display: flex;
   flex-direction: column;
 }
@@ -1454,8 +1639,8 @@ html, body {
 }
 
 .badge-difficulty {
-  font-size: 9px;
-  padding: 2px 6px;
+  font-size: 12px;
+  padding: 3px 8px;
   background-color: var(--gb-mid);
   color: var(--pixel-white);
   border: 1px solid var(--gb-light);
@@ -1489,15 +1674,15 @@ html, body {
 
 .turn-timer-text {
   font-family: var(--font-game);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--pixel-yellow);
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
 
 .turn-timer-track {
-  width: 110px;
-  height: 12px;
+  width: 120px;
+  height: 14px;
   background-color: var(--gb-darkest);
   border: 2px solid var(--gb-mid);
   overflow: hidden;
@@ -1541,24 +1726,24 @@ html, body {
 }
 
 .challenge-title {
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.05em;
   color: var(--pixel-yellow);
   margin: 0;
 }
 
 .challenge-topic-tag {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--pixel-blue);
   background-color: var(--pixel-dark);
-  padding: 2px 6px;
+  padding: 3px 8px;
   border: 1px solid var(--pixel-mid);
 }
 
 .challenge-desc {
   font-family: var(--font-code);
-  font-size: 20px;
-  line-height: 1.3;
+  font-size: 22px;
+  line-height: 1.35;
   color: var(--pixel-white);
   margin: 0;
 }
@@ -1569,13 +1754,13 @@ html, body {
   background-color: rgba(244, 180, 27, 0.12);
   border-left: 3px solid var(--pixel-yellow);
   font-family: var(--font-code);
-  font-size: 19px;
+  font-size: 21px;
   line-height: 1.3;
   color: var(--pixel-yellow);
 }
 
 .hint-label {
-  font-size: 10px;
+  font-size: 12px;
   margin-right: 6px;
 }
 
@@ -1590,12 +1775,12 @@ html, body {
   justify-content: space-between;
   background-color: #121820;
   border-bottom: 1px solid #1f2b38;
-  height: 32px;
-  min-height: 32px;
+  height: 36px;
+  min-height: 36px;
   padding: 0 10px 0 0;
   user-select: none;
   font-family: var(--font-code);
-  font-size: 13px;
+  font-size: 14px;
   overflow: hidden;
 }
 
@@ -1609,7 +1794,7 @@ html, body {
   height: 100%;
   border-right: 1px solid #1f2b38;
   border-top: 2px solid #38bdf8;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
   position: relative;
 }
@@ -1617,7 +1802,7 @@ html, body {
 .vscode-file-icon {
   background-color: #f4b41b;
   color: #0c1015;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   padding: 1px 4px;
   border-radius: 2px;
@@ -1631,7 +1816,7 @@ html, body {
 
 .vscode-tab-close {
   color: #526f8a;
-  font-size: 11px;
+  font-size: 12px;
   margin-left: 4px;
   transition: color 0.1s;
 }
@@ -1642,7 +1827,7 @@ html, body {
 
 .vscode-breadcrumbs {
   color: #607b99;
-  font-size: 12px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1667,13 +1852,13 @@ html, body {
 }
 
 .editor-gutter {
-  width: 48px;
-  min-width: 48px;
+  width: 52px;
+  min-width: 52px;
   background-color: #0d1219;
   border-right: 1px solid #1f2b38;
   color: #526f8a;
   font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.5;
   text-align: right;
   padding: 10px 8px 10px 0;
@@ -1701,7 +1886,7 @@ html, body {
   background-color: #0a0d12;
   color: #eef5fc;
   font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.5;
   padding: 10px 14px;
   border: none;
@@ -1729,9 +1914,9 @@ html, body {
   border-top: 1px solid #1b2632;
   color: #8da4be;
   font-family: var(--font-code);
-  font-size: 12px;
-  padding: 3px 12px;
-  min-height: 24px;
+  font-size: 13px;
+  padding: 4px 12px;
+  min-height: 26px;
   user-select: none;
   flex-shrink: 0;
 }
@@ -1788,7 +1973,7 @@ html, body {
 
 .toolbar-dev-col .pixel-btn {
   padding: 6px 12px;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .pixel-btn-cyan {
@@ -1807,11 +1992,12 @@ html, body {
   align-items: center;
 }
 
-/* 3. #output-console (~25% height) */
+/* 3. #output-console (Resizable bottom section) */
 #output-console {
-  flex: 0 0 25%;
-  height: 25%;
-  min-height: 150px;
+  height: var(--console-height, 25%);
+  min-height: 80px;
+  max-height: calc(100% - 240px);
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
 }
@@ -1828,8 +2014,8 @@ html, body {
   overflow-y: auto;
   padding: 10px 16px;
   font-family: var(--font-code);
-  font-size: 20px;
-  line-height: 1.4;
+  font-size: 22px;
+  line-height: 1.45;
   background-color: var(--pixel-black);
 }
 
@@ -1837,6 +2023,7 @@ html, body {
   margin-bottom: 4px;
   white-space: pre-wrap;
   word-break: break-word;
+  font-size: 22px;
 }
 
 .console-line.console-pass {
@@ -1852,10 +2039,11 @@ html, body {
 .console-line.console-error {
   color: #ff5252;
   background-color: rgba(224, 60, 60, 0.15);
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-left: 3px solid var(--pixel-red);
   margin-top: 4px;
   margin-bottom: 4px;
+  font-size: 22px;
 }
 
 .console-line.console-info {
@@ -1896,23 +2084,41 @@ html, body {
    -------------------------------------------------------------------------- */
 @media (max-width: 900px) {
   #app {
-    grid-template-columns: 1fr;
-    grid-template-rows: 50vh 50vh;
+    flex-direction: column;
   }
 
   #game-panel {
-    height: 50vh;
+    width: 100% !important;
+    height: var(--game-panel-height, 50vh) !important;
+    max-width: none;
+    min-height: 240px;
     border-right: none;
-    border-bottom: 4px solid var(--pixel-mid); /* Stack divider */
+    border-bottom: none;
+  }
+
+  .split-resizer-col {
+    width: 100%;
+    height: 10px;
+    cursor: row-resize;
+    border-left: none;
+    border-right: none;
+    border-top: 2px solid var(--pixel-mid);
+    border-bottom: 2px solid var(--pixel-mid);
+  }
+
+  .resizer-col-handle {
+    flex-direction: row;
   }
 
   #code-panel {
-    height: 50vh;
+    width: 100% !important;
+    height: auto;
+    flex: 1 1 auto;
   }
 
   .battle-hud-strip {
     padding: 8px 12px;
-    font-size: 11px;
+    font-size: 13px;
   }
 
   .canvas-viewport {
@@ -2252,7 +2458,7 @@ html, body {
   display: inline-block;
   background-color: var(--gb-red);
   color: var(--gb-lightest);
-  font-size: 11px;
+  font-size: 13px;
   padding: 6px 14px;
   margin-bottom: 14px;
   letter-spacing: 0.08em;
@@ -2286,7 +2492,7 @@ html, body {
 }
 
 .decision-title {
-  font-size: 20px;
+  font-size: 22px;
   color: var(--gb-lightest);
   margin-bottom: 12px;
   letter-spacing: 0.08em;
@@ -2294,7 +2500,7 @@ html, body {
 }
 
 .decision-subtitle {
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.6;
   color: var(--gb-lightest);
   margin-bottom: 20px;
@@ -2312,7 +2518,7 @@ html, body {
   display: flex;
   justify-content: space-between;
   margin-bottom: 8px;
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.06em;
 }
 
@@ -2332,12 +2538,12 @@ html, body {
   margin-top: 8px;
   padding-top: 6px;
   border-top: 1px dashed rgba(255, 255, 255, 0.15);
-  font-size: 10px;
+  font-size: 12px;
   text-align: left;
 }
 
 .moves-count-label {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: bold;
   letter-spacing: 0.05em;
   display: block;
@@ -2355,8 +2561,8 @@ html, body {
   background-color: #1b2632;
   border: 1px solid #2c3e50;
   color: var(--gb-lightest);
-  padding: 2px 5px;
-  font-size: 9px;
+  padding: 3px 7px;
+  font-size: 11px;
   border-radius: 2px;
   letter-spacing: 0.03em;
   white-space: nowrap;
@@ -2369,8 +2575,8 @@ html, body {
   background-color: #1b2632;
   color: #38bdf8;
   border: 1px solid #2c3e50;
-  padding: 3px 8px;
-  font-size: 8px;
+  padding: 4px 9px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   cursor: pointer;
   box-shadow: 1px 1px 0 #000;
@@ -2547,7 +2753,7 @@ html, body {
   background-color: #0c1015;
   color: #38bdf8;
   border: 1px solid #2c3e50;
-  font-size: 10px;
+  font-size: 12px;
   padding: 4px 10px;
   margin-bottom: 12px;
   letter-spacing: 0.08em;
@@ -2562,7 +2768,7 @@ html, body {
 }
 
 .pause-subtitle {
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--gb-lightest);
   margin-bottom: 20px;
