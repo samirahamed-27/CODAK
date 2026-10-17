@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="64" height="64" shape-rendering="crispEdges">
+  <!-- Bug-Sqloph: Fractured Database Monolith Glitch -->
+  <!-- Fractured Broken Schema Plates -->
+  <rect x="3" y="1" width="4" height="2" fill="#ff0055" />
+  <rect x="9" y="0" width="4" height="2" fill="#ea80fc" />
+  <rect x="5" y="1" width="1" height="1" fill="#ffffff" />
+  <!-- Menacing Cracked Core -->
+  <rect x="2" y="3" width="12" height="6" fill="#150308" />
+  <rect x="3" y="4" width="10" height="4" fill="#540d1a" />
+  <!-- Jagged SQL Injection Eyes / Visor -->
+  <rect x="4" y="5" width="3" height="2" fill="#ff1744" />
+  <rect x="9" y="5" width="3" height="2" fill="#ff1744" />
+  <rect x="5" y="5" width="1" height="1" fill="#ffffff" />
+  <rect x="10" y="5" width="1" height="1" fill="#ffffff" />
+  <!-- Cracked Table Body -->
+  <rect x="2" y="9" width="12" height="5" fill="#2a040d" />
+  <rect x="3" y="9" width="10" height="4" fill="#9b51e0" />
+  <!-- Void Leak -->
+  <rect x="6" y="10" width="4" height="2" fill="#ff0055" />
+  <!-- Pillars -->
+  <rect x="2" y="14" width="4" height="2" fill="#540d1a" />
+  <rect x="10" y="14" width="4" height="2" fill="#540d1a" />
+</svg>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="64" height="64" shape-rendering="crispEdges">
+  <!-- Stack Overflow Front Sprite: Infinite Recursion Vortex Demon -->
+  <!-- Ascending Call Stack Frames -->
+  <rect x="6" y="0" width="4" height="1" fill="#38bdf8" />
+  <rect x="5" y="1" width="6" height="1" fill="#f4b41b" />
+  <rect x="4" y="2" width="8" height="2" fill="#e03c3c" />
+  <!-- Swirling Vortex Head -->
+  <rect x="3" y="4" width="10" height="5" fill="#1b2632" />
+  <rect x="4" y="4" width="8" height="4" fill="#2c3e50" />
+  <!-- Infinite Spiral Eyes -->
+  <rect x="5" y="5" width="2" height="2" fill="#f4b41b" />
+  <rect x="9" y="5" width="2" height="2" fill="#f4b41b" />
+  <rect x="5" y="5" width="1" height="1" fill="#38bdf8" />
+  <rect x="10" y="5" width="1" height="1" fill="#38bdf8" />
+  <!-- Overflowing Frame Stack Body -->
+  <rect x="2" y="9" width="12" height="5" fill="#0c1015" />
+  <rect x="3" y="9" width="10" height="4" fill="#1b2632" />
+  <!-- Stack Layer Bars -->
+  <rect x="4" y="9" width="8" height="1" fill="#e03c3c" />
+  <rect x="4" y="11" width="8" height="1" fill="#f4b41b" />
+  <!-- Vortex Swirl Tendrils -->
+  <rect x="2" y="14" width="4" height="2" fill="#38bdf8" />
+  <rect x="10" y="14" width="4" height="2" fill="#e03c3c" />
+</svg>

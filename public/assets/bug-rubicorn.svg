@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="64" height="64" shape-rendering="crispEdges">
+  <!-- Bug-Rubicorn: Shattered Crystal Glitch Beast -->
+  <!-- Corrupted Shattered Horn -->
+  <rect x="7" y="0" width="2" height="4" fill="#ff0055" />
+  <rect x="6" y="1" width="1" height="2" fill="#ea80fc" />
+  <rect x="9" y="2" width="1" height="1" fill="#ffffff" />
+  <!-- Menacing Head -->
+  <rect x="3" y="2" width="2" height="3" fill="#540d1a" />
+  <rect x="11" y="2" width="2" height="3" fill="#540d1a" />
+  <rect x="3" y="4" width="10" height="5" fill="#2a040d" />
+  <rect x="4" y="5" width="8" height="3" fill="#540d1a" />
+  <!-- Glowing Glitch Eyes -->
+  <rect x="4" y="5" width="2" height="2" fill="#ff1744" />
+  <rect x="10" y="5" width="2" height="2" fill="#ff1744" />
+  <rect x="5" y="5" width="1" height="1" fill="#ffffff" />
+  <rect x="11" y="5" width="1" height="1" fill="#ffffff" />
+  <!-- Glitch Body -->
+  <rect x="2" y="9" width="12" height="5" fill="#150308" />
+  <rect x="3" y="9" width="10" height="4" fill="#540d1a" />
+  <!-- Jagged Corrupted Core -->
+  <rect x="7" y="10" width="2" height="3" fill="#ea80fc" />
+  <rect x="6" y="11" width="4" height="1" fill="#ff0055" />
+  <!-- Clawed Glitch Legs -->
+  <rect x="2" y="14" width="3" height="2" fill="#9b51e0" />
+  <rect x="11" y="14" width="3" height="2" fill="#9b51e0" />
+</svg>

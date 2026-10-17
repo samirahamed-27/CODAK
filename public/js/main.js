@@ -358,7 +358,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Starters Catalog from js/data.js (CODEMONS)
   const starters = window.CODEMONS || (window.CodemonData ? window.CodemonData.CODEMONS : []);
-  activeEnemy = window.ENEMY_BUGMON || (window.CodemonData ? window.CodemonData.ENEMY_BUGMON : {
+  const enemyList = window.ENEMY_CHARACTERS || (window.CodemonData ? window.CodemonData.ENEMY_CHARACTERS : []);
+  activeEnemy = (enemyList && enemyList.length > 0)
+    ? enemyList[0]
+    : (window.ENEMY_BUGMON || (window.CodemonData ? window.CodemonData.ENEMY_BUGMON : {
     id: 'bugmon',
     name: 'Bugmon',
     language: 'Bug/Glitch',
@@ -368,7 +371,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     spriteFront: 'assets/nullpointer.svg',
     spriteBack: 'assets/nullpointer.svg',
     moves: [{ name: 'Segfault Slam', power: 26 }]
-  });
+  }));
   
   selectedCodemon = starters[0] || null;
 
@@ -676,11 +679,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentHp: chosen.maxHp
     };
 
-    // Store enemy in gameState (pick rival starter if not already set)
+    // Store enemy in gameState (pick error enemy character if not already set)
     if (!window.gameState.enemy) {
-      const rivals = codemonsList.filter(c => c.id !== chosen.id);
-      const rivalChoice = rivals.length > 0 ? rivals[0] : (window.ENEMY_BUGMON || codemonsList[0]);
-      window.gameState.enemy = { ...rivalChoice };
+      const enemies = (window.ENEMY_CHARACTERS && window.ENEMY_CHARACTERS.length > 0)
+        ? window.ENEMY_CHARACTERS
+        : (window.CodemonData && window.CodemonData.ENEMY_CHARACTERS && window.CodemonData.ENEMY_CHARACTERS.length > 0)
+          ? window.CodemonData.ENEMY_CHARACTERS
+          : null;
+      if (enemies && enemies.length > 0) {
+        const randomIndex = Math.floor(Math.random() * enemies.length);
+        window.gameState.enemy = { ...enemies[randomIndex] };
+      } else {
+        const rivals = codemonsList.filter(c => c.id !== chosen.id);
+        const rivalChoice = rivals.length > 0 ? rivals[0] : (window.ENEMY_BUGMON || codemonsList[0]);
+        window.gameState.enemy = { ...rivalChoice };
+      }
     }
 
     playSound('battle');

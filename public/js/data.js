@@ -144,11 +144,350 @@ const CODEMONS = [
       { name: 'Direct Memory Poke', power: 38, type: 'C++', accuracy: 0.85 },
       { name: 'Zero Overhead Slam', power: 50, type: 'C++', accuracy: 0.70 }
     ]
+  },
+  {
+    id: 'javagron',
+    name: 'Javagron',
+    language: 'Java',
+    maxHp: 110,
+    hp: 110,
+    attackPower: 0.95,
+    spriteFront: 'assets/javagron-front.svg',
+    spriteBack: 'assets/javagron-back.svg',
+    description: 'Enterprise-grade Java juggernaut with JVM memory shields and robust multithreaded defenses.',
+    typeColor: 'var(--pixel-yellow)',
+    bugmonVariant: {
+      name: 'Bug-Javagron',
+      sprite: 'assets/bug-javagron.svg',
+      maxHp: 165,
+      palette: {
+        primary: '#e03c3c',
+        secondary: '#9b51e0',
+        dark: '#2a040d',
+        glow: '#ea80fc'
+      },
+      description: 'A colossal corrupted JVM beast oozing memory leaks, heap churn, and infinite deadlock threads.',
+      moves: [
+        { name: 'OutOfMemoryError Core', power: 20, type: 'Glitch' },
+        { name: 'ClassCastException Stomp', power: 18, type: 'Glitch' },
+        { name: 'Deadlock Threadlock', power: 19, type: 'Glitch' },
+        { name: 'PermGen Depletion', power: 17, type: 'Glitch' },
+        { name: 'Garbage Collection Freeze', power: 20, type: 'Glitch' },
+        { name: 'StackOverflow Spiral', power: 19, type: 'Glitch' },
+        { name: 'ClassNotFound Catastrophe', power: 18, type: 'Glitch' },
+        { name: 'Jar Hell Infestation', power: 17, type: 'Glitch' }
+      ]
+    },
+    moves: [
+      { name: 'JVM Thread Jab', power: 26, type: 'Java', accuracy: 0.95 },
+      { name: 'Bytecode Blast', power: 32, type: 'Java', accuracy: 0.88 },
+      { name: 'Garbage Collector Sweep', power: 0, heal: 30, type: 'Support', accuracy: 1.0 },
+      { name: 'Spring Boot Surge', power: 44, type: 'Java', accuracy: 0.82 },
+      { name: 'Polymorphic Slam', power: 36, type: 'Java', accuracy: 0.86 },
+      { name: 'Abstract Factory Shield', power: 0, heal: 35, type: 'Support', accuracy: 1.0 },
+      { name: 'Static Void Strike', power: 40, type: 'Java', accuracy: 0.85 },
+      { name: 'Maven Package Crush', power: 35, type: 'Java', accuracy: 0.88 },
+      { name: 'Synchronized Lock', power: 30, type: 'Java', accuracy: 0.90 },
+      { name: 'NPE Ward Impact', power: 48, type: 'Java', accuracy: 0.75 }
+    ]
+  },
+  {
+    id: 'rubicorn',
+    name: 'Rubicorn',
+    language: 'Ruby',
+    maxHp: 95,
+    hp: 95,
+    attackPower: 1.05,
+    spriteFront: 'assets/rubicorn-front.svg',
+    spriteBack: 'assets/rubicorn-back.svg',
+    description: 'Dynamic Ruby unicorn with gem-forged horn strikes and elegant, expressive metaprogramming.',
+    typeColor: 'var(--pixel-red)',
+    bugmonVariant: {
+      name: 'Bug-Rubicorn',
+      sprite: 'assets/bug-rubicorn.svg',
+      maxHp: 143,
+      palette: {
+        primary: '#d50000',
+        secondary: '#9c27b0',
+        dark: '#150308',
+        glow: '#ff0055'
+      },
+      description: 'A savage crystal beast with shattered ruby gems, reckless monkey patching, and thread race conditions.',
+      moves: [
+        { name: 'Broken Gemfile Blight', power: 18, type: 'Glitch' },
+        { name: 'NoMethodError Gore', power: 20, type: 'Glitch' },
+        { name: 'Reckless Monkey Patch', power: 19, type: 'Glitch' },
+        { name: 'Fiber Deadlock Vortex', power: 18, type: 'Glitch' },
+        { name: 'Unbound Method Glitch', power: 17, type: 'Glitch' },
+        { name: 'Global Interpreter Strife', power: 19, type: 'Glitch' },
+        { name: 'YARD Doc Corruption', power: 16, type: 'Glitch' },
+        { name: 'Migration Rollback Ruin', power: 20, type: 'Glitch' }
+      ]
+    },
+    moves: [
+      { name: 'Gem Piercer', power: 28, type: 'Ruby', accuracy: 0.95 },
+      { name: 'Block Yield', power: 34, type: 'Ruby', accuracy: 0.88 },
+      { name: 'Metaprogram Magic', power: 38, type: 'Ruby', accuracy: 0.85 },
+      { name: 'ActiveRecord Cascade', power: 42, type: 'Ruby', accuracy: 0.82 },
+      { name: 'Ruby on Rails Rush', power: 45, type: 'Ruby', accuracy: 0.80 },
+      { name: 'Monkey Patch Mending', power: 0, heal: 28, type: 'Support', accuracy: 1.0 },
+      { name: 'Symbol Splat', power: 32, type: 'Ruby', accuracy: 0.90 },
+      { name: 'Duck Typing Dance', power: 30, type: 'Ruby', accuracy: 0.92 },
+      { name: 'Enumerable Map Slam', power: 36, type: 'Ruby', accuracy: 0.86 },
+      { name: 'Pry Debugger Pierce', power: 50, type: 'Ruby', accuracy: 0.72 }
+    ]
+  },
+  {
+    id: 'sqloph',
+    name: 'Sqloph',
+    language: 'SQL',
+    maxHp: 115,
+    hp: 115,
+    attackPower: 0.92,
+    spriteFront: 'assets/sqloph-front.svg',
+    spriteBack: 'assets/sqloph-back.svg',
+    description: 'Relational database titan armored in immutable schema tables, ACID transactions, and indexed query cannons.',
+    typeColor: 'var(--pixel-blue)',
+    bugmonVariant: {
+      name: 'Bug-Sqloph',
+      sprite: 'assets/bug-sqloph.svg',
+      maxHp: 173,
+      palette: {
+        primary: '#c62828',
+        secondary: '#7b1fa2',
+        dark: '#150308',
+        glow: '#ff1744'
+      },
+      description: 'A fractured monolith of corrupted schemas, unindexed table scans, and catastrophic SQL injection voids.',
+      moves: [
+        { name: 'SQL Injection Nova', power: 20, type: 'Glitch' },
+        { name: 'Corrupt Primary Key', power: 19, type: 'Glitch' },
+        { name: 'Deadlock Lock Escalation', power: 20, type: 'Glitch' },
+        { name: 'Full Table Scan Quake', power: 18, type: 'Glitch' },
+        { name: 'Database Connection Exhaust', power: 19, type: 'Glitch' },
+        { name: 'Orphaned Foreign Key', power: 17, type: 'Glitch' },
+        { name: 'Transaction Timeout', power: 18, type: 'Glitch' },
+        { name: 'Corrupt WAL Log Blast', power: 20, type: 'Glitch' }
+      ]
+    },
+    moves: [
+      { name: 'Select All Strike', power: 24, type: 'SQL', accuracy: 0.95 },
+      { name: 'Inner Join Blast', power: 32, type: 'SQL', accuracy: 0.88 },
+      { name: 'B-Tree Index Rush', power: 35, type: 'SQL', accuracy: 0.85 },
+      { name: 'ACID Rollback Barrier', power: 0, heal: 35, type: 'Support', accuracy: 1.0 },
+      { name: 'Partition Prune', power: 38, type: 'SQL', accuracy: 0.85 },
+      { name: 'Foreign Key Bind', power: 30, type: 'SQL', accuracy: 0.90 },
+      { name: 'Group By Aggregation', power: 42, type: 'SQL', accuracy: 0.82 },
+      { name: 'Transaction Commit', power: 0, heal: 40, type: 'Support', accuracy: 1.0 },
+      { name: 'Query Optimizer Laser', power: 46, type: 'SQL', accuracy: 0.78 },
+      { name: 'Drop Table Cataclysm', power: 52, type: 'SQL', accuracy: 0.70 }
+    ]
   }
 ];
 
 // ---------------------------------------------------------------------------
-// ENEMY BUGMON
+// DEDICATED ERROR ENEMIES (Error Names & Numbers)
+// ---------------------------------------------------------------------------
+const ENEMY_CHARACTERS = [
+  {
+    id: 'error_404',
+    name: 'Error 404',
+    language: 'HTTP 404',
+    maxHp: 115,
+    hp: 115,
+    attackPower: 1.05,
+    spriteFront: 'assets/enemy-404.svg',
+    spriteBack: 'assets/enemy-404.svg',
+    description: 'A phantom glitch stalker that dissolves into the digital void, leaving only missing routes and broken links.',
+    typeColor: 'var(--pixel-blue)',
+    bugmonVariant: {
+      name: 'Bug-404',
+      sprite: 'assets/enemy-404.svg',
+      maxHp: 172,
+      palette: { primary: '#ff1744', secondary: '#9c27b0', dark: '#150308', glow: '#ff0055' },
+      description: 'The void anomaly: an absolute 404 breakdown that erases memory coordinates from existence.',
+      moves: [
+        { name: 'Total Route Oblivion', power: 20, type: 'Glitch' },
+        { name: 'Hyperlink Sever', power: 19, type: 'Glitch' },
+        { name: 'Null Response Void', power: 20, type: 'Glitch' },
+        { name: 'DNS Blackhole Pull', power: 18, type: 'Glitch' },
+        { name: 'Zero Bytes Transferred', power: 19, type: 'Glitch' },
+        { name: 'Connection Reset Peer', power: 18, type: 'Glitch' },
+        { name: 'Stateless Horror', power: 17, type: 'Glitch' },
+        { name: 'Broken Gateway Apocalypse', power: 20, type: 'Glitch' }
+      ]
+    },
+    moves: [
+      { name: 'Route Not Found', power: 18, type: 'Error' },
+      { name: 'Broken Hyperlink', power: 16, type: 'Error' },
+      { name: 'Phantom Request', power: 19, type: 'Error' },
+      { name: 'Null Payload', power: 17, type: 'Error' },
+      { name: 'DNS Blackhole', power: 20, type: 'Error' },
+      { name: 'Dead Link Slash', power: 18, type: 'Error' },
+      { name: 'Vanishing Endpoint', power: 19, type: 'Error' },
+      { name: '404 Wipeout', power: 20, type: 'Error' }
+    ]
+  },
+  {
+    id: 'syntax_error',
+    name: 'Syntax Error',
+    language: 'Syntax Error',
+    maxHp: 120,
+    hp: 120,
+    attackPower: 1.1,
+    spriteFront: 'assets/enemy-syntax.svg',
+    spriteBack: 'assets/enemy-syntax.svg',
+    description: 'A jagged anomaly of misplaced tokens, unclosed parentheses, and parsing chaos that tears code apart.',
+    typeColor: 'var(--pixel-red)',
+    bugmonVariant: {
+      name: 'Bug-Syntax',
+      sprite: 'assets/enemy-syntax.svg',
+      maxHp: 180,
+      palette: { primary: '#e03c3c', secondary: '#7b1fa2', dark: '#2a040d', glow: '#ea80fc' },
+      description: 'A rogue AST parser demon that chews through tokens and emits violent compile-time screams.',
+      moves: [
+        { name: 'Catastrophic Parse Fail', power: 20, type: 'Glitch' },
+        { name: 'Token Stream Corruption', power: 19, type: 'Glitch' },
+        { name: 'Mismatched Brace Carnage', power: 20, type: 'Glitch' },
+        { name: 'Lexical Grammar Shred', power: 18, type: 'Glitch' },
+        { name: 'Unterminated String Ripper', power: 19, type: 'Glitch' },
+        { name: 'Indentation Cataclysm', power: 17, type: 'Glitch' },
+        { name: 'Semicolon Desolation', power: 18, type: 'Glitch' },
+        { name: 'Abstract Tree Shatter', power: 20, type: 'Glitch' }
+      ]
+    },
+    moves: [
+      { name: 'Unexpected Token <', power: 19, type: 'Error' },
+      { name: 'Missing Semicolon', power: 18, type: 'Error' },
+      { name: 'Unclosed Parenthesis', power: 20, type: 'Error' },
+      { name: 'Indentation Mismatch', power: 16, type: 'Error' },
+      { name: 'Malformed Expression', power: 19, type: 'Error' },
+      { name: 'Token Shredder', power: 20, type: 'Error' },
+      { name: 'Parse Tree Collapse', power: 18, type: 'Error' },
+      { name: 'Grammar Rupture', power: 19, type: 'Error' }
+    ]
+  },
+  {
+    id: 'error_500',
+    name: 'Error 500',
+    language: 'HTTP 500',
+    maxHp: 135,
+    hp: 135,
+    attackPower: 1.15,
+    spriteFront: 'assets/enemy-500.svg',
+    spriteBack: 'assets/enemy-500.svg',
+    description: 'A molten core of catastrophic server meltdowns, unhandled backend panics, and gateway collapse.',
+    typeColor: 'var(--pixel-red)',
+    bugmonVariant: {
+      name: 'Bug-500',
+      sprite: 'assets/enemy-500.svg',
+      maxHp: 200,
+      palette: { primary: '#d50000', secondary: '#4a148c', dark: '#150308', glow: '#ff1744' },
+      description: 'A critical reactor failure: an unrecoverable 500 server inferno that incinerates cloud clusters.',
+      moves: [
+        { name: 'Cluster Meltdown Nova', power: 20, type: 'Glitch' },
+        { name: 'Process Exit Code 137', power: 20, type: 'Glitch' },
+        { name: 'OOM Killer Stampede', power: 19, type: 'Glitch' },
+        { name: 'Gateway Collapse 504', power: 19, type: 'Glitch' },
+        { name: 'Unhandled Panic Cascade', power: 20, type: 'Glitch' },
+        { name: 'Server Room Inferno', power: 18, type: 'Glitch' },
+        { name: 'Cloud Region Evaporation', power: 20, type: 'Glitch' },
+        { name: 'Hard Reboot Shockwave', power: 19, type: 'Glitch' }
+      ]
+    },
+    moves: [
+      { name: 'Internal Meltdown', power: 20, type: 'Error' },
+      { name: 'Gateway Timeout 504', power: 19, type: 'Error' },
+      { name: 'Bad Gateway 502', power: 18, type: 'Error' },
+      { name: 'Service Unavailable 503', power: 20, type: 'Error' },
+      { name: 'Backend Crash Wave', power: 19, type: 'Error' },
+      { name: 'Unhandled Runtime Spike', power: 18, type: 'Error' },
+      { name: 'Process Exit 1', power: 20, type: 'Error' },
+      { name: 'Catastrophic Failover', power: 19, type: 'Error' }
+    ]
+  },
+  {
+    id: 'null_pointer',
+    name: 'Null Pointer',
+    language: 'Null Pointer',
+    maxHp: 110,
+    hp: 110,
+    attackPower: 1.1,
+    spriteFront: 'assets/nullpointer.svg',
+    spriteBack: 'assets/nullpointer.svg',
+    description: 'A hollow spectre that feeds on uninitialized memory and dereferences objects into nothingness.',
+    typeColor: 'var(--pixel-yellow)',
+    bugmonVariant: {
+      name: 'Bug-NullPointer',
+      sprite: 'assets/nullpointer.svg',
+      maxHp: 165,
+      palette: { primary: '#9c27b0', secondary: '#e03c3c', dark: '#1f002b', glow: '#ff0055' },
+      description: 'The void phantom that unlinks memory addresses and leaves raw memory completely hollow.',
+      moves: [
+        { name: 'Null Pointer Oblivion', power: 20, type: 'Glitch' },
+        { name: 'Zero Memory Absorption', power: 19, type: 'Glitch' },
+        { name: 'Uninitialized Dread', power: 18, type: 'Glitch' },
+        { name: 'Hollow Reference Claws', power: 20, type: 'Glitch' },
+        { name: 'Segmentation Sever', power: 19, type: 'Glitch' },
+        { name: 'Dangling Memory Haunt', power: 18, type: 'Glitch' },
+        { name: 'Invalid Address Warp', power: 20, type: 'Glitch' },
+        { name: 'Total Void Nullification', power: 20, type: 'Glitch' }
+      ]
+    },
+    moves: [
+      { name: 'Null Dereference', power: 20, type: 'Error' },
+      { name: 'Void Gaze', power: 17, type: 'Error' },
+      { name: 'Undefined Invocation', power: 19, type: 'Error' },
+      { name: 'Zero Address Strike', power: 18, type: 'Error' },
+      { name: 'Segmentation Rip', power: 20, type: 'Error' },
+      { name: 'Dangling Hook', power: 18, type: 'Error' },
+      { name: 'Unchecked Optional', power: 17, type: 'Error' },
+      { name: 'Absolute Zero Null', power: 20, type: 'Error' }
+    ]
+  },
+  {
+    id: 'stack_overflow',
+    name: 'Stack Overflow',
+    language: 'Stack Overflow',
+    maxHp: 125,
+    hp: 125,
+    attackPower: 1.2,
+    spriteFront: 'assets/enemy-overflow.svg',
+    spriteBack: 'assets/enemy-overflow.svg',
+    description: 'An endless vortex of self-calling recursion that exhausts the call stack until memory shatters.',
+    typeColor: 'var(--pixel-yellow)',
+    bugmonVariant: {
+      name: 'Bug-StackOverflow',
+      sprite: 'assets/enemy-overflow.svg',
+      maxHp: 188,
+      palette: { primary: '#ea80fc', secondary: '#d50000', dark: '#260033', glow: '#ff1744' },
+      description: 'A bottomless recursive whirlpool that devours stack frames with zero base cases.',
+      moves: [
+        { name: 'Call Stack Collapse Nova', power: 20, type: 'Glitch' },
+        { name: 'Infinite Frame Swarm', power: 19, type: 'Glitch' },
+        { name: 'Base Case Obliteration', power: 20, type: 'Glitch' },
+        { name: 'Memory Exhaust Whirlwind', power: 19, type: 'Glitch' },
+        { name: 'Recursive Singularity', power: 20, type: 'Glitch' },
+        { name: 'Execution Thread Crush', power: 18, type: 'Glitch' },
+        { name: 'Tail Call Annihilation', power: 19, type: 'Glitch' },
+        { name: 'Depth Exceeded Apocalypse', power: 20, type: 'Glitch' }
+      ]
+    },
+    moves: [
+      { name: 'Infinite Recursion', power: 20, type: 'Error' },
+      { name: 'Frame Depletion', power: 19, type: 'Error' },
+      { name: 'Base Case Forgotten', power: 20, type: 'Error' },
+      { name: 'Call Stack Blast', power: 18, type: 'Error' },
+      { name: 'Maximum Depth Exceeded', power: 20, type: 'Error' },
+      { name: 'Recursive Whirlpool', power: 19, type: 'Error' },
+      { name: 'Memory Saturation', power: 18, type: 'Error' },
+      { name: 'Stack Tear Claws', power: 20, type: 'Error' }
+    ]
+  }
+];
+
+// ---------------------------------------------------------------------------
+// ENEMY BUGMON (Classic Prime Rogue Glitch)
 // ---------------------------------------------------------------------------
 const ENEMY_BUGMON = {
   id: 'bugmon',
@@ -267,12 +606,14 @@ async function loadQuestions() {
 // Global namespace attachment for standard vanilla JS scripting
 window.CODEMONS = CODEMONS;
 window.ENEMY_BUGMON = ENEMY_BUGMON;
+window.ENEMY_CHARACTERS = ENEMY_CHARACTERS;
 
 window.CodemonData = {
   CODEMONS,
   CODEMONS_LIST: CODEMONS,
   CODEMON_DEX: CODEMONS,
   ENEMY_BUGMON,
+  ENEMY_CHARACTERS,
   FALLBACK_QUESTIONS,
   loadQuestions
 };

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="64" height="64" shape-rendering="crispEdges">
+  <!-- Rubicorn Back Sprite: Player View -->
+  <!-- Ruby Horn Tip -->
+  <rect x="7" y="0" width="2" height="3" fill="#e03c3c" />
+  <!-- Back of Head & Mane -->
+  <rect x="4" y="2" width="2" height="2" fill="#941e1e" />
+  <rect x="10" y="2" width="2" height="2" fill="#941e1e" />
+  <rect x="4" y="4" width="8" height="5" fill="#e03c3c" />
+  <rect x="7" y="4" width="2" height="5" fill="#f4b41b" />
+  <!-- Dynamic Back & Mane -->
+  <rect x="3" y="9" width="10" height="5" fill="#941e1e" />
+  <rect x="4" y="9" width="8" height="4" fill="#e03c3c" />
+  <rect x="7" y="9" width="2" height="4" fill="#f4b41b" />
+  <!-- Legs -->
+  <rect x="3" y="14" width="3" height="2" fill="#0c1015" />
+  <rect x="10" y="14" width="3" height="2" fill="#0c1015" />
+</svg>
