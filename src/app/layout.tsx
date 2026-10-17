@@ -1,3 +1,4 @@
+import React from 'react';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
@@ -58,7 +59,9 @@ export default function RootLayout({
           />
         </div>
 
-        <DemoRoleSwitch />
+        <React.Suspense fallback={null}>
+          <DemoRoleSwitch />
+        </React.Suspense>
         <div className="relative z-10 flex-1 flex flex-col w-full">
           {children}
         </div>

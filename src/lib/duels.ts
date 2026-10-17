@@ -162,6 +162,7 @@ export function sanitizeDuelQuestions(
     choice_c: string;
     choice_d: string;
     question_order?: number;
+    correct_option?: string;
     correct_answer?: string;
     explanation?: string;
   }[]

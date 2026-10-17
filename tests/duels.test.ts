@@ -42,6 +42,7 @@ describe('Phase 3E & H8: Async Quiz Duels & Anti-Win-Trading Suite', () => {
       expect(safeQuestions).toHaveLength(2);
       safeQuestions.forEach((q) => {
         expect((q as any).correct_answer).toBeUndefined();
+        expect((q as any).correct_option).toBeUndefined();
         expect((q as any).explanation).toBeUndefined();
         expect(q.id).toBeDefined();
         expect(q.question_text).toBeDefined();

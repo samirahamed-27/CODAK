@@ -19,7 +19,9 @@ export async function GET(req: NextRequest) {
     data: { user },
   } = await supabaseServer.auth.getUser();
 
-  const requesterId = user?.id || req.headers.get('x-test-requester-id') || undefined;
+  const isTestEnv = process.env.NODE_ENV === 'test';
+  const testRequesterId = isTestEnv ? req.headers.get('x-test-requester-id') : null;
+  const requesterId = user?.id || testRequesterId || undefined;
   if (!requesterId) {
     return NextResponse.json(
       { error: 'Unauthorized: login required to view leaderboard' },
@@ -37,7 +39,7 @@ export async function GET(req: NextRequest) {
     if (profile?.role) {
       requesterRole = profile.role as 'student' | 'faculty' | 'admin';
     }
-  } else if (req.headers.get('x-test-requester-role')) {
+  } else if (isTestEnv && req.headers.get('x-test-requester-role')) {
     requesterRole = req.headers.get('x-test-requester-role') as 'student' | 'faculty' | 'admin';
   }
 

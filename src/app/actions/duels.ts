@@ -302,7 +302,7 @@ export async function getDuelSessionAction(duelId: string): Promise<{
   // 2. Fetch questions
   const { data: duelQuestions, error: dqErr } = await adminClient
     .from('duel_questions')
-    .select('question_order, questions(id, question_text, choice_a, choice_b, choice_c, choice_d)')
+    .select('question_order, questions(id, question_text, option_a, option_b, option_c, option_d)')
     .eq('duel_id', duelId)
     .order('question_order', { ascending: true });
 
@@ -310,8 +310,13 @@ export async function getDuelSessionAction(duelId: string): Promise<{
     return { success: false, error: 'Failed to load duel questions' };
   }
 
-  const rawQuestions = duelQuestions.map((dq) => ({
-    ...(dq.questions as any),
+  const rawQuestions = duelQuestions.map((dq: any) => ({
+    id: dq.questions?.id,
+    question_text: dq.questions?.question_text,
+    choice_a: dq.questions?.option_a,
+    choice_b: dq.questions?.option_b,
+    choice_c: dq.questions?.option_c,
+    choice_d: dq.questions?.option_d,
     question_order: dq.question_order,
   }));
 
@@ -383,15 +388,18 @@ export async function submitDuelAnswersAction(input: DuelSubmissionInput): Promi
   const questionIds = input.answers.map((a) => a.questionId);
   const { data: actualQuestions } = await adminClient
     .from('questions')
-    .select('id, correct_answer')
+    .select('id, correct_option')
     .in('id', questionIds);
 
   const answerKeyMap = new Map<string, string>();
-  (actualQuestions || []).forEach((q) => answerKeyMap.set(q.id, q.correct_answer));
+  (actualQuestions || []).forEach((q: any) => answerKeyMap.set(q.id, q.correct_option));
 
   let score = 0;
   const answerRows = input.answers.map((ans) => {
-    const correct = answerKeyMap.get(ans.questionId) === ans.selectedChoice;
+    const expected = answerKeyMap.get(ans.questionId);
+    const correct =
+      Boolean(expected) &&
+      String(expected).trim().toLowerCase() === String(ans.selectedChoice || '').trim().toLowerCase();
     if (correct) score++;
     return {
       duel_id: input.duelId,

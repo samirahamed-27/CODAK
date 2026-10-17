@@ -4,7 +4,6 @@ import React, { use, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import BattleArena from '@/components/battles/BattleArena';
 import { Navbar } from '@/components/Navbar';
-import { BottomNav } from '@/components/BottomNav';
 import Aurora from '@/components/Aurora';
 import { ArrowLeft } from 'lucide-react';
 
@@ -51,8 +50,6 @@ export default function StudentBattlePage({ params }: { params: Promise<{ id: st
             <BattleContent params={params} />
           </Suspense>
         </main>
-
-        <BottomNav />
       </div>
     </div>
   );
