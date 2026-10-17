@@ -2,26 +2,69 @@
 
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 import {
   generateConceptMatchRound,
   verifyConceptMatches,
+  createSignedRoundToken,
+  verifySignedRoundToken,
   ConceptMatchRound,
 } from '@/lib/concept-match';
+
+function getSigningSecret(): string {
+  return (
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.CRON_SECRET ||
+    'concept-match-local-secret'
+  );
+}
 
 export async function getConceptMatchRoundAction(): Promise<{
   success: boolean;
   round?: ConceptMatchRound;
+  roundToken?: string;
   error?: string;
 }> {
   try {
+    const supabaseServer = await createServerClient();
+    const {
+      data: { user },
+    } = await supabaseServer.auth.getUser();
+
+    let studentId = user?.id;
+
+    if (!studentId) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+      if (supabaseUrl && serviceRoleKey) {
+        const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
+        const { data: demo } = await adminClient.from('students').select('id').limit(1).single();
+        studentId = demo?.id;
+      }
+    }
+
     const round = generateConceptMatchRound(4);
-    return { success: true, round };
+    const roundId = crypto.randomUUID();
+    const roundToken = createSignedRoundToken(
+      {
+        roundId,
+        studentId: studentId || 'anonymous',
+        termIds: round.terms.map((t) => t.id),
+        issuedAt: Date.now(),
+      },
+      getSigningSecret()
+    );
+
+    return { success: true, round, roundToken };
   } catch (err: any) {
     return { success: false, error: err.message || 'Failed to generate round' };
   }
 }
 
-export async function submitConceptMatchAction(matches: { termId: string; definitionId: string }[]): Promise<{
+export async function submitConceptMatchAction(
+  matches: { termId: string; definitionId: string }[],
+  roundToken?: string
+): Promise<{
   success: boolean;
   correctCount: number;
   totalCount: number;
@@ -29,6 +72,33 @@ export async function submitConceptMatchAction(matches: { termId: string; defini
   xpAwarded?: number;
   error?: string;
 }> {
+  if (!roundToken) {
+    return {
+      success: false,
+      correctCount: 0,
+      totalCount: matches.length,
+      isPerfect: false,
+      xpAwarded: 0,
+      error: 'Submission rejected: Missing server-issued round token.',
+    };
+  }
+
+  // 1. Verify signed expiring token
+  const tokenCheck = verifySignedRoundToken(roundToken, getSigningSecret());
+  if (!tokenCheck.valid || !tokenCheck.payload) {
+    return {
+      success: false,
+      correctCount: 0,
+      totalCount: matches.length,
+      isPerfect: false,
+      xpAwarded: 0,
+      error: `Submission rejected: ${tokenCheck.error || 'Invalid token'}`,
+    };
+  }
+
+  const { payload } = tokenCheck;
+
+  // 2. Identify student
   const supabaseServer = await createServerClient();
   const {
     data: { user },
@@ -54,16 +124,44 @@ export async function submitConceptMatchAction(matches: { termId: string; defini
     return { success: false, correctCount: 0, totalCount: 0, isPerfect: false, error: 'Student not found' };
   }
 
-  // 1. Verify matches
+  // Verify token matches current student if authenticated
+  if (payload.studentId !== 'anonymous' && payload.studentId !== studentId) {
+    return {
+      success: false,
+      correctCount: 0,
+      totalCount: matches.length,
+      isPerfect: false,
+      xpAwarded: 0,
+      error: 'Submission rejected: Round token belongs to a different student.',
+    };
+  }
+
+  // 3. Verify submitted terms match the exact terms issued in this round
+  const issuedTerms = new Set(payload.termIds);
+  const submittedTerms = new Set(matches.map((m) => m.termId));
+
+  if (
+    issuedTerms.size !== submittedTerms.size ||
+    [...issuedTerms].some((t) => !submittedTerms.has(t))
+  ) {
+    return {
+      success: false,
+      correctCount: 0,
+      totalCount: matches.length,
+      isPerfect: false,
+      xpAwarded: 0,
+      error: 'Submission rejected: Submitted terms do not match the round issued by the server.',
+    };
+  }
+
+  // 4. Verify match correctness on server
   const outcome = verifyConceptMatches(matches);
 
   let xpAwarded = 0;
 
-  // 2. Award XP if perfect match (all 4 correct)
+  // 5. Award XP if perfect match (all 4 correct) with unique round reference
   if (outcome.isPerfect) {
-    const nowIso = new Date().toISOString().split('T')[0];
-    const timestampMs = Date.now();
-    const referenceId = `concept_match:${nowIso}:${studentId}:${timestampMs}`;
+    const referenceId = `concept_match:${payload.roundId}`;
 
     const { data: awardRes, error: xpErr } = await adminClient.rpc('award_xp', {
       p_student_id: studentId,
@@ -76,7 +174,7 @@ export async function submitConceptMatchAction(matches: { termId: string; defini
     if (!xpErr && awardRes && typeof awardRes === 'object') {
       const typed = awardRes as any;
       if (typed.status === 'awarded' || typed.status === 'success') {
-        xpAwarded = 10;
+        xpAwarded = typed.xp_awarded ?? 10;
       }
     }
   }

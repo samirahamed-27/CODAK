@@ -108,3 +108,69 @@ export function verifyConceptMatches(
     incorrectPairs,
   };
 }
+
+import crypto from 'crypto';
+
+export interface ConceptMatchTokenPayload {
+  roundId: string;
+  studentId: string;
+  termIds: string[];
+  issuedAt: number;
+}
+
+export function createSignedRoundToken(
+  payload: ConceptMatchTokenPayload,
+  secret: string
+): string {
+  const data = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = crypto
+    .createHmac('sha256', secret)
+    .update(data)
+    .digest('base64url');
+  return `${data}.${signature}`;
+}
+
+export function verifySignedRoundToken(
+  token: string,
+  secret: string,
+  maxAgeMs = 5 * 60 * 1000 // 5 minutes
+): { valid: boolean; payload?: ConceptMatchTokenPayload; error?: string } {
+  if (!token || typeof token !== 'string') {
+    return { valid: false, error: 'Missing or invalid token format' };
+  }
+
+  const parts = token.split('.');
+  if (parts.length !== 2) {
+    return { valid: false, error: 'Malformed token structure' };
+  }
+
+  const [data, signature] = parts;
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(data)
+    .digest('base64url');
+
+  const sigBuf = Buffer.from(signature, 'utf8');
+  const expBuf = Buffer.from(expectedSignature, 'utf8');
+
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+    return { valid: false, error: 'Invalid token signature (forged token)' };
+  }
+
+  try {
+    const jsonStr = Buffer.from(data, 'base64url').toString('utf8');
+    const payload: ConceptMatchTokenPayload = JSON.parse(jsonStr);
+
+    if (Date.now() - payload.issuedAt > maxAgeMs) {
+      return { valid: false, error: 'Token expired' };
+    }
+
+    if (!payload.roundId || !Array.isArray(payload.termIds) || payload.termIds.length === 0) {
+      return { valid: false, error: 'Invalid payload contents' };
+    }
+
+    return { valid: true, payload };
+  } catch {
+    return { valid: false, error: 'Corrupt token payload' };
+  }
+}

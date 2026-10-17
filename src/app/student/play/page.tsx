@@ -76,6 +76,7 @@ export default function StudentPlayPage() {
 
   // Concept Match State
   const [matchRound, setMatchRound] = useState<ConceptMatchRound | null>(null);
+  const [matchToken, setMatchToken] = useState<string | null>(null);
   const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
   const [userMatches, setUserMatches] = useState<Record<string, string>>({});
   const [matchLoading, setMatchLoading] = useState(false);
@@ -124,6 +125,7 @@ export default function StudentPlayPage() {
     const res = await getConceptMatchRoundAction();
     if (res.success && res.round) {
       setMatchRound(res.round);
+      setMatchToken(res.roundToken || null);
     }
     setMatchLoading(false);
   }
@@ -161,7 +163,7 @@ export default function StudentPlayPage() {
     if (matchesArray.length < matchRound.terms.length) return;
 
     setMatchSubmitting(true);
-    const res = await submitConceptMatchAction(matchesArray);
+    const res = await submitConceptMatchAction(matchesArray, matchToken || undefined);
     setMatchSubmitting(false);
 
     if (res.success) {
