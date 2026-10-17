@@ -305,11 +305,13 @@ GRANT EXECUTE ON FUNCTION public.submit_battle_answer TO authenticated;
 
 -- SELECT Policies:
 -- Battles: authenticated can read non-draft battles or any battle if faculty/admin
+DROP POLICY IF EXISTS "Read Battles Policy" ON public.battles;
 CREATE POLICY "Read Battles Policy" ON public.battles
 FOR SELECT TO authenticated
 USING (status != 'draft' OR public.get_my_role() IN ('faculty', 'admin'));
 
 -- Teams: read teams for readable battles
+DROP POLICY IF EXISTS "Read Teams Policy" ON public.battle_teams;
 CREATE POLICY "Read Teams Policy" ON public.battle_teams
 FOR SELECT TO authenticated
 USING (EXISTS (
@@ -319,6 +321,7 @@ USING (EXISTS (
 ));
 
 -- Team Members: read members of readable battles
+DROP POLICY IF EXISTS "Read Team Members Policy" ON public.battle_team_members;
 CREATE POLICY "Read Team Members Policy" ON public.battle_team_members
 FOR SELECT TO authenticated
 USING (EXISTS (
@@ -328,6 +331,7 @@ USING (EXISTS (
 ));
 
 -- Battle Questions: read questions for battles you are enrolled in or if faculty/admin
+DROP POLICY IF EXISTS "Read Battle Questions Policy" ON public.battle_questions;
 CREATE POLICY "Read Battle Questions Policy" ON public.battle_questions
 FOR SELECT TO authenticated
 USING (
@@ -340,11 +344,13 @@ USING (
 );
 
 -- Battle Submissions: students can ONLY read their own submissions. NEVER other students'.
+DROP POLICY IF EXISTS "Read My Own Submissions Policy" ON public.battle_submissions;
 CREATE POLICY "Read My Own Submissions Policy" ON public.battle_submissions
 FOR SELECT TO authenticated
 USING (student_id = auth.uid() OR public.get_my_role() IN ('faculty', 'admin'));
 
 -- Battle Scores: students can only read scores for battles they participate in; faculty/admin can read all
+DROP POLICY IF EXISTS "Read Battle Scores Policy" ON public.battle_scores;
 CREATE POLICY "Read Battle Scores Policy" ON public.battle_scores
 FOR SELECT TO authenticated
 USING (
