@@ -53,6 +53,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Code Panel DOM Elements
   const pickerCardsContainer = document.getElementById('picker-cards-container');
   const pickerStatusBadge = document.getElementById('picker-status-badge');
+  const pickerBody = document.getElementById('picker-body');
+  const pickerExpandedOverlay = document.getElementById('picker-expanded-overlay');
+  const pickerExpandedTabs = document.getElementById('picker-expanded-tabs');
+  const pickerExpandedBody = document.getElementById('picker-expanded-body');
 
   const currentChallengeBadge = document.getElementById('current-challenge-badge');
   const turnTimerText = document.getElementById('turn-timer-text');
@@ -943,11 +947,146 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  let activeExpandedIndex = 0;
+
+  function showExpandedPicker(index) {
+    if (!battleActive || activeChallenge || !pickerExpandedOverlay) return;
+    if (!currentTurnCards || currentTurnCards.length === 0) return;
+    if (typeof isEnemyTurn !== 'undefined' && isEnemyTurn) return;
+
+    activeExpandedIndex = Math.max(0, Math.min(index, currentTurnCards.length - 1));
+    updateExpandedOverlayUI();
+    pickerExpandedOverlay.style.display = 'flex';
+  }
+
+  function hideExpandedPicker() {
+    if (pickerExpandedOverlay) {
+      pickerExpandedOverlay.style.display = 'none';
+    }
+  }
+
+  function updateExpandedOverlayUI() {
+    if (!pickerExpandedTabs || !pickerExpandedBody || !currentTurnCards) return;
+    const cards = currentTurnCards;
+    const dmgMap = { easy: 10, medium: 20, hard: 35 };
+
+    pickerExpandedTabs.innerHTML = '';
+    cards.forEach((challenge, idx) => {
+      const dmg = dmgMap[challenge.difficulty] || 10;
+      const isActive = (idx === activeExpandedIndex);
+      const isLocked = challenge.locked === true;
+
+      const tab = document.createElement('div');
+      tab.className = `picker-tab ${challenge.difficulty} ${isActive ? 'active' : ''} ${isLocked ? 'locked' : ''}`;
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('tabindex', isLocked ? '-1' : '0');
+      tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      tab.id = `picker-tab-${challenge.id || idx}`;
+
+      tab.innerHTML = `
+        <div class="picker-tab-badge-row">
+          <span class="picker-badge font-pixel ${isLocked ? 'text-red' : ''}">${isLocked ? 'LOCKED' : (challenge.difficulty || 'EASY').toUpperCase()}</span>
+          <span class="picker-tab-dmg font-pixel">${isLocked ? 'LOCKED' : `${dmg} DMG`}</span>
+        </div>
+        <div class="picker-tab-title font-pixel">${isLocked ? 'LOCKED' : (challenge.title || 'Challenge')}</div>
+      `;
+
+      tab.addEventListener('mouseenter', () => {
+        if (activeExpandedIndex !== idx) {
+          activeExpandedIndex = idx;
+          updateExpandedOverlayUI();
+          if (!isLocked) {
+            playSound('select');
+          }
+        }
+      });
+
+      tab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (isLocked) return;
+        const allCardEls = pickerCardsContainer ? pickerCardsContainer.querySelectorAll('.picker-card') : [];
+        const cardEl = allCardEls[idx];
+        hideExpandedPicker();
+        selectChallengeCard(challenge, cardEl);
+      });
+
+      tab.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          const nextTab = (idx + 1) % cards.length;
+          activeExpandedIndex = nextTab;
+          updateExpandedOverlayUI();
+          const newTabs = pickerExpandedTabs.querySelectorAll('.picker-tab');
+          if (newTabs[nextTab]) newTabs[nextTab].focus();
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          const prevTab = (idx - 1 + cards.length) % cards.length;
+          activeExpandedIndex = prevTab;
+          updateExpandedOverlayUI();
+          const newTabs = pickerExpandedTabs.querySelectorAll('.picker-tab');
+          if (newTabs[prevTab]) newTabs[prevTab].focus();
+        } else if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          if (isLocked) return;
+          const allCardEls = pickerCardsContainer ? pickerCardsContainer.querySelectorAll('.picker-card') : [];
+          const cardEl = allCardEls[idx];
+          hideExpandedPicker();
+          selectChallengeCard(challenge, cardEl);
+        }
+      });
+
+      pickerExpandedTabs.appendChild(tab);
+    });
+
+    const currentChallenge = cards[activeExpandedIndex];
+    if (!currentChallenge) return;
+
+    const dmg = dmgMap[currentChallenge.difficulty] || 10;
+    const isLocked = currentChallenge.locked === true;
+
+    pickerExpandedBody.className = `picker-expanded-body font-pixel ${currentChallenge.difficulty} ${isLocked ? 'locked' : ''}`;
+    pickerExpandedBody.setAttribute('aria-label', `${currentChallenge.difficulty} challenge: ${currentChallenge.title}`);
+
+    pickerExpandedBody.innerHTML = `
+      <div class="picker-expanded-header">
+        <div class="picker-expanded-meta">
+          <span class="picker-badge font-pixel ${isLocked ? 'text-red' : ''}">${isLocked ? 'LOCKED' : (currentChallenge.difficulty || 'EASY').toUpperCase()}</span>
+          <span class="picker-expanded-dmg font-pixel">${isLocked ? 'LOCKED' : `${dmg} DMG`}</span>
+          <span class="picker-expanded-topic font-pixel">TOPIC: ${(currentChallenge.topic || 'LOGIC').toUpperCase()}</span>
+        </div>
+        <span class="picker-expanded-cta font-pixel">${isLocked ? 'RESTRICTED IN ENCOUNTER' : '► CLICK OR PRESS ENTER TO ATTACK'}</span>
+      </div>
+      <div class="picker-expanded-title font-pixel">${isLocked ? 'LOCKED MOVE' : (currentChallenge.title || 'Challenge')}</div>
+      <div class="picker-expanded-desc font-code">${currentChallenge.description || ''}</div>
+    `;
+
+    pickerExpandedBody.onclick = () => {
+      if (isLocked) return;
+      const allCardEls = pickerCardsContainer ? pickerCardsContainer.querySelectorAll('.picker-card') : [];
+      const cardEl = allCardEls[activeExpandedIndex];
+      hideExpandedPicker();
+      selectChallengeCard(currentChallenge, cardEl);
+    };
+
+    pickerExpandedBody.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (isLocked) return;
+        const allCardEls = pickerCardsContainer ? pickerCardsContainer.querySelectorAll('.picker-card') : [];
+        const cardEl = allCardEls[activeExpandedIndex];
+        hideExpandedPicker();
+        selectChallengeCard(currentChallenge, cardEl);
+      }
+    };
+  }
+
   function renderPickerCards(cards) {
     if (!pickerCardsContainer) return;
     pickerCardsContainer.innerHTML = '';
+    hideExpandedPicker();
 
-    cards.forEach((challenge) => {
+    cards.forEach((challenge, idx) => {
       const dmgMap = { easy: 10, medium: 20, hard: 35 };
       const dmg = dmgMap[challenge.difficulty] || 10;
       const isLocked = challenge.locked === true;
@@ -972,6 +1111,12 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="picker-card-desc font-code">${challenge.description}</div>
           <div class="picker-card-topic font-pixel">RESTRICTED</div>
         `;
+        card.addEventListener('mouseenter', () => {
+          showExpandedPicker(idx);
+        });
+        card.addEventListener('focus', () => {
+          showExpandedPicker(idx);
+        });
         pickerCardsContainer.appendChild(card);
         return;
       }
@@ -986,24 +1131,42 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="picker-card-topic font-pixel">TOPIC: ${(challenge.topic || 'LOGIC').toUpperCase()}</div>
       `;
 
+      card.addEventListener('mouseenter', () => {
+        showExpandedPicker(idx);
+      });
+
+      card.addEventListener('focus', () => {
+        showExpandedPicker(idx);
+      });
+
       card.addEventListener('click', () => {
+        hideExpandedPicker();
         selectChallengeCard(challenge, card);
       });
 
       card.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
+          hideExpandedPicker();
           selectChallengeCard(challenge, card);
         }
       });
 
       pickerCardsContainer.appendChild(card);
     });
+
+    if (pickerBody && !pickerBody.__hasHoverListeners) {
+      pickerBody.__hasHoverListeners = true;
+      pickerBody.addEventListener('mouseleave', () => {
+        hideExpandedPicker();
+      });
+    }
   }
 
   function selectChallengeCard(challenge, cardElement) {
     if (!battleActive || activeChallenge) return;
 
+    hideExpandedPicker();
     playSound('select');
     activeChallenge = challenge;
     battleUsedChallenges.add(challenge.id);
@@ -1941,6 +2104,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         playSound('click');
         resultOverlay.style.display = 'none';
         showScreen('title');
+      } else if (pickerExpandedOverlay && pickerExpandedOverlay.style.display === 'flex') {
+        hideExpandedPicker();
+        playSound('click');
       } else if (currentScreen === 'battle') {
         openPauseMenu();
       } else if (currentScreen === 'select') {
@@ -2002,12 +2168,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             e.preventDefault();
             const nextIdx = currentCardIdx === -1 ? 0 : (currentCardIdx + 1) % pickerCards.length;
             pickerCards[nextIdx].focus();
+            showExpandedPicker(nextIdx);
           } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
             e.preventDefault();
             const prevIdx = currentCardIdx === -1 ? 0 : (currentCardIdx - 1 + pickerCards.length) % pickerCards.length;
             pickerCards[prevIdx].focus();
+            showExpandedPicker(prevIdx);
           } else if ((e.key === 'Enter' || e.key === ' ') && currentCardIdx !== -1) {
             e.preventDefault();
+            hideExpandedPicker();
             pickerCards[currentCardIdx].click();
           }
         }

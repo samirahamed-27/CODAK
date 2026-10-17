@@ -308,10 +308,20 @@
             <span class="section-title">■ [01] QUESTION_PICKER</span>
             <span id="picker-status-badge" class="section-badge font-code">SELECT DIFFICULTY TO ATTACK</span>
           </div>
-          <div class="section-body picker-body">
+          <div class="section-body picker-body" id="picker-body">
             <!-- 3 Challenge Cards: Easy, Medium, Hard -->
             <div class="picker-cards-grid" id="picker-cards-container">
               <!-- Rendered via JS -->
+            </div>
+
+            <!-- Full-Question Expansion on Hover (covers entire question section while keeping titles visible) -->
+            <div id="picker-expanded-overlay" class="picker-expanded-overlay" style="display: none;" aria-live="polite">
+              <div class="picker-expanded-tabs" id="picker-expanded-tabs" role="tablist" aria-label="Difficulty Tabs">
+                <!-- 3 Tabs: Easy, Medium, Hard (visible so user can read titles and choose others) -->
+              </div>
+              <div class="picker-expanded-body" id="picker-expanded-body" role="tabpanel" tabindex="0">
+                <!-- Full details for the active hovered question -->
+              </div>
             </div>
           </div>
         </section>
