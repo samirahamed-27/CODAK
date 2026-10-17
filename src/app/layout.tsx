@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Gamify - Gamified Learning Platform',
-  description: 'Next-Gen Gamified Academic Platform: Learn, Play, and Compete.',
+  title: 'CODAK - Gamified Learning Platform',
+  description: 'CODAK - Next-Gen Gamified Academic Platform: Learn, Play, and Compete.',
 };
 
 export default function RootLayout({

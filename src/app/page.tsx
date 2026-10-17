@@ -14,7 +14,7 @@ export default function HomePage() {
               🎮
             </div>
             <Shuffle
-              text="GAMIFY"
+              text="CODAK"
               tag="span"
               effect="slide"
               duration={0.3}
@@ -37,7 +37,7 @@ export default function HomePage() {
         <div className="py-12 sm:py-20 flex flex-col items-center text-center max-w-2xl mx-auto">
           <div className="mb-3">
             <Shuffle
-              text="GAMIFY"
+              text="CODAK"
               tag="h1"
               effect="slide"
               shuffleDirection="right"
@@ -166,7 +166,7 @@ export default function HomePage() {
 
         {/* Footer */}
         <footer className="text-center py-6 border-t border-[#1D2233]/60 text-xs text-slate-500">
-          Gamified Learning Platform • Timezone: Asia/Kolkata • Ledger-backed XP Engine
+          CODAK Learning Platform • Timezone: Asia/Kolkata • Ledger-backed XP Engine
         </footer>
       </main>
     </div>

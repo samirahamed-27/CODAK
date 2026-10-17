@@ -1,6 +1,6 @@
 /**
  * Main Controller: Screen Switching, 160x144 Canvas Rendering & Codemon Selection
- * Mirai-Game / Gamify Platform
+ * Mirai-Game / CODAK Platform
  */
 
 // Global Game State

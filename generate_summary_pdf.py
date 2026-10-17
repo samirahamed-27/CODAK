@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Gamify / Codemons Project Summary PDF Generator
+CODAK / Codemons Project Summary PDF Generator
 Generates a polished, 4-page executive and engineering team summary PDF report.
 """
 
@@ -43,7 +43,7 @@ class NumberedCanvas(canvas.Canvas):
 
         # Top Running Header (Pages > 1)
         if self._pageNumber > 1:
-            self.drawString(36, 758, "GAMIFY PLATFORM & CODEMONS | ENGINEERING MILESTONE SUMMARY")
+            self.drawString(36, 758, "CODAK PLATFORM & CODEMONS | ENGINEERING MILESTONE SUMMARY")
             self.drawRightString(576, 758, "OCTOBER 2026")
             self.setStrokeColor(colors.HexColor("#CBD5E1"))
             self.setLineWidth(0.75)
@@ -199,7 +199,7 @@ def create_summary_pdf(output_path):
     # =========================================================================
     # PAGE 1: TITLE BANNER, META, EXECUTIVE SUMMARY & RETRO GAME PANEL
     # =========================================================================
-    story.append(Paragraph("GAMIFY: CODEMONS & PLATFORM MILESTONE", title_style))
+    story.append(Paragraph("CODAK: CODEMONS & PLATFORM MILESTONE", title_style))
     story.append(Paragraph("Comprehensive Technical & Feature Milestone Summary for the Engineering Team", subtitle_style))
     story.append(HRFlowable(width="100%", thickness=1.5, color=c_secondary, spaceAfter=8))
 
@@ -232,7 +232,7 @@ def create_summary_pdf(output_path):
     story.append(Paragraph("1. Executive Summary", h1_style))
     summary_text = (
         "This milestone report details the successful delivery of the <b>Codemons Retro Code Combat Arena</b> "
-        "and its integration with the <b>Gamify</b> educational platform. The system bridges classic 8-bit "
+        "and its integration with the <b>CODAK</b> educational platform. The system bridges classic 8-bit "
         "Game Boy combat mechanics with real-time, browser-isolated JavaScript programming challenges. Students write, "
         "test, and debug algorithmic code inside a sandboxed IDE to command their starter Codemons against rogue bug monsters. "
         "All subsystems have been fully implemented, validated across comprehensive test suites, and pushed to <code>origin/main</code>."
@@ -552,5 +552,5 @@ def create_summary_pdf(output_path):
     print(f"Summary PDF successfully generated at: {output_path}")
 
 if __name__ == '__main__':
-    target = sys.argv[1] if len(sys.argv) > 1 else 'Gamify_Codemons_Project_Summary.pdf'
+    target = sys.argv[1] if len(sys.argv) > 1 else 'CODAK_Codemons_Project_Summary.pdf'
     create_summary_pdf(target)

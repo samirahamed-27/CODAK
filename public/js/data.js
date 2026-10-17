@@ -1,6 +1,6 @@
 /**
  * Codemon Stats & Question Loader
- * Mirai-Game / Gamify Platform
+ * Mirai-Game / CODAK Platform
  */
 
 // ---------------------------------------------------------------------------

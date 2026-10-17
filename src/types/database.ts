@@ -1,5 +1,5 @@
 /**
- * Database Types & Role Enums for Gamified Learning Platform
+ * Database Types & Role Enums for CODAK Platform
  */
 
 export type UserRole = 'student' | 'faculty' | 'admin';

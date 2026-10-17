@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎮 GAMIFY // CODEMONS
+# 🎮 CODAK // CODEMONS
 ### *Next-Gen Academic Learning Platform + Real-Time Code Battle Arena*
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.4-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
@@ -299,5 +299,5 @@ npm test
 ---
 
 <div align="center">
-  <sub>Crafted with passion for <b>MSOT Student Challenge</b>. Made by the Gamify & Codemons Engineering Team.</sub>
+  <sub>Crafted with passion for <b>MSOT Student Challenge</b>. Made by the CODAK & Codemons Engineering Team.</sub>
 </div>

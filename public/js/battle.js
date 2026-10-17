@@ -1,6 +1,6 @@
 /**
  * Battle Scene Engine & Visuals Module
- * Mirai-Game / Gamify Platform
+ * Mirai-Game / CODAK Platform
  * 
  * Implements 160x144 Canvas visual rendering, pixel-grid sprite arrays,
  * HP bar animations, typewriter dialogue, points system, and win/lose conditions.

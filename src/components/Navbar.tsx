@@ -97,7 +97,7 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
             🎮
           </div>
           <Shuffle
-            text="GAMIFY"
+            text="CODAK"
             tag="span"
             effect="slide"
             duration={0.3}

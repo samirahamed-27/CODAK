@@ -1,6 +1,6 @@
 /**
  * Safe Code Runner Module (Web Worker + Blob Sandbox)
- * Mirai-Game / Gamify Platform
+ * Mirai-Game / CODAK Platform
  * 
  * Runs user code inside an isolated Web Worker instantiated from a Blob URL.
  * Never executes eval() or Function() on the main browser thread.
