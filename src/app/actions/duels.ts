@@ -8,6 +8,7 @@ import {
   SafeDuelQuestion,
   validateDuelChallenge,
   validateDuelSubmission,
+  formatDuelSummaries,
 } from '@/lib/duels';
 
 export interface DuelSubmissionInput {
@@ -506,37 +507,19 @@ export async function getMyDuelsAction(): Promise<{
     return { success: false, duels: [] };
   }
 
-  const summaries: DuelSummary[] = duels.map((d: any) => {
-    const isChallenger = d.challenger_id === studentId;
-    const opponent = isChallenger ? d.challenged : d.challenger;
-    const opponentProfile = opponent?.profiles;
-
-    let opponentName = opponentProfile?.full_name || 'Waiting for Opponent...';
-    if (opponentProfile?.is_anonymous) {
-      opponentName = 'Anonymous';
+  let requesterRole: 'student' | 'faculty' | 'admin' = 'student';
+  if (user) {
+    const { data: prof } = await adminClient
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    if (prof?.role) {
+      requesterRole = prof.role as 'student' | 'faculty' | 'admin';
     }
+  }
 
-    const mySubmitted = isChallenger ? !!d.challenger_submitted_at : !!d.challenged_submitted_at;
-    const opponentSubmitted = isChallenger ? !!d.challenged_submitted_at : !!d.challenger_submitted_at;
-
-    return {
-      id: d.id,
-      status: d.status,
-      opponentName,
-      opponentRollNo: opponent?.roll_no,
-      isChallenger,
-      myScore: isChallenger ? d.challenger_score : d.challenged_score,
-      myTime: isChallenger ? d.challenger_time_seconds : d.challenged_time_seconds,
-      mySubmitted,
-      opponentScore: isChallenger ? d.challenged_score : d.challenger_score,
-      opponentTime: isChallenger ? d.challenged_time_seconds : d.challenger_time_seconds,
-      opponentSubmitted,
-      isWinner: d.status === 'completed' ? d.winner_id === studentId : undefined,
-      isDraw: d.is_draw,
-      expiresAt: d.expires_at,
-      createdAt: d.created_at,
-    };
-  });
+  const summaries: DuelSummary[] = formatDuelSummaries(duels, studentId, requesterRole);
 
   return { success: true, duels: summaries };
 }

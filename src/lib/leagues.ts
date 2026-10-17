@@ -115,6 +115,68 @@ export function calculateGroupOutcomes(
   });
 }
 
+export interface LeagueStandingMember {
+  studentId: string;
+  name: string;
+  rollNo?: string;
+  weeklyXp: number;
+  rank: number;
+  isMe: boolean;
+  isAnonymous: boolean;
+  zone: 'promotion' | 'relegation' | 'safe';
+}
+
+/**
+ * Server-side scrubbing of league standings.
+ * Peers see "Anonymous" with no roll number for anonymous peers.
+ * The student sees themselves (name and roll number).
+ * Faculty and admin see real identities for all members.
+ */
+export function formatLeagueStandingMembers(
+  outcomes: MemberOutcomeResult[],
+  requesterStudentId: string,
+  requesterRole: 'student' | 'faculty' | 'admin' = 'student',
+  config: LeagueConfig = DEFAULT_LEAGUE_CONFIG,
+  currentTierId: string = 'bronze'
+): LeagueStandingMember[] {
+  const isSmallGroup = outcomes.length < config.min_group_size_for_relegation;
+  const currentTierOrder = TIERS_ORDER[currentTierId] || 1;
+  const isTopTier = currentTierOrder >= 4;
+  const isBottomTier = currentTierOrder <= 1;
+
+  const isPrivileged = requesterRole === 'faculty' || requesterRole === 'admin';
+
+  return outcomes.map((o) => {
+    let zone: 'promotion' | 'relegation' | 'safe' = 'safe';
+    if (o.rank <= config.promotion_count && o.weeklyXp > 0 && !isTopTier) {
+      zone = 'promotion';
+    } else if (o.rank > outcomes.length - config.relegation_count && !isSmallGroup && !isBottomTier) {
+      zone = 'relegation';
+    }
+
+    const isMe = o.studentId === requesterStudentId;
+    let displayName = o.studentName || 'Student';
+    let displayRoll: string | undefined = o.rollNo;
+
+    if (o.isAnonymous && !isMe && !isPrivileged) {
+      displayName = 'Anonymous';
+      displayRoll = undefined;
+    }
+
+    return {
+      studentId: o.studentId,
+      name: displayName,
+      rollNo: displayRoll,
+      weeklyXp: o.weeklyXp,
+      rank: o.rank,
+      isMe,
+      isAnonymous: o.isAnonymous || false,
+      zone,
+    };
+  });
+}
+
+
 /**
  * Assigns a student to a league group for the specified week.
  * If student has no current tier status, initializes them in Bronze.

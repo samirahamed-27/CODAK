@@ -17,6 +17,73 @@ export interface DuelOutcome {
   reason: string;
 }
 
+export interface DuelSummary {
+  id: string;
+  status: 'open' | 'active' | 'completed' | 'expired' | 'declined';
+  opponentName: string;
+  opponentRollNo?: string;
+  isChallenger: boolean;
+  myScore?: number | null;
+  myTime?: number | null;
+  mySubmitted: boolean;
+  opponentScore?: number | null;
+  opponentTime?: number | null;
+  opponentSubmitted: boolean;
+  isWinner?: boolean;
+  isDraw?: boolean;
+  expiresAt: string;
+  createdAt: string;
+}
+
+/**
+ * Server-side scrubbing of duel summaries.
+ * Peers see "Anonymous" with no roll number for anonymous opponents.
+ * Faculty and admin see real identities.
+ */
+export function formatDuelSummaries(
+  duels: any[],
+  currentStudentId: string,
+  requesterRole: 'student' | 'faculty' | 'admin' = 'student'
+): DuelSummary[] {
+  const isPrivileged = requesterRole === 'faculty' || requesterRole === 'admin';
+
+  return duels.map((d: any) => {
+    const isChallenger = d.challenger_id === currentStudentId;
+    const opponent = isChallenger ? d.challenged : d.challenger;
+    const opponentProfile = opponent?.profiles;
+
+    const isAnon = opponentProfile?.is_anonymous || false;
+    let opponentName = opponentProfile?.full_name || 'Waiting for Opponent...';
+    let opponentRollNo: string | undefined = opponent?.roll_no;
+
+    if (isAnon && !isPrivileged) {
+      opponentName = 'Anonymous';
+      opponentRollNo = undefined;
+    }
+
+    const mySubmitted = isChallenger ? !!d.challenger_submitted_at : !!d.challenged_submitted_at;
+    const opponentSubmitted = isChallenger ? !!d.challenged_submitted_at : !!d.challenger_submitted_at;
+
+    return {
+      id: d.id,
+      status: d.status,
+      opponentName,
+      opponentRollNo,
+      isChallenger,
+      myScore: isChallenger ? d.challenger_score : d.challenged_score,
+      myTime: isChallenger ? d.challenger_time_seconds : d.challenged_time_seconds,
+      mySubmitted,
+      opponentScore: isChallenger ? d.challenged_score : d.challenger_score,
+      opponentTime: isChallenger ? d.challenged_time_seconds : d.challenger_time_seconds,
+      opponentSubmitted,
+      isWinner: d.status === 'completed' ? d.winner_id === currentStudentId : undefined,
+      isDraw: d.is_draw,
+      expiresAt: d.expires_at,
+      createdAt: d.created_at,
+    };
+  });
+}
+
 /**
  * Pure function: Determines duel winner by score, then time tie-break.
  * Losing NEVER removes XP.

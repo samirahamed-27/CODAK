@@ -8,19 +8,12 @@ import {
   DEFAULT_LEAGUE_CONFIG,
   LeagueConfig,
   TIERS_ORDER,
+  formatLeagueStandingMembers,
+  LeagueStandingMember,
 } from '@/lib/leagues';
 import { getIstWeekDetails } from '@/lib/quests';
 
-export interface LeagueStandingMember {
-  studentId: string;
-  name: string;
-  rollNo?: string;
-  weeklyXp: number;
-  rank: number;
-  isMe: boolean;
-  isAnonymous: boolean;
-  zone: 'promotion' | 'relegation' | 'safe';
-}
+export type { LeagueStandingMember };
 
 export interface StudentLeagueData {
   tierId: string;
@@ -140,31 +133,26 @@ export async function getStudentLeagueAction(customDate?: string): Promise<{
   // 5. Compute ranked outcomes
   const outcomes = calculateGroupOutcomes(memberInputs, config, assignment.tierId);
 
-  // 6. Format standings with zones
-  const isSmallGroup = outcomes.length < config.min_group_size_for_relegation;
-  const currentTierOrder = TIERS_ORDER[assignment.tierId] || 1;
-  const isTopTier = currentTierOrder >= 4;
-  const isBottomTier = currentTierOrder <= 1;
-
-  const standings: LeagueStandingMember[] = outcomes.map((o) => {
-    let zone: 'promotion' | 'relegation' | 'safe' = 'safe';
-    if (o.rank <= config.promotion_count && o.weeklyXp > 0 && !isTopTier) {
-      zone = 'promotion';
-    } else if (o.rank > outcomes.length - config.relegation_count && !isSmallGroup && !isBottomTier) {
-      zone = 'relegation';
+  // 6. Format standings with server-side anonymization
+  let requesterRole: 'student' | 'faculty' | 'admin' = 'student';
+  if (user) {
+    const { data: prof } = await adminClient
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    if (prof?.role) {
+      requesterRole = prof.role as 'student' | 'faculty' | 'admin';
     }
+  }
 
-    return {
-      studentId: o.studentId,
-      name: o.studentName || 'Student',
-      rollNo: o.rollNo,
-      weeklyXp: o.weeklyXp,
-      rank: o.rank,
-      isMe: o.isMe || false,
-      isAnonymous: o.isAnonymous || false,
-      zone,
-    };
-  });
+  const standings: LeagueStandingMember[] = formatLeagueStandingMembers(
+    outcomes,
+    studentId,
+    requesterRole,
+    config,
+    assignment.tierId
+  );
 
   const meStanding = standings.find((s) => s.isMe) || { rank: 1, weeklyXp: 0 };
 
