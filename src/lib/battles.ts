@@ -163,15 +163,41 @@ export function sanitizeBattleQuestions(
  * Strictly idempotent.
  */
 export async function finalizeBattle(
-  adminClient: any,
-  battleId: string
+  clientOrBattleId: any,
+  maybeBattleId?: string
 ): Promise<{
   success: boolean;
+  alreadyFinalized?: boolean;
+  winningTeamId?: string;
   rankings?: BattleScore[];
   awardedCounts?: { participation: number; winners: number };
   error?: string;
 }> {
   try {
+    let adminClient: any;
+    let battleId: string;
+
+    if (typeof clientOrBattleId === 'string') {
+      battleId = clientOrBattleId;
+      const { createClient } = await import('@supabase/supabase-js');
+      adminClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+        process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+      );
+    } else {
+      adminClient = clientOrBattleId;
+      battleId = maybeBattleId!;
+    }
+
+    // Check if battle was already finished
+    const { data: battleData } = await adminClient
+      .from('battles')
+      .select('status')
+      .eq('id', battleId)
+      .single();
+
+    const alreadyFinalized = battleData?.status === 'finished';
+
     // 1. Mark battle as finished
     await adminClient
       .from('battles')
@@ -219,46 +245,64 @@ export async function finalizeBattle(
 
     let participationCount = 0;
     let winnerCount = 0;
+    const CHUNK_SIZE = 25;
 
-    // 5. Award BATTLE_PARTICIPATION through award_xp
-    for (const studentId of distinctParticipantIds) {
-      const { data: res } = await adminClient.rpc('award_xp', {
-        p_student_id: studentId,
-        p_action_type: 'BATTLE_PARTICIPATION',
-        p_reference_id: `battle:${battleId}:${studentId}:participation`,
-        p_extra_units: 0,
-        p_actor: null,
-      });
+    // 5. Award BATTLE_PARTICIPATION through award_xp in concurrent batches
+    for (let i = 0; i < distinctParticipantIds.length; i += CHUNK_SIZE) {
+      const chunk = distinctParticipantIds.slice(i, i + CHUNK_SIZE);
+      const results = await Promise.all(
+        chunk.map((studentId) =>
+          adminClient.rpc('award_xp', {
+            p_student_id: studentId,
+            p_action_type: 'BATTLE_PARTICIPATION',
+            p_reference_id: `battle:${battleId}:${studentId}:participation`,
+            p_extra_units: 0,
+            p_actor: null,
+          })
+        )
+      );
 
-      if ((res as any)?.status === 'awarded') {
-        participationCount++;
+      for (const res of results) {
+        if ((res.data as any)?.status === 'awarded') {
+          participationCount++;
+        }
       }
     }
 
-    // 6. Award BATTLE_WIN to all winning team members
+    // 6. Award BATTLE_WIN to all winning team members in concurrent batches
     if (winningTeam) {
       const { data: winningMembers } = await adminClient
         .from('battle_team_members')
         .select('student_id')
         .eq('team_id', winningTeam.team_id);
 
-      for (const m of winningMembers || []) {
-        const { data: res } = await adminClient.rpc('award_xp', {
-          p_student_id: m.student_id,
-          p_action_type: 'BATTLE_WIN',
-          p_reference_id: `battle:${battleId}:${m.student_id}:win`,
-          p_extra_units: 0,
-          p_actor: null,
-        });
+      const winList = winningMembers || [];
+      for (let i = 0; i < winList.length; i += CHUNK_SIZE) {
+        const chunk = winList.slice(i, i + CHUNK_SIZE);
+        const results = await Promise.all(
+          chunk.map((m: any) =>
+            adminClient.rpc('award_xp', {
+              p_student_id: m.student_id,
+              p_action_type: 'BATTLE_WIN',
+              p_reference_id: `battle:${battleId}:${m.student_id}:win`,
+              p_extra_units: 0,
+              p_actor: null,
+            })
+          )
+        );
 
-        if ((res as any)?.status === 'awarded') {
-          winnerCount++;
+        for (const res of results) {
+          if ((res.data as any)?.status === 'awarded') {
+            winnerCount++;
+          }
         }
       }
     }
 
     return {
       success: true,
+      alreadyFinalized,
+      winningTeamId: winningTeam?.team_id,
       rankings: ranked as any,
       awardedCounts: {
         participation: participationCount,
