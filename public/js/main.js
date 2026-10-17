@@ -40,6 +40,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnForfeitBattle = document.getElementById('btn-forfeit-battle');
   const startersContainer = document.getElementById('starters-list');
   const soundToggleBtn = document.getElementById('sound-toggle-btn');
+  const effectsToggleBtn = document.getElementById('effects-toggle-btn');
+
+  // Pause Menu & HUD Pause DOM Elements
+  const btnHudPause = document.getElementById('btn-hud-pause');
+  const pauseMenuOverlay = document.getElementById('pause-menu-overlay');
+  const btnPauseResume = document.getElementById('btn-pause-resume');
+  const btnPauseMute = document.getElementById('btn-pause-mute');
+  const btnPauseEffects = document.getElementById('btn-pause-effects');
+  const btnPauseQuit = document.getElementById('btn-pause-quit');
 
   // Code Panel DOM Elements
   const pickerCardsContainer = document.getElementById('picker-cards-container');
@@ -72,7 +81,88 @@ document.addEventListener('DOMContentLoaded', async () => {
   let selectedIndex = 0;
   let selectedCodemon = null;
   let activeEnemy = null;
+  let isGamePaused = false;
+  let isTimerPaused = false;
+
+  // Sound state with localStorage persistence
   let soundEnabled = true;
+  try {
+    const savedMute = localStorage.getItem('codemons_sound_muted');
+    if (savedMute !== null) {
+      soundEnabled = (savedMute !== 'true');
+    }
+  } catch {
+    soundEnabled = true;
+  }
+
+  // Accessibility effects state with localStorage persistence
+  let effectsDisabled = false;
+  try {
+    const savedEffects = localStorage.getItem('codemons_disable_effects');
+    if (savedEffects !== null) {
+      effectsDisabled = (savedEffects === 'true');
+    } else if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      effectsDisabled = true;
+    }
+  } catch {
+    effectsDisabled = false;
+  }
+
+  function updateSoundUI() {
+    if (soundToggleBtn) {
+      soundToggleBtn.textContent = soundEnabled ? 'SFX: ON' : 'SFX: OFF';
+      soundToggleBtn.setAttribute('aria-pressed', soundEnabled ? 'true' : 'false');
+    }
+    if (btnPauseMute) {
+      btnPauseMute.textContent = soundEnabled ? '🔊 MUTE SOUND' : '🔇 UNMUTE SOUND';
+      btnPauseMute.setAttribute('aria-pressed', soundEnabled ? 'false' : 'true');
+    }
+  }
+
+  function toggleSound() {
+    soundEnabled = !soundEnabled;
+    try {
+      localStorage.setItem('codemons_sound_muted', soundEnabled ? 'false' : 'true');
+    } catch {}
+    updateSoundUI();
+    if (soundEnabled) {
+      playSound('click');
+    }
+  }
+
+  function updateEffectsUI() {
+    if (typeof document !== 'undefined' && document.body) {
+      if (effectsDisabled) {
+        document.body.classList.add('reduce-motion-active');
+      } else {
+        document.body.classList.remove('reduce-motion-active');
+      }
+    }
+    if (effectsToggleBtn) {
+      effectsToggleBtn.textContent = effectsDisabled ? '⚡ FX: OFF' : '⚡ FX: ON';
+      effectsToggleBtn.setAttribute('aria-pressed', effectsDisabled ? 'false' : 'true');
+    }
+    if (btnPauseEffects) {
+      btnPauseEffects.textContent = effectsDisabled ? '⚡ ENABLE EFFECTS' : '⚡ DISABLE EFFECTS';
+      btnPauseEffects.setAttribute('aria-pressed', effectsDisabled ? 'true' : 'false');
+    }
+  }
+
+  function toggleEffects() {
+    effectsDisabled = !effectsDisabled;
+    try {
+      localStorage.setItem('codemons_disable_effects', effectsDisabled ? 'true' : 'false');
+    } catch {}
+    updateEffectsUI();
+    playSound('click');
+  }
+
+  window.isEffectsDisabled = () => effectsDisabled;
+  window.toggleSound = toggleSound;
+  window.toggleEffects = toggleEffects;
+
+  updateSoundUI();
+  updateEffectsUI();
   let challengesCatalog = [];
   let animFrameId = null;
   let animTick = 0;
@@ -115,60 +205,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       const ctx = getAudioContext();
       if (!ctx) return;
 
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
       const now = ctx.currentTime;
 
-      if (type === 'click') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(440, now);
-        osc.frequency.setValueAtTime(880, now + 0.05);
-        gain.gain.setValueAtTime(0.12, now);
-        gain.gain.setValueAtTime(0.01, now + 0.07);
-        osc.start(now);
-        osc.stop(now + 0.07);
-      } else if (type === 'select') {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(520, now);
-        osc.frequency.setValueAtTime(780, now + 0.08);
-        gain.gain.setValueAtTime(0.12, now);
-        gain.gain.setValueAtTime(0.01, now + 0.14);
-        osc.start(now);
-        osc.stop(now + 0.14);
-      } else if (type === 'battle') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(180, now);
-        osc.frequency.setValueAtTime(440, now + 0.12);
-        osc.frequency.setValueAtTime(880, now + 0.25);
-        gain.gain.setValueAtTime(0.18, now);
-        gain.gain.setValueAtTime(0.01, now + 0.35);
-        osc.start(now);
-        osc.stop(now + 0.35);
-      } else if (type === 'hit') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(140, now);
-        osc.frequency.exponentialRampToValueAtTime(40, now + 0.16);
-        gain.gain.setValueAtTime(0.22, now);
-        gain.gain.linearRampToValueAtTime(0.01, now + 0.18);
-        osc.start(now);
-        osc.stop(now + 0.18);
-      } else if (type === 'heal') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(523.25, now);
-        osc.frequency.setValueAtTime(659.25, now + 0.08);
-        osc.frequency.setValueAtTime(783.99, now + 0.16);
-        osc.frequency.setValueAtTime(1046.50, now + 0.24);
-        gain.gain.setValueAtTime(0.2, now);
-        gain.gain.linearRampToValueAtTime(0.01, now + 0.36);
-        osc.start(now);
-        osc.stop(now + 0.36);
-      } else if (type === 'static' || type === 'glitch') {
-        // Short static noise sound using procedural audio buffer
+      function playTone(freq, startOffset, duration, waveType = 'square', peakGain = 0.16) {
+        const toneOsc = ctx.createOscillator();
+        const toneGain = ctx.createGain();
+        toneOsc.type = waveType;
+        toneOsc.frequency.setValueAtTime(freq, now + startOffset);
+        toneGain.gain.setValueAtTime(peakGain, now + startOffset);
+        toneGain.gain.exponentialRampToValueAtTime(0.001, now + startOffset + duration);
+        toneOsc.connect(toneGain);
+        toneGain.connect(ctx.destination);
+        toneOsc.start(now + startOffset);
+        toneOsc.stop(now + startOffset + duration);
+      }
+
+      function playNoiseBurst(duration = 0.12, centerFreq = 1100, peakGain = 0.24) {
         try {
-          const bufferSize = Math.floor(ctx.sampleRate * 0.28);
+          const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * duration));
           const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
           const data = buffer.getChannelData(0);
           for (let i = 0; i < bufferSize; i++) {
@@ -178,26 +232,106 @@ document.addEventListener('DOMContentLoaded', async () => {
           noise.buffer = buffer;
           const filter = ctx.createBiquadFilter();
           filter.type = 'bandpass';
-          filter.frequency.value = 1400;
+          filter.frequency.setValueAtTime(centerFreq, now);
+          filter.Q.setValueAtTime(1.2, now);
           const noiseGain = ctx.createGain();
-          noiseGain.gain.setValueAtTime(0.25, now);
-          noiseGain.gain.linearRampToValueAtTime(0.01, now + 0.26);
+          noiseGain.gain.setValueAtTime(peakGain, now);
+          noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
           noise.connect(filter);
           filter.connect(noiseGain);
           noiseGain.connect(ctx.destination);
           noise.start(now);
-          noise.stop(now + 0.28);
+          noise.stop(now + duration);
         } catch {
-          // Fallback to rapid frequency modulation
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(80, now);
-          osc.frequency.linearRampToValueAtTime(1200, now + 0.1);
-          osc.frequency.linearRampToValueAtTime(60, now + 0.2);
-          gain.gain.setValueAtTime(0.2, now);
-          gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
-          osc.start(now);
-          osc.stop(now + 0.22);
+          const fallbackOsc = ctx.createOscillator();
+          const fallbackGain = ctx.createGain();
+          fallbackOsc.type = 'sawtooth';
+          fallbackOsc.frequency.setValueAtTime(centerFreq, now);
+          fallbackOsc.frequency.exponentialRampToValueAtTime(40, now + duration);
+          fallbackGain.gain.setValueAtTime(peakGain, now);
+          fallbackGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+          fallbackOsc.connect(fallbackGain);
+          fallbackGain.connect(ctx.destination);
+          fallbackOsc.start(now);
+          fallbackOsc.stop(now + duration);
         }
+      }
+
+      const t = (type || '').toLowerCase();
+
+      if (t === 'correct' || t === 'correct answer') {
+        // Rising two-note chime (C5 523.25Hz -> G5 783.99Hz)
+        playTone(523.25, 0.00, 0.09, 'square', 0.14);
+        playTone(783.99, 0.09, 0.18, 'square', 0.16);
+      } else if (t === 'wrong' || t === 'wrong answer') {
+        // Low buzz (descending raspy sawtooth 115Hz -> 75Hz)
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(115, now);
+        osc.frequency.linearRampToValueAtTime(75, now + 0.22);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.22);
+      } else if (t === 'hit') {
+        // Short noise burst
+        playNoiseBurst(0.12, 1000, 0.24);
+      } else if (t === 'level-up' || t === 'levelup' || t === 'level_up') {
+        // 4-note ascending arpeggio (C5 -> E5 -> G5 -> C6)
+        playTone(523.25, 0.00, 0.08, 'square', 0.15);
+        playTone(659.25, 0.07, 0.08, 'square', 0.15);
+        playTone(783.99, 0.14, 0.08, 'square', 0.16);
+        playTone(1046.50, 0.21, 0.22, 'square', 0.20);
+      } else if (t === 'bugmon_transform' || t === 'transform' || t === 'glitch') {
+        // Descending glitch (pitch drop + noise crackle)
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(1100, now);
+        osc.frequency.exponentialRampToValueAtTime(65, now + 0.38);
+        gain.gain.setValueAtTime(0.24, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.40);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.40);
+        playNoiseBurst(0.24, 750, 0.18);
+      } else if (t === 'victory' || t === 'victory jingle') {
+        // Victory jingle (8-bit celebratory motif)
+        playTone(392.00, 0.00, 0.08, 'square', 0.14); // G4
+        playTone(523.25, 0.08, 0.08, 'square', 0.15); // C5
+        playTone(659.25, 0.16, 0.08, 'square', 0.15); // E5
+        playTone(783.99, 0.24, 0.14, 'square', 0.18); // G5
+        playTone(659.25, 0.40, 0.08, 'square', 0.15); // E5
+        playTone(783.99, 0.48, 0.16, 'square', 0.18); // G5
+        playTone(1046.50, 0.64, 0.35, 'square', 0.22); // C6
+      } else if (t === 'defeat' || t === 'defeat jingle') {
+        // Defeat jingle (sad descending minor motif)
+        playTone(622.25, 0.00, 0.12, 'triangle', 0.18); // Eb5
+        playTone(587.33, 0.12, 0.12, 'triangle', 0.18); // D5
+        playTone(523.25, 0.24, 0.14, 'triangle', 0.18); // C5
+        playTone(415.30, 0.38, 0.16, 'triangle', 0.16); // Ab4
+        playTone(392.00, 0.54, 0.38, 'triangle', 0.14); // G4
+      } else if (t === 'click') {
+        playTone(440, 0.00, 0.04, 'triangle', 0.12);
+        playTone(880, 0.04, 0.04, 'triangle', 0.10);
+      } else if (t === 'select') {
+        playTone(520, 0.00, 0.07, 'square', 0.12);
+        playTone(780, 0.07, 0.08, 'square', 0.12);
+      } else if (t === 'battle') {
+        playTone(220, 0.00, 0.10, 'sawtooth', 0.16);
+        playTone(440, 0.10, 0.10, 'sawtooth', 0.16);
+        playTone(880, 0.20, 0.18, 'sawtooth', 0.18);
+      } else if (t === 'heal') {
+        playTone(523.25, 0.00, 0.08, 'triangle', 0.18);
+        playTone(659.25, 0.08, 0.08, 'triangle', 0.18);
+        playTone(783.99, 0.16, 0.08, 'triangle', 0.18);
+        playTone(1046.50, 0.24, 0.20, 'triangle', 0.20);
+      } else if (t === 'static') {
+        playNoiseBurst(0.28, 1400, 0.25);
       }
     } catch {
       // Audio playback blocked or unsupported
@@ -356,6 +490,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // -------------------------------------------------------------------------
   function showScreen(targetScreen) {
     playSound('click');
+    const wipeEl = document.getElementById('screen-wipe-overlay');
+    const effectsOff = (window.isEffectsDisabled && window.isEffectsDisabled());
+    const prevScreen = currentScreen;
     currentScreen = targetScreen;
 
     if (targetScreen === 'select') {
@@ -399,6 +536,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (gamePanel) {
       gamePanel.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Visual horizontal wipe screen transition
+    if (wipeEl && !effectsOff && targetScreen !== prevScreen) {
+      wipeEl.classList.remove('wipe-out');
+      wipeEl.classList.add('wipe-in');
+      setTimeout(() => {
+        wipeEl.classList.remove('wipe-in');
+        wipeEl.classList.add('wipe-out');
+        setTimeout(() => {
+          wipeEl.classList.remove('wipe-out');
+        }, 220);
+      }, 160);
     }
   }
 
@@ -599,6 +749,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     stopTurnTimer();
     timerRemaining = seconds;
     timerTotal = seconds;
+    isTimerPaused = false;
     updateTimerUI();
 
     turnTimerId = setInterval(() => {
@@ -612,11 +763,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 1000);
   }
 
+  function pauseTurnTimer() {
+    if (turnTimerId) {
+      clearInterval(turnTimerId);
+      turnTimerId = null;
+      isTimerPaused = true;
+    }
+  }
+
+  function resumeTurnTimer() {
+    if (isTimerPaused && timerRemaining > 0 && battleActive) {
+      isTimerPaused = false;
+      turnTimerId = setInterval(() => {
+        timerRemaining--;
+        updateTimerUI();
+
+        if (timerRemaining <= 0) {
+          stopTurnTimer();
+          handleTurnTimeout();
+        }
+      }, 1000);
+    }
+  }
+
   function stopTurnTimer() {
     if (turnTimerId) {
       clearInterval(turnTimerId);
       turnTimerId = null;
     }
+    isTimerPaused = false;
   }
 
   function updateTimerUI() {
@@ -984,6 +1159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (outcome.passed) {
+          playSound('correct');
           stopTurnTimer();
           if (consoleStatusBadge) {
             consoleStatusBadge.textContent = 'SYS: PASSED';
@@ -1005,6 +1181,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             executePlayerAttack();
           }
         } else {
+          playSound('wrong');
           // Partial passes (some tests pass, not all): no damage, but show
           // "N/M tests passed" in the console, and the player may keep editing and
           // re-running until the timer ends. Each failed run costs nothing, but only the
@@ -1080,6 +1257,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         consoleStatusBadge.className = 'section-badge font-code text-green';
       }
 
+      playSound('correct');
       appendConsoleLine(`> PASS: All ${testCases.length}/${testCases.length} tests passed cleanly via Dev Power! Unleashing attack...`, 'console-pass');
 
       const outcome = {
@@ -1427,7 +1605,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (outcome === 'victory') {
-      playSound('battle');
+      playSound('victory');
       if (isBugmon) {
         // Defeating a Bugmon gives double XP and sets gameState.bugmonsDefeated += 1
         const currentXp = typeof window.gameState.xp === 'number' ? window.gameState.xp : 100;
@@ -1479,7 +1657,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         resultOverlay.style.display = 'flex';
       }
     } else if (outcome === 'transformation') {
-      playSound('hit');
+      playSound('bugmon_transform');
       if (window.typeText) {
         window.typeText(`The enemy is still glitching... Bugmon initiated Glitch Transformation!`, 22);
       }
@@ -1514,7 +1692,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         resultOverlay.style.display = 'flex';
       }
     } else {
-      playSound('hit');
+      playSound('defeat');
       const reason = player.hp <= 0 ? `${player.name.toUpperCase()} fainted!` : 'Turn limit reached!';
       if (window.typeText) {
         window.typeText(`DEFEAT! ${reason} Bugmon overwhelmed your code.`, 22);
@@ -1676,22 +1854,157 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // -------------------------------------------------------------------------
+  // PAUSE MENU CONTROLLER
+  // -------------------------------------------------------------------------
+  function openPauseMenu() {
+    if (isGamePaused || !pauseMenuOverlay) return;
+    isGamePaused = true;
+    pauseTurnTimer();
+    pauseMenuOverlay.style.display = 'flex';
+    playSound('click');
+    if (btnPauseResume) {
+      btnPauseResume.focus();
+    }
+  }
+
+  function closePauseMenu() {
+    if (!isGamePaused || !pauseMenuOverlay) return;
+    isGamePaused = false;
+    pauseMenuOverlay.style.display = 'none';
+    resumeTurnTimer();
+    playSound('click');
+  }
+
+  function togglePauseMenu() {
+    if (isGamePaused) {
+      closePauseMenu();
+    } else {
+      openPauseMenu();
+    }
+  }
+
+  window.openPauseMenu = openPauseMenu;
+  window.closePauseMenu = closePauseMenu;
+  window.togglePauseMenu = togglePauseMenu;
+
+  if (btnHudPause) {
+    btnHudPause.addEventListener('click', () => {
+      openPauseMenu();
+    });
+  }
+
+  if (btnPauseResume) {
+    btnPauseResume.addEventListener('click', () => {
+      closePauseMenu();
+    });
+  }
+
+  if (btnPauseMute) {
+    btnPauseMute.addEventListener('click', () => {
+      toggleSound();
+    });
+  }
+
+  if (btnPauseEffects) {
+    btnPauseEffects.addEventListener('click', () => {
+      toggleEffects();
+    });
+  }
+
+  if (btnPauseQuit) {
+    btnPauseQuit.addEventListener('click', () => {
+      battleActive = false;
+      if (window.gameState) {
+        window.gameState.battleActive = false;
+      }
+      stopTurnTimer();
+    });
+  }
+
   document.addEventListener('keydown', (e) => {
+    const isTypingInEditor = document.activeElement && document.activeElement.id === 'code-textarea';
+
+    // 1. Escape key: closes open modals/overlays or toggles pause menu
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (isGamePaused) {
+        closePauseMenu();
+      } else if (howToPlayBox && (howToPlayBox.style.display === 'block' || howToPlayBox.style.display === 'flex')) {
+        howToPlayBox.style.display = 'none';
+        playSound('click');
+      } else if (bugmonDecisionOverlay && bugmonDecisionOverlay.style.display === 'flex') {
+        playSound('click');
+        bugmonDecisionOverlay.style.display = 'none';
+        handleBattleOutcome('bugmon_escaped');
+      } else if (resultOverlay && resultOverlay.style.display === 'flex') {
+        playSound('click');
+        resultOverlay.style.display = 'none';
+        showScreen('title');
+      } else if (currentScreen === 'battle') {
+        openPauseMenu();
+      } else if (currentScreen === 'select') {
+        showScreen('title');
+      }
+      return;
+    }
+
+    if (isTypingInEditor) {
+      return;
+    }
+
+    // 2. Navigation when pause menu is open
+    if (isGamePaused) {
+      const pauseButtons = [btnPauseResume, btnPauseMute, btnPauseEffects, btnPauseQuit].filter(Boolean);
+      const activeIdx = pauseButtons.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        const nextIdx = (activeIdx + 1) % pauseButtons.length;
+        pauseButtons[nextIdx].focus();
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const prevIdx = (activeIdx - 1 + pauseButtons.length) % pauseButtons.length;
+        pauseButtons[prevIdx].focus();
+      }
+      return;
+    }
+
+    // 3. Screen navigation (Arrows, Enter, Space)
     if (currentScreen === 'title') {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         showScreen('select');
       }
     } else if (currentScreen === 'select') {
-      if (e.key === 'ArrowLeft') {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         e.preventDefault();
         moveSelection(-1);
-      } else if (e.key === 'ArrowRight') {
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
         e.preventDefault();
         moveSelection(1);
       } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         confirmStarterChoice();
+      }
+    } else if (currentScreen === 'battle') {
+      // Allow arrow keys to cycle between available challenge cards when choosing a challenge
+      if (!activeChallenge && pickerCardsContainer) {
+        const pickerCards = Array.from(pickerCardsContainer.querySelectorAll('.picker-card:not(.locked)'));
+        if (pickerCards.length > 0) {
+          const currentCardIdx = pickerCards.indexOf(document.activeElement);
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            const nextIdx = currentCardIdx === -1 ? 0 : (currentCardIdx + 1) % pickerCards.length;
+            pickerCards[nextIdx].focus();
+          } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const prevIdx = currentCardIdx === -1 ? 0 : (currentCardIdx - 1 + pickerCards.length) % pickerCards.length;
+            pickerCards[prevIdx].focus();
+          } else if ((e.key === 'Enter' || e.key === ' ') && currentCardIdx !== -1) {
+            e.preventDefault();
+            pickerCards[currentCardIdx].click();
+          }
+        }
       }
     }
   });
@@ -1721,9 +2034,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (soundToggleBtn) {
     soundToggleBtn.addEventListener('click', () => {
-      soundEnabled = !soundEnabled;
-      soundToggleBtn.textContent = soundEnabled ? 'SFX: ON' : 'SFX: OFF';
-      playSound('click');
+      toggleSound();
+    });
+  }
+
+  if (effectsToggleBtn) {
+    effectsToggleBtn.addEventListener('click', () => {
+      toggleEffects();
     });
   }
 

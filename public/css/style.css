@@ -1940,3 +1940,317 @@ html, body {
   letter-spacing: 0.03em;
   white-space: nowrap;
 }
+
+/* ---------------------------------------------------------------------------
+   FINAL POLISH: BUTTONS & ACCESSIBILITY TOKENS
+   --------------------------------------------------------------------------- */
+.pixel-btn-xs {
+  background-color: #1b2632;
+  color: #38bdf8;
+  border: 1px solid #2c3e50;
+  padding: 3px 8px;
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  box-shadow: 1px 1px 0 #000;
+  transition: background-color 0.15s, color 0.15s;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pixel-btn-xs:hover {
+  background-color: #2c3e50;
+  color: #7dd3fc;
+}
+
+/* ---------------------------------------------------------------------------
+   VISUAL: FLOATING DAMAGE NUMBERS OVER SPRITES
+   --------------------------------------------------------------------------- */
+.combat-floating-damage-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 25;
+  overflow: hidden;
+}
+
+.combat-floating-damage {
+  position: absolute;
+  font-family: var(--font-pixel, monospace);
+  font-size: 14px;
+  font-weight: bold;
+  color: #ff1744;
+  text-shadow: 0 1px 0 #000, 0 2px 0 #000, 1px 0 0 #000, -1px 0 0 #000;
+  transform: translate(-50%, -50%);
+  animation: floatDamageUp 0.85s cubic-bezier(0.2, 0.8, 0.25, 1) forwards;
+  pointer-events: none;
+  z-index: 30;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.combat-floating-damage.heavy {
+  font-size: 18px;
+  color: #f4b41b;
+  text-shadow: 0 0 8px rgba(244, 180, 27, 0.8), 0 2px 0 #000, 1px 0 0 #e03c3c, -1px 0 0 #e03c3c;
+  animation: floatDamageUpHeavy 0.95s cubic-bezier(0.2, 0.8, 0.25, 1) forwards;
+}
+
+@keyframes floatDamageUp {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -8px) scale(1.15);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -20px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -32px) scale(0.9);
+  }
+}
+
+@keyframes floatDamageUpHeavy {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.7);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -10px) scale(1.35);
+  }
+  75% {
+    opacity: 1;
+    transform: translate(-50%, -24px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -38px) scale(0.9);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   VISUAL: SCREEN SHAKE ON HEAVY HITS
+   --------------------------------------------------------------------------- */
+.screen-shake-heavy {
+  animation: screenShakeHeavyAnim 0.42s steps(4) forwards;
+}
+
+@keyframes screenShakeHeavyAnim {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 4px) rotate(-0.5deg); }
+  40% { transform: translate(6px, -4px) rotate(0.5deg); }
+  60% { transform: translate(-4px, -3px); }
+  80% { transform: translate(4px, 2px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ---------------------------------------------------------------------------
+   VISUAL: 2-FRAME STEPPING IDLE BOBBING (GAME BOY STYLE)
+   --------------------------------------------------------------------------- */
+.sprite-idle-steps, .preview-sprite, .starter-sprite-img {
+  animation: spriteIdleSteps 1.2s steps(2, jump-none) infinite;
+}
+
+@keyframes spriteIdleSteps {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   VISUAL: CLASSIC HORIZONTAL WIPE SCREEN TRANSITION
+   --------------------------------------------------------------------------- */
+.screen-wipe-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  background-color: #0c1015;
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.screen-wipe-overlay.wipe-in {
+  transform: scaleX(1);
+  opacity: 1;
+  transition: transform 0.22s steps(6, end), opacity 0.05s linear;
+}
+
+.screen-wipe-overlay.wipe-out {
+  transform: scaleX(0);
+  opacity: 0;
+  transform-origin: right center;
+  transition: transform 0.22s steps(6, end), opacity 0.05s linear;
+}
+
+/* ---------------------------------------------------------------------------
+   PAUSE MENU MODAL OVERLAY
+   --------------------------------------------------------------------------- */
+.pause-menu-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  background-color: rgba(12, 16, 21, 0.88);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.pause-menu-modal {
+  background-color: #1b2632;
+  border: 4px solid #2c3e50;
+  box-shadow: 0 0 0 2px #0c1015, 0 12px 28px rgba(0, 0, 0, 0.7);
+  padding: 24px 28px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+}
+
+.pause-badge {
+  display: inline-block;
+  background-color: #0c1015;
+  color: #38bdf8;
+  border: 1px solid #2c3e50;
+  font-size: 10px;
+  padding: 4px 10px;
+  margin-bottom: 12px;
+  letter-spacing: 0.08em;
+}
+
+.pause-title {
+  font-size: 20px;
+  color: #f4b41b;
+  margin-bottom: 8px;
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 0 #000;
+}
+
+.pause-subtitle {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--gb-lightest);
+  margin-bottom: 20px;
+}
+
+.pause-menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pause-menu-actions .pixel-btn {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 13px;
+  text-align: center;
+  justify-content: center;
+}
+
+/* ---------------------------------------------------------------------------
+   ACCESSIBILITY: REDUCED MOTION & HIGH CONTRAST
+   --------------------------------------------------------------------------- */
+body.reduce-motion-active *,
+@media (prefers-reduced-motion: reduce) {
+  .screen-shake-heavy,
+  .screen-glitch-active,
+  .bugmon-glitch-active,
+  .combat-floating-damage,
+  .sprite-idle-steps,
+  .decision-sprite,
+  .preview-sprite,
+  .starter-sprite-img {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .screen-wipe-overlay {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* Focus indicator for keyboard accessibility */
+button:focus-visible,
+a:focus-visible,
+textarea:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 2px solid #f4b41b !important;
+  outline-offset: 3px !important;
+}
+
+/* ---------------------------------------------------------------------------
+   CONTROLS & MOBILE SCALING (PHONE VIEWPORTS)
+   --------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  body {
+    flex-direction: column;
+    overflow-y: auto;
+    height: auto;
+  }
+
+  #game-panel,
+  #code-panel {
+    width: 100% !important;
+    min-width: 100% !important;
+    height: auto !important;
+  }
+
+  .canvas-viewport {
+    padding: 8px;
+  }
+
+  .canvas-frame {
+    max-width: 100%;
+    aspect-ratio: 160 / 144;
+    height: auto;
+  }
+
+  .pixel-btn,
+  .pixel-link-sm {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+
+  .panel-actions {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .starters-pixel-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .starter-pixel-card {
+    min-height: 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pixel-title-large {
+    font-size: 24px;
+  }
+
+  .hud-strip-center {
+    display: none;
+  }
+
+  .pause-menu-modal {
+    padding: 16px;
+  }
+}

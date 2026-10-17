@@ -32,8 +32,11 @@
           <a href="play.html" class="pixel-link-sm font-pixel" id="btn-back-to-play" aria-label="Back to Play section">
             ◀ BACK TO PLAY
           </a>
-          <button type="button" id="sound-toggle-btn" class="pixel-btn-sm font-pixel" aria-label="Toggle retro audio">
-            SFX: ON
+          <button type="button" id="sound-toggle-btn" class="pixel-btn-sm font-pixel" aria-label="Toggle retro audio" aria-pressed="true">
+            🔊 SFX: ON
+          </button>
+          <button type="button" id="effects-toggle-btn" class="pixel-btn-sm font-pixel" aria-label="Toggle screen shake and flashing effects" aria-pressed="true">
+            ⚡ FX: ON
           </button>
         </div>
       </header>
@@ -148,6 +151,9 @@
             </div>
             <div class="hud-strip-center">
               <span class="text-blue">■ BATTLE ARENA ■</span>
+              <button type="button" id="btn-hud-pause" class="pixel-btn-xs font-pixel" aria-label="Pause game">
+                ⏸ PAUSE [ESC]
+              </button>
             </div>
             <div class="hud-strip-item">
               <span class="text-yellow">TURNS LEFT:</span>
@@ -160,6 +166,9 @@
             <div class="canvas-frame" id="canvas-frame">
               <canvas id="game-canvas" width="160" height="144" aria-label="Codemons 160x144 retro game scene"></canvas>
               
+              <!-- Floating combat damage text layer -->
+              <div id="combat-floating-damage-layer" class="combat-floating-damage-layer" aria-hidden="true"></div>
+
               <!-- Dialogue box along the bottom as a DOM element over the canvas -->
               <div id="battle-dialogue-overlay" class="battle-dialogue-overlay font-pixel" role="region" aria-live="polite">
                 <div id="battle-dialogue-text" class="dialogue-text">A wild Bugmon appeared!</div>
@@ -249,6 +258,32 @@
             </div>
           </div>
         </section>
+      </div>
+
+      <!-- Retro Horizontal Screen Wipe Overlay -->
+      <div id="screen-wipe-overlay" class="screen-wipe-overlay" aria-hidden="true"></div>
+
+      <!-- Pause Menu Modal Dialog -->
+      <div id="pause-menu-overlay" class="pause-menu-overlay font-pixel" style="display: none;" role="dialog" aria-modal="true" aria-label="Game Pause Menu">
+        <div class="pause-menu-modal">
+          <div class="pause-badge font-pixel">SYSTEM PAUSED</div>
+          <h2 class="pause-title font-pixel text-yellow">■ GAME PAUSED ■</h2>
+          <p class="pause-subtitle font-code">Battle state suspended. Choose an option to proceed.</p>
+          <div class="pause-menu-actions">
+            <button type="button" id="btn-pause-resume" class="pixel-btn pixel-btn-green font-pixel" aria-label="Resume battle">
+              ▶ RESUME
+            </button>
+            <button type="button" id="btn-pause-mute" class="pixel-btn pixel-btn-blue font-pixel" aria-label="Toggle sound mute">
+              🔊 SOUND: ON
+            </button>
+            <button type="button" id="btn-pause-effects" class="pixel-btn pixel-btn-cyan font-pixel" aria-label="Toggle screen shake and effects">
+              ⚡ EFFECTS: ON
+            </button>
+            <a href="learn.html" id="btn-pause-quit" class="pixel-btn pixel-btn-dark font-pixel" aria-label="Quit battle to learn section">
+              ◀ QUIT TO LEARN
+            </a>
+          </div>
+        </div>
       </div>
     </main>
 

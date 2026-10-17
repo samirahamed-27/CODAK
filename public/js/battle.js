@@ -575,36 +575,106 @@ function playAttackAnimation(attacker) {
 }
 
 /**
- * playHitAnimation(target)
- * Shakes target codemon and flashes visibility + triggers screen shake
+ * showFloatingDamage(target, damage, isHeavy = false)
+ * Appends floating combat damage text that rises and fades over the sprite.
  */
-function playHitAnimation(target) {
+function showFloatingDamage(target, damage, isHeavy = false) {
+  if (typeof document === 'undefined') return;
+  const layer = document.getElementById('combat-floating-damage-layer');
+  if (!layer) return;
+
+  const dmgEl = document.createElement('div');
+  dmgEl.className = `combat-floating-damage ${isHeavy ? 'heavy' : ''}`;
+  dmgEl.textContent = `-${damage}`;
+
+  // Position relative to target sprite on 160x144 canvas viewport
+  if (target === 'player') {
+    dmgEl.style.left = '26%';
+    dmgEl.style.top = '60%';
+  } else {
+    dmgEl.style.left = '74%';
+    dmgEl.style.top = '22%';
+  }
+
+  layer.appendChild(dmgEl);
+
+  dmgEl.addEventListener('animationend', () => {
+    if (dmgEl.parentNode) {
+      dmgEl.parentNode.removeChild(dmgEl);
+    }
+  });
+
+  setTimeout(() => {
+    if (dmgEl.parentNode) {
+      dmgEl.parentNode.removeChild(dmgEl);
+    }
+  }, 1000);
+}
+
+/**
+ * triggerHeavyScreenShake()
+ * Triggers a pronounced screen shake on #canvas-frame on heavy hits.
+ */
+function triggerHeavyScreenShake() {
+  if (typeof document === 'undefined') return;
+  if (window.isEffectsDisabled && window.isEffectsDisabled()) return;
+
+  const canvasFrame = document.getElementById('canvas-frame');
+  if (canvasFrame) {
+    canvasFrame.classList.remove('screen-shake-heavy');
+    void canvasFrame.offsetWidth;
+    canvasFrame.classList.add('screen-shake-heavy');
+    setTimeout(() => {
+      canvasFrame.classList.remove('screen-shake-heavy');
+    }, 450);
+  }
+}
+
+/**
+ * playHitAnimation(target, damage = null, isHeavy = false)
+ * Shakes target codemon and flashes visibility + triggers screen shake and floating damage
+ */
+function playHitAnimation(target, damage = null, isHeavy = false) {
   if (window.playSound) {
     window.playSound('hit');
   }
+
+  // Floating damage number over target sprite
+  if (damage !== null && typeof damage === 'number' && damage > 0) {
+    showFloatingDamage(target, damage, isHeavy);
+  }
+
+  // Heavy hit screen shake
+  if (isHeavy) {
+    triggerHeavyScreenShake();
+  }
+
+  const isEffectsOff = (window.isEffectsDisabled && window.isEffectsDisabled());
 
   return new Promise((resolve) => {
     const isPlayer = target === 'player';
     const targetObj = isPlayer ? battleVisualState.player : battleVisualState.enemy;
 
-    const startTime = performance.now();
-    const duration = 380; // ms
+    const startTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const duration = isEffectsOff ? 150 : 380; // ms
 
     function animateHit(now) {
       const elapsed = now - startTime;
       const progress = Math.min(1, elapsed / duration);
 
       if (progress < 1) {
-        // Rapid flash toggle
-        targetObj.visible = Math.floor(elapsed / 45) % 2 === 0;
+        if (!isEffectsOff) {
+          // Rapid flash toggle
+          targetObj.visible = Math.floor(elapsed / 45) % 2 === 0;
 
-        // Violent horizontal jitter
-        targetObj.offsetX = (Math.random() - 0.5) * 6;
-        targetObj.offsetY = (Math.random() - 0.5) * 2;
+          // Horizontal jitter
+          targetObj.offsetX = (Math.random() - 0.5) * (isHeavy ? 10 : 6);
+          targetObj.offsetY = (Math.random() - 0.5) * 2;
 
-        // Screen shake
-        battleVisualState.screenShake.x = (Math.random() - 0.5) * 4;
-        battleVisualState.screenShake.y = (Math.random() - 0.5) * 2;
+          // Screen shake
+          battleVisualState.screenShake.x = (Math.random() - 0.5) * (isHeavy ? 8 : 4);
+          battleVisualState.screenShake.y = (Math.random() - 0.5) * (isHeavy ? 4 : 2);
+        }
 
         requestAnimationFrame(animateHit);
       } else {
@@ -753,7 +823,9 @@ function renderBattleScene(ctx, animTick = 0) {
   // 5. TOP-RIGHT: ENEMY CODEMON SPRITE (16x16 Pixel Grid Array)
   // -------------------------------------------------------------------------
   if (battleVisualState.enemy.visible) {
-    const enemyBob = Math.sin(animTick * 0.08) * 2;
+    const isEffectsOff = (window.isEffectsDisabled && window.isEffectsDisabled());
+    const isBobStep = Math.floor(animTick / 24) % 2 === 1;
+    const enemyBob = isEffectsOff ? 0 : (isBobStep ? 2 : 0);
     const enemy = (window.gameState && window.gameState.enemy) || { id: 'bugmon', name: 'Bugmon' };
     const eId = ((enemy.id || enemy.name || '') + '').toLowerCase();
 
@@ -807,8 +879,10 @@ function renderBattleScene(ctx, animTick = 0) {
   // 6. BOTTOM-LEFT: PLAYER CODEMON SPRITE (BACK VIEW, 16x16 Pixel Grid Array)
   // -------------------------------------------------------------------------
   if (battleVisualState.player.visible) {
+    const isEffectsOff = (window.isEffectsDisabled && window.isEffectsDisabled());
+    const isBobStep = Math.floor(animTick / 24) % 2 === 1;
     const player = (window.gameState && window.gameState.player) || { id: 'pyrawr', name: 'Pyrawr' };
-    const playerBob = Math.sin(animTick * 0.1) * 1.5;
+    const playerBob = isEffectsOff ? 0 : (isBobStep ? 0 : 2);
     const playerX = 22 + battleVisualState.player.offsetX;
     const playerY = 76 + playerBob + battleVisualState.player.offsetY;
 
@@ -1187,7 +1261,8 @@ async function handlePlayerCodeSuccess(challenge, outcome) {
   const triggerMsg = window.showMessage || showMessage;
 
   await triggerAttack('player');
-  await triggerHit('enemy');
+  const isHeavyPlayerHit = damage >= 20 || diff === 'hard';
+  await triggerHit('enemy', damage, isHeavyPlayerHit);
 
   // 4. Animate the enemy HP bar
   const currentEnemyHp = (window.gameState && window.gameState.enemy && typeof window.gameState.enemy.hp === 'number')
@@ -1360,7 +1435,8 @@ async function startEnemyTurn(isBonusDamage = false) {
 
   // 3. Enemy attack animations
   await triggerAttack('enemy');
-  await triggerHit('player');
+  const isHeavyEnemyHit = isBonusDamage || isBugmon || enemyDmg >= 18;
+  await triggerHit('player', enemyDmg, isHeavyEnemyHit);
 
   // 4. Animate player HP bar
   const currentPlayerHp = (window.gameState && window.gameState.player && typeof window.gameState.player.hp === 'number')
@@ -1484,6 +1560,8 @@ window.BattleEngine = {
   // Visual & Animation Functions
   playAttackAnimation,
   playHitAnimation,
+  showFloatingDamage,
+  triggerHeavyScreenShake,
   showMessage,
   typeText,
   setHp,
@@ -1509,6 +1587,8 @@ window.evaluateBattleConditions = evaluateBattleConditions;
 window.triggerBugmonTransformation = triggerBugmonTransformation;
 window.playAttackAnimation = playAttackAnimation;
 window.playHitAnimation = playHitAnimation;
+window.showFloatingDamage = showFloatingDamage;
+window.triggerHeavyScreenShake = triggerHeavyScreenShake;
 window.showMessage = showMessage;
 window.typeText = typeText;
 window.setHp = setHp;
