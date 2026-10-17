@@ -123,7 +123,12 @@ npm run migrate
   - **Algorithm**: Compares today's XP to the student's 14-day active average. Flags when `today > 3x average` AND `today >= 200 XP` AND `>= 5 baseline active days`.
   - **Flag Only**: Statistical flags never auto-punish or void XP automatically.
   - **Idempotency Guarantee**: Unique index on `flags` table ensures duplicate runs for the same date generate 0 duplicate flags.
-  - **CLI Runner**: `npm run detect-spikes [-- --date YYYY-MM-DD]`
+- **Collusion & Win-Trading Detection Endpoint**: `/api/cron/detect-collusion` (Supports `GET` with Bearer auth and `POST` with `x-cron-secret`)
+  - **Cron Schedule**: `45 18 * * *` (Daily at 18:45 UTC = 00:15:00 IST).
+  - **Answer Sharing Algorithm**: Evaluates pairs of students on shared quiz/practice questions. Flags when common questions >= 10, shared WRONG choice ratio >= 60%, and submitted close in time (within 120s). Legitimate battle teammates talking during a battle are excluded from being flagged for that battle's questions. Control pairs with 10 identical correct answers are never flagged.
+  - **Win-Trading Algorithm**: Flags pairs exceeding > 6 duels in a 7-day window or exhibiting >= 80% one-sided results (intentional XP farming).
+  - **Flag Only**: Writes to `flags` table for faculty review. Never auto-voids XP.
+  - **CLI Runner**: `npm run detect-collusion`
 - **Authentication**: Secured via `CRON_SECRET`. The request must include either:
   - Header `Authorization: Bearer <CRON_SECRET>` (standard Vercel Cron format)
   - Header `x-cron-secret: <CRON_SECRET>`
@@ -139,6 +144,10 @@ npm run migrate
     {
       "path": "/api/cron/detect-spikes",
       "schedule": "30 18 * * *"
+    },
+    {
+      "path": "/api/cron/detect-collusion",
+      "schedule": "45 18 * * *"
     }
   ]
 }
@@ -152,6 +161,11 @@ curl -X POST https://your-domain.com/api/cron/weekly-leagues \
 
 # Trigger daily spike detection:
 curl -X POST https://your-domain.com/api/cron/detect-spikes \
+  -H "Authorization: Bearer your-cron-secret-token" \
+  -H "Content-Type: application/json"
+
+# Trigger collusion detection:
+curl -X POST https://your-domain.com/api/cron/detect-collusion \
   -H "Authorization: Bearer your-cron-secret-token" \
   -H "Content-Type: application/json"
 ```

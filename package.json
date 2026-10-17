@@ -10,7 +10,8 @@
     "test": "vitest run",
     "seed": "tsx scripts/seed-demo-users.ts",
     "migrate": "tsx scripts/run-migration.ts",
-    "detect-spikes": "tsx scripts/run-spike-detection.ts"
+    "detect-spikes": "tsx scripts/run-spike-detection.ts",
+    "detect-collusion": "tsx scripts/run-collusion-detection.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
