@@ -60,6 +60,7 @@ describe.runIf(isLiveConfigured)('Phase 3E Audit: Duels Server Action & Schema A
   let question1Id: string;
   let question2Id: string;
   let testSubjectId: string;
+  const extraStudentIds: string[] = [];
 
   beforeAll(async () => {
     // 1. Get a subject
@@ -158,12 +159,12 @@ describe.runIf(isLiveConfigured)('Phase 3E Audit: Duels Server Action & Schema A
     if (question2Id) await adminClient.from('questions').delete().eq('id', question2Id);
 
     // Clean up test users
-    for (const sId of [student1Id, student2Id]) {
+    for (const sId of [student1Id, student2Id, ...extraStudentIds]) {
       if (sId) {
-        await adminClient.from('xp_events').delete().eq('student_id', sId);
-        await adminClient.from('students').delete().eq('id', sId);
-        await adminClient.from('profiles').delete().eq('id', sId);
-        await adminClient.auth.admin.deleteUser(sId);
+        try { await adminClient.from('xp_events').delete().eq('student_id', sId); } catch {}
+        try { await adminClient.from('students').delete().eq('id', sId); } catch {}
+        try { await adminClient.from('profiles').delete().eq('id', sId); } catch {}
+        try { await adminClient.auth.admin.deleteUser(sId); } catch {}
       }
     }
   });
@@ -388,6 +389,7 @@ describe.runIf(isLiveConfigured)('Phase 3E Audit: Duels Server Action & Schema A
       user_metadata: { full_name: 'Audit Grandmaster', roll_no: `AUDIT-GM-${ts}`, department: 'CSE' },
     });
     const highStudentId = highUser.user!.id;
+    extraStudentIds.push(highStudentId);
 
     let highDuelId: string | undefined;
     let s1DuelId: string | undefined;
@@ -419,17 +421,17 @@ describe.runIf(isLiveConfigured)('Phase 3E Audit: Duels Server Action & Schema A
     } finally {
       // Guaranteed Cleanup
       if (highDuelId) {
-        await adminClient.from('duel_questions').delete().eq('duel_id', highDuelId);
-        await adminClient.from('duels').delete().eq('id', highDuelId);
+        try { await adminClient.from('duel_questions').delete().eq('duel_id', highDuelId); } catch {}
+        try { await adminClient.from('duels').delete().eq('id', highDuelId); } catch {}
       }
       if (s1DuelId) {
-        await adminClient.from('duel_questions').delete().eq('duel_id', s1DuelId);
-        await adminClient.from('duels').delete().eq('id', s1DuelId);
+        try { await adminClient.from('duel_questions').delete().eq('duel_id', s1DuelId); } catch {}
+        try { await adminClient.from('duels').delete().eq('id', s1DuelId); } catch {}
       }
-      await adminClient.from('xp_events').delete().eq('student_id', highStudentId);
-      await adminClient.from('students').delete().eq('id', highStudentId);
-      await adminClient.from('profiles').delete().eq('id', highStudentId);
-      await adminClient.auth.admin.deleteUser(highStudentId);
+      try { await adminClient.from('xp_events').delete().eq('student_id', highStudentId); } catch {}
+      try { await adminClient.from('students').delete().eq('id', highStudentId); } catch {}
+      try { await adminClient.from('profiles').delete().eq('id', highStudentId); } catch {}
+      try { await adminClient.auth.admin.deleteUser(highStudentId); } catch {}
     }
   });
 });
