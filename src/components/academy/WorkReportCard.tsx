@@ -116,10 +116,10 @@ export function WorkReportCard({ activityData = mockActivityCalendar }: WorkRepo
       className="game-card p-6 flex flex-col justify-between relative overflow-visible animate-card-pop"
     >
       {/* Header: Title and Month Chip with Prev/Next Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3 text-xs">
         <div>
-          <span className="font-pixel text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-            ACTIVITY HEATMAP
+          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 block mb-0.5">
+            Activity Heatmap
           </span>
           <Shuffle
             text="Work Report"
@@ -130,32 +130,32 @@ export function WorkReportCard({ activityData = mockActivityCalendar }: WorkRepo
             triggerOnHover={true}
             color="#FFFFFF"
             accentColor="#7DD3FC"
-            style={{ fontSize: '1.25rem', letterSpacing: '0.04em' }}
+            style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
           />
         </div>
 
         {/* Month Selector Chip */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#081534] border border-[#1E3A78] shadow-inner">
+        <div className="flex items-center gap-1 px-2 py-1 rounded-xl bg-white/[0.03] border border-white/[0.08]">
           <button
             type="button"
             onClick={handlePrevMonth}
-            className="p-1 rounded-lg text-[#A9B8D6] hover:text-white hover:bg-[#7CC4FF]/20 transition-colors focus:outline-none focus:ring-1 focus:ring-[#7CC4FF]"
+            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
             aria-label="Previous month"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5" />
           </button>
 
-          <span className="font-pixel text-xs font-bold text-[#7CC4FF] px-2 min-w-[120px] text-center select-none">
+          <span className="font-mono text-xs font-semibold text-zinc-200 px-2 min-w-[110px] text-center select-none">
             {MONTH_NAMES[month]} {year}
           </span>
 
           <button
             type="button"
             onClick={handleNextMonth}
-            className="p-1 rounded-lg text-[#A9B8D6] hover:text-white hover:bg-[#7CC4FF]/20 transition-colors focus:outline-none focus:ring-1 focus:ring-[#7CC4FF]"
+            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
             aria-label="Next month"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -268,47 +268,32 @@ export function WorkReportCard({ activityData = mockActivityCalendar }: WorkRepo
       </div>
 
       {/* Heatmap Footer: Legend & Monthly Stats */}
-      <div className="mt-5 pt-3 border-t border-[#1E3A78]/70 flex flex-wrap items-center justify-between gap-3 text-xs">
-        {/* Power-up Legend: Less -> More (#14214A, #1F4E8C, #4A97D6, #8FD0FF, #FFB27A) */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-[#6C7FAD] font-medium">Less</span>
-          <div
-            className="w-3.5 h-3.5 rounded-sm bg-[#14214A] border border-[#1E3A78]"
-            title="0 XP"
-          />
-          <div
-            className="w-3.5 h-3.5 rounded-sm bg-[#1F4E8C]"
-            title="1 - 40 XP"
-          />
-          <div
-            className="w-3.5 h-3.5 rounded-sm bg-[#4A97D6]"
-            title="41 - 80 XP"
-          />
-          <div
-            className="w-3.5 h-3.5 rounded-sm bg-[#8FD0FF]"
-            title="81 - 120 XP"
-          />
-          <div
-            className="w-3.5 h-3.5 rounded-sm bg-[#FFB27A] shadow-[0_0_6px_rgba(255,178,122,0.6)]"
-            title="121+ XP"
-          />
-          <span className="text-[10px] text-[#FFB27A] font-bold">More</span>
+      <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-3 text-xs">
+        {/* Legend */}
+        <div className="flex items-center gap-1.5 font-mono text-[10px]">
+          <span className="text-zinc-500">Less</span>
+          <div className="w-3 h-3 rounded-sm bg-zinc-900 border border-white/5" title="0 XP" />
+          <div className="w-3 h-3 rounded-sm bg-sky-950" title="1 - 40 XP" />
+          <div className="w-3 h-3 rounded-sm bg-sky-800" title="41 - 80 XP" />
+          <div className="w-3 h-3 rounded-sm bg-sky-600" title="81 - 120 XP" />
+          <div className="w-3 h-3 rounded-sm bg-sky-400" title="121+ XP" />
+          <span className="text-sky-400">More</span>
         </div>
 
         {/* Monthly Summary Badges */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 text-[11px] text-[#A9B8D6]">
-            <Zap className="w-3.5 h-3.5 text-[#FFB27A]" />
-            <span>Month XP:</span>
-            <span className="font-pixel font-bold text-white">
+        <div className="flex items-center gap-3 font-mono text-[11px]">
+          <div className="flex items-center gap-1 text-zinc-400">
+            <Zap className="w-3.5 h-3.5 text-sky-400" />
+            <span>XP:</span>
+            <span className="font-bold text-white">
               <AnimatedCounter value={monthlyTotalXp} />
             </span>
           </div>
 
-          <div className="flex items-center gap-1 text-[11px] text-[#FFB27A]">
-            <Flame className="w-3.5 h-3.5 fill-[#FFB27A]" />
-            <span>Best Streak:</span>
-            <span className="font-pixel font-bold text-white">
+          <div className="flex items-center gap-1 text-amber-300">
+            <Flame className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            <span>Best:</span>
+            <span className="font-bold text-white">
               {bestMonthlyStreak}d
             </span>
           </div>

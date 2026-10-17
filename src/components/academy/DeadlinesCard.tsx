@@ -13,13 +13,13 @@ export function DeadlinesCard({ deadlines = [] }: DeadlinesCardProps) {
   return (
     <article
       aria-label="Student Deadlines and Assignments"
-      className="game-card p-6 flex flex-col justify-between relative overflow-hidden animate-card-pop"
+      className="game-card p-5 flex flex-col justify-between relative overflow-hidden h-full"
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3 text-xs">
         <div>
-          <span className="font-pixel text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-            COURSEWORK
+          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 block mb-0.5">
+            Coursework
           </span>
           <Shuffle
             text="Deadlines"
@@ -30,51 +30,47 @@ export function DeadlinesCard({ deadlines = [] }: DeadlinesCardProps) {
             triggerOnHover={true}
             color="#FFFFFF"
             accentColor="#7DD3FC"
-            style={{ fontSize: '1.25rem', letterSpacing: '0.04em' }}
+            style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
           />
         </div>
 
-        <div className="w-8 h-8 rounded-xl bg-[#10131E] border border-sky-400/40 flex items-center justify-center text-sky-400">
-          <Scroll className="w-4 h-4" />
+        <div className="w-7 h-7 rounded-lg bg-white/[0.03] border border-white/10 flex items-center justify-center text-sky-400">
+          <Scroll className="w-3.5 h-3.5" />
         </div>
       </div>
 
-      {/* Body: Placeholder State or Renderable List */}
+      {/* Body */}
       <div className="flex-1 my-3 flex flex-col justify-center">
         {deadlines.length === 0 ? (
-          // Placeholder empty state per prompt specifications
-          <div className="p-6 rounded-2xl bg-[#081534]/70 border border-[#1E3A78]/70 text-center flex flex-col items-center justify-center">
-            {/* Locked chest / scroll visual icon */}
-            <div className="w-14 h-14 rounded-2xl bg-[#06080F] border-2 border-[#1E3A78] shadow-inner flex items-center justify-center text-[#FFB27A] mb-3 relative">
-              <Lock className="w-6 h-6 text-[#FFB27A]" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#7CC4FF] animate-ping" />
+          <div className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center flex flex-col items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center text-zinc-400 mb-2.5">
+              <Lock className="w-4 h-4 text-zinc-400" />
             </div>
 
-            <h3 className="font-bold text-white text-sm mb-1.5 font-body">
-              No assignments yet.
+            <h3 className="font-semibold text-white text-xs mb-1">
+              No assignments pending
             </h3>
-            <p className="text-xs text-[#A9B8D6] max-w-xs leading-relaxed">
-              Homework, assignments, and deadlines set by teachers will appear here.
+            <p className="text-[11px] text-zinc-400 max-w-xs leading-relaxed">
+              Teacher assignments and homework deadlines will automatically sync here.
             </p>
           </div>
         ) : (
-          // Structured list renderer ready for future backend items
-          <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
             {deadlines.map((item) => (
               <div
                 key={item.id}
-                className="p-3 rounded-xl bg-[#081534] border border-[#1E3A78] flex items-center justify-between gap-3 text-xs"
+                className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between gap-3 text-xs"
               >
                 <div>
-                  <h4 className="font-bold text-white leading-tight">
+                  <h4 className="font-medium text-white leading-tight">
                     {item.title}
                   </h4>
-                  <span className="text-[10px] text-[#7CC4FF] font-medium">
+                  <span className="text-[10px] text-sky-400 font-mono">
                     {item.subject}
                   </span>
                 </div>
-                <div className="flex items-center gap-1 text-[11px] text-[#FFB27A]">
-                  <Clock className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-1 text-[11px] text-zinc-400 font-mono">
+                  <Clock className="w-3 h-3 text-zinc-500" />
                   <span>{item.dueDate}</span>
                 </div>
               </div>
@@ -84,12 +80,12 @@ export function DeadlinesCard({ deadlines = [] }: DeadlinesCardProps) {
       </div>
 
       {/* Footer Info */}
-      <div className="pt-3 border-t border-[#1E3A78]/70 flex items-center justify-between text-xs text-[#6C7FAD]">
+      <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-500 font-mono">
         <span className="flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5 text-[#7CC4FF]" />
+          <Calendar className="w-3 h-3 text-sky-400" />
           <span>Faculty sync active</span>
         </span>
-        <span className="text-[11px] font-pixel text-[#A9B8D6]">0 PENDING</span>
+        <span className="text-zinc-400 font-medium">0 PENDING</span>
       </div>
     </article>
   );

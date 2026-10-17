@@ -16,7 +16,7 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
   const [newTitle, setNewTitle] = useState('');
   const [animatingQuestId, setAnimatingQuestId] = useState<string | null>(null);
 
-  // Hydrate quests from localStorage on client mount to prevent server-client HTML mismatch
+  // Hydrate quests from localStorage on client mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -31,7 +31,6 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
     }
   }, []);
 
-  // Save to localStorage on change
   const saveQuests = (updated: QuestItem[]) => {
     setQuests(updated);
     try {
@@ -48,7 +47,6 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
     const willBeCompleted = !targetQuest.completed;
 
     if (willBeCompleted) {
-      // Trigger pop and floating +10 XP animation (Pastel Orange #FFB27A)
       setAnimatingQuestId(id);
       setTimeout(() => setAnimatingQuestId(null), 900);
       onQuestCompleted?.(targetQuest.xpReward || 10);
@@ -88,17 +86,17 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
   return (
     <article
       aria-label="Student Quests and To-Do List"
-      className="game-card p-6 flex flex-col justify-between relative animate-card-pop"
+      className="game-card p-5 flex flex-col justify-between relative h-full"
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3 text-xs">
         <div>
-          <span className="font-pixel text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-            DAILY MISSIONS
+          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 block mb-0.5">
+            Missions & To-Do
           </span>
           <div className="flex items-center gap-2">
             <Shuffle
-              text="To do"
+              text="Tasks"
               tag="h2"
               effect="slide"
               duration={0.35}
@@ -106,20 +104,17 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
               triggerOnHover={true}
               color="#FFFFFF"
               accentColor="#7DD3FC"
-              style={{ fontSize: '1.25rem', letterSpacing: '0.04em' }}
+              style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
             />
-            <span className="px-2 py-0.5 rounded-md bg-[#10131E] border border-sky-400/40 text-sky-300 text-[10px] font-pixel font-bold">
-              QUESTS
-            </span>
           </div>
         </div>
 
-        {/* Counter Chip (Pastel Orange #FFB27A) */}
+        {/* Counter Chip */}
         <div
           suppressHydrationWarning
-          className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#081534] border border-[#1E3A78] text-xs font-semibold text-[#FFB27A]"
+          className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-mono text-sky-300"
         >
-          <Sparkles className="w-3.5 h-3.5" />
+          <Sparkles className="w-3 h-3 text-sky-400" />
           <span suppressHydrationWarning>
             {completedCount}/{quests.length} Done
           </span>
@@ -127,14 +122,14 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
       </div>
 
       {/* Quest List */}
-      <div className="flex-1 my-2 space-y-2.5 max-h-56 overflow-y-auto pr-1">
+      <div className="flex-1 my-2 space-y-2 max-h-56 overflow-y-auto pr-1">
         {quests.length === 0 ? (
           <div className="py-8 flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 rounded-2xl bg-[#081534] border border-[#1E3A78] flex items-center justify-center text-[#A9B8D6] mb-2">
-              <Swords className="w-6 h-6 text-[#6C7FAD]" />
+            <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center text-zinc-400 mb-2">
+              <Swords className="w-5 h-5 text-zinc-500" />
             </div>
-            <p className="text-sm font-semibold text-white">No quests yet.</p>
-            <p className="text-xs text-[#6C7FAD]">Add one below to earn +10 XP!</p>
+            <p className="text-xs font-semibold text-white">No active tasks.</p>
+            <p className="text-[11px] text-zinc-500">Add one below to earn +10 XP</p>
           </div>
         ) : (
           quests.map((quest) => {
@@ -143,24 +138,24 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
             return (
               <div
                 key={quest.id}
-                className={`group relative flex items-center justify-between p-3 rounded-2xl border transition-all ${
+                className={`group relative flex items-center justify-between p-2.5 rounded-xl border transition-all ${
                   quest.completed
-                    ? 'bg-[#081534]/60 border-[#1E3A78]/50 text-[#6C7FAD]'
-                    : 'bg-[#081534] border-[#1E3A78] text-white hover:border-[#7CC4FF]'
+                    ? 'bg-white/[0.01] border-white/[0.04] text-zinc-500'
+                    : 'bg-white/[0.03] border-white/[0.08] hover:border-white/20 text-white'
                 }`}
               >
-                {/* Floating "+10 XP" Particle in Pastel Orange #FFB27A */}
+                {/* Floating "+10 XP" Particle */}
                 {isAnimating && (
                   <div
                     aria-hidden="true"
-                    className="absolute -top-3 left-6 font-pixel text-xs font-bold text-[#FFB27A] shadow-md animate-float-xp pointer-events-none z-30 drop-shadow-[0_0_8px_rgba(255,178,122,0.8)]"
+                    className="absolute -top-3 left-6 font-mono text-xs font-bold text-sky-300 animate-float-xp pointer-events-none z-30"
                   >
-                    +{quest.xpReward} XP! ⚡
+                    +{quest.xpReward} XP!
                   </div>
                 )}
 
-                {/* Left: Circular Checkbox (Filled orange #FFB27A with black check mark #06080F) */}
-                <div className="flex items-center gap-3 flex-1 min-w-0 pr-2">
+                {/* Left: Circular Checkbox */}
+                <div className="flex items-center gap-2.5 flex-1 min-w-0 pr-2">
                   <button
                     type="button"
                     onClick={() => handleToggle(quest.id)}
@@ -169,20 +164,20 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
                     aria-label={`Mark quest "${quest.title}" as ${
                       quest.completed ? 'incomplete' : 'complete'
                     }`}
-                    className={`w-6 h-6 shrink-0 rounded-full border-2 flex items-center justify-center transition-all ${
+                    className={`w-5 h-5 shrink-0 rounded-full border flex items-center justify-center transition-all ${
                       quest.completed
-                        ? 'bg-[#FFB27A] border-[#FFB27A] text-[#06080F] shadow-[0_0_10px_rgba(255,178,122,0.5)]'
-                        : 'border-[#1E3A78] bg-[#06080F] hover:border-[#7CC4FF]'
+                        ? 'bg-sky-400 border-sky-400 text-black shadow-sm'
+                        : 'border-white/20 bg-zinc-900 hover:border-sky-400'
                     }`}
                   >
-                    {quest.completed && <Check className="w-3.5 h-3.5 stroke-[3] text-[#06080F]" />}
+                    {quest.completed && <Check className="w-3 h-3 stroke-[3] text-black" />}
                   </button>
 
                   <span
                     className={`text-xs font-medium leading-snug break-words ${
                       quest.completed
-                        ? 'line-through text-[#6C7FAD]'
-                        : 'text-slate-100'
+                        ? 'line-through text-zinc-500'
+                        : 'text-zinc-200'
                     }`}
                   >
                     {quest.title}
@@ -194,7 +189,7 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
                   type="button"
                   onClick={() => handleDeleteQuest(quest.id)}
                   aria-label={`Delete quest: ${quest.title}`}
-                  className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-[#6C7FAD] hover:text-[#FFB27A] hover:bg-[#FFB27A]/15 transition-all"
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-zinc-500 hover:text-rose-400 transition-all"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -205,21 +200,21 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
       </div>
 
       {/* Add Quest Form */}
-      <form onSubmit={handleAddQuest} className="mt-3 pt-3 border-t border-[#1E3A78]/70 flex gap-2">
+      <form onSubmit={handleAddQuest} className="mt-2 pt-2.5 border-t border-white/[0.06] flex gap-2">
         <input
           type="text"
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
-          placeholder="New quest (e.g. Master DP)..."
+          placeholder="New task (e.g. Master DP)..."
           maxLength={80}
-          className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#06080F] border border-[#1E3A78] text-xs text-white placeholder:text-[#6C7FAD] focus:outline-none focus:border-[#7CC4FF] focus:ring-1 focus:ring-[#7CC4FF]"
+          className="flex-1 px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-sky-400"
         />
         <button
           type="submit"
-          className="btn-arcade-primary px-3.5 py-2.5 text-xs flex items-center justify-center gap-1 shrink-0"
-          aria-label="Add quest"
+          className="px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-black font-semibold text-xs flex items-center justify-center gap-1 shrink-0 transition-colors"
+          aria-label="Add task"
         >
-          <Plus className="w-4 h-4 text-[#06080F]" />
+          <Plus className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Add</span>
         </button>
       </form>

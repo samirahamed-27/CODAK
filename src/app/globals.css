@@ -90,78 +90,80 @@ body {
   font-family: var(--font-body);
 }
 
-/* Chunky 3D Game Card */
+/* Sleek Minimalist Modern Card */
 .game-card {
-  background-color: var(--bg-card);
-  border: 2px solid var(--border-card);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card-3d);
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  background-color: rgba(14, 18, 28, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .game-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-card-hover);
-  border-color: rgba(125, 211, 252, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.6), 0 0 20px rgba(125, 211, 252, 0.06);
+  border-color: rgba(125, 211, 252, 0.3);
 }
 
-/* Chunky Arcade Game Buttons */
+/* Sleek Minimal Buttons */
 .btn-arcade-primary {
-  background-color: var(--accent-primary);
-  color: var(--text-contrast-dark);
-  border-radius: var(--radius-btn);
-  border: 1px solid #BAE6FD;
-  box-shadow: 0 4px 0 var(--accent-primary-dark);
-  font-weight: 700;
-  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.15s ease;
+  background-color: #38BDF8;
+  color: #07080B;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.25);
+  transition: all 0.2s ease;
 }
 
 .btn-arcade-primary:hover {
-  background-color: var(--accent-primary-hover);
+  background-color: #7DD3FC;
+  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35);
+  transform: translateY(-1px);
 }
 
 .btn-arcade-primary:active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 var(--accent-primary-dark);
+  transform: translateY(0);
 }
 
 .btn-arcade-gold {
-  background-color: var(--accent-highlight);
-  color: var(--text-contrast-dark);
-  border-radius: var(--radius-btn);
-  border: 1px solid #FFFFFF;
-  box-shadow: 0 4px 0 var(--accent-highlight-dark);
-  font-weight: 800;
-  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.15s ease;
+  background: #FFFFFF;
+  color: #07080B;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease;
 }
 
 .btn-arcade-gold:hover {
-  background-color: var(--accent-highlight-hover);
+  background-color: #F1F5F9;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
 .btn-arcade-gold:active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 var(--accent-highlight-dark);
+  transform: translateY(0);
 }
 
 .btn-arcade-ghost {
-  background-color: rgba(16, 19, 30, 0.85);
+  background-color: rgba(255, 255, 255, 0.03);
   color: var(--text-muted);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-btn);
-  box-shadow: 0 3px 0 var(--bg-page);
-  transition: all 0.1s ease;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  transition: all 0.2s ease;
 }
 
 .btn-arcade-ghost:hover {
   color: var(--text-white);
-  border-color: rgba(125, 211, 252, 0.5);
-  background-color: rgba(125, 211, 252, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.06);
 }
 
 .btn-arcade-ghost:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 var(--bg-page);
+  transform: translateY(0);
 }
 
 /* Animations */

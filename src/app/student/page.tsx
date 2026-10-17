@@ -80,86 +80,86 @@ export default function StudentDashboardPage() {
           {/* Main Top Header */}
           <AcademyHeader profile={profile} />
 
-          {/* PHASE 2 HERO: Today's Daily Quiz & Streak Card */}
-          <div className="p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-indigo-500/30 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-            <div className="flex items-center gap-5 z-10">
+          {/* Minimalist Hero: Today's Daily Quiz & Streak Card */}
+          <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/[0.08] hover:border-white/15 backdrop-blur-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5 transition-all">
+            <div className="flex items-center gap-4">
               <div
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg shrink-0 ${
+                className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shrink-0 border transition-colors ${
                   streakInfo.isTodayCompleted
-                    ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/25'
-                    : 'bg-gradient-to-br from-amber-500 to-rose-500 shadow-rose-500/25'
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                    : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
                 }`}
               >
                 {streakInfo.isTodayCompleted ? (
-                  <CheckCircle2 className="w-8 h-8 text-white" />
+                  <CheckCircle2 className="w-6 h-6 text-emerald-400" />
                 ) : (
-                  <Flame className="w-8 h-8 animate-pulse text-amber-200" />
+                  <Flame className="w-6 h-6 text-amber-400" />
                 )}
               </div>
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <span
-                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider border ${
                       streakInfo.isTodayCompleted
-                        ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
-                        : 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
+                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                        : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
                     }`}
                   >
-                    {streakInfo.isTodayCompleted ? 'Completed for Today' : 'Daily Study Routine'}
+                    {streakInfo.isTodayCompleted ? 'Completed Today' : 'Daily Challenge'}
                   </span>
-                  <span className="text-xs text-slate-400">Asia/Kolkata Calendar</span>
+                  <span className="text-[11px] text-zinc-500 font-mono">CS101</span>
                 </div>
-                <h2 className="text-xl font-extrabold text-white tracking-tight">
+                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
                   {streakInfo.isTodayCompleted
-                    ? "Today's Daily Quiz Completed! (CS101)"
-                    : "Today's Daily Quiz (CS101)"}
+                    ? "Today's Daily Quiz Completed"
+                    : "Today's Daily Practice Quiz"}
                 </h2>
-                <p className="text-xs text-slate-300 max-w-lg">
+                <p className="text-xs text-zinc-400 max-w-xl">
                   {streakInfo.isTodayCompleted
-                    ? 'Awesome job! You earned your daily quiz XP and maintained your streak. Feel free to practice more to sharpen your skills.'
-                    : `Answer 5 concept questions to reinforce your learning, earn up to ${streakInfo.maxDailyQuizXp || 40} XP towards your level, and extend your study streak.`}
+                    ? 'Great job! You claimed today’s XP and maintained your streak. Feel free to practice more.'
+                    : `Answer 5 concept questions to reinforce key topics, earn up to ${streakInfo.maxDailyQuizXp || 40} XP, and keep your streak alive.`}
                 </p>
               </div>
             </div>
 
             {/* Streak Counter & CTA Actions */}
-            <div className="flex items-center gap-3 w-full md:w-auto shrink-0 z-10">
-              <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-950/70 border border-slate-800 text-xs">
-                <div className="flex items-center gap-1.5 text-amber-400 font-bold">
-                  <Flame className="w-4 h-4 text-rose-500 fill-rose-500" />
-                  <span>
+            <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0">
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-xs font-mono">
+                <div className="flex items-center gap-1.5 text-amber-300">
+                  <Flame className="w-3.5 h-3.5 fill-amber-400/80 text-amber-400" />
+                  <span className="font-semibold">
                     {streakInfo.loading
                       ? '...'
                       : streakInfo.currentStreak > 0
-                      ? `${streakInfo.currentStreak} Day Streak`
-                      : '0 Day Streak'}
+                      ? `${streakInfo.currentStreak}d Streak`
+                      : '0d Streak'}
                   </span>
                 </div>
-                <span className="text-slate-600">|</span>
-                <div className="flex items-center gap-1 text-cyan-300">
-                  <Snowflake className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="text-zinc-600">•</span>
+                <div className="flex items-center gap-1 text-sky-300">
+                  <Snowflake className="w-3 h-3 text-sky-400" />
                   <span>
                     {streakInfo.loading
                       ? '...'
-                      : `${streakInfo.freezeDaysRemaining} Freezes Left`}
+                      : `${streakInfo.freezeDaysRemaining} Freezes`}
                   </span>
                 </div>
               </div>
 
               <Link
                 href="/student/play"
-                className={`flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl text-white text-xs font-extrabold shadow-lg transition-all hover:scale-[1.02] ${
+                className={`flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
                   streakInfo.isTodayCompleted
-                    ? 'bg-slate-800 hover:bg-slate-700 border border-slate-700 shadow-slate-900/50'
-                    : 'bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 shadow-rose-500/25'
+                    ? 'bg-white/10 hover:bg-white/15 text-white border border-white/10'
+                    : 'bg-sky-500 hover:bg-sky-400 text-black shadow-md shadow-sky-500/20'
                 }`}
               >
                 <span>
                   {streakInfo.isTodayCompleted
                     ? 'Practice Mode'
-                    : `Start Today's Quiz (earn up to ${streakInfo.maxDailyQuizXp || 40} XP)`}
+                    : 'Start Quiz'}
                 </span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>

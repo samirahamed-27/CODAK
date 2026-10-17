@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Trash2, Shield, AlertTriangle } from 'lucide-react';
+import { Camera, Trash2, Shield, AlertTriangle, Sparkles } from 'lucide-react';
 import { StudentProfile } from '@/data/studentDashboardData';
 import Shuffle from '@/components/Shuffle';
-import Aurora from '@/components/Aurora';
 
 interface ProfileCardProps {
   profile: StudentProfile;
@@ -18,7 +17,7 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Hydrate avatar from localStorage on client mount to prevent server-client HTML mismatch
+  // Hydrate avatar from localStorage on client mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -47,7 +46,6 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
       return;
     }
 
-    // Read and preview immediately via FileReader (Base64 data URL)
     const reader = new FileReader();
     reader.onload = (event) => {
       const result = event.target?.result as string;
@@ -79,39 +77,23 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
   return (
     <article
       aria-label="Student Profile Card"
-      className="game-card p-6 flex flex-col items-center justify-between text-center relative overflow-hidden animate-card-pop"
+      className="game-card p-5 flex flex-col items-center justify-between text-center relative overflow-hidden h-full"
     >
-      {/* Ambient WebGL Aurora Background */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-30 rounded-2xl">
-        <Aurora
-          colorStops={['#2c0fa1', '#104572', '#2284c1']}
-          amplitude={1}
-          blend={0.5}
-          height={0.5}
-          speed={0.7}
-          glow={0.6}
-          brightness={1}
-        />
-      </div>
-
-      {/* Background ambient glow */}
-      <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#7CC4FF]/10 rounded-full blur-2xl pointer-events-none z-10" />
-
       {/* Top Title */}
-      <div className="w-full flex items-center justify-between mb-4">
-        <span className="font-pixel text-[11px] font-bold uppercase tracking-wider text-[#A9B8D6]">
-          HERO PROFILE
+      <div className="w-full flex items-center justify-between mb-3 text-xs">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">
+          Student Profile
         </span>
-        <div className="flex items-center gap-1 text-[11px] font-bold text-[#FFB27A]">
+        <div className="flex items-center gap-1 text-[11px] font-mono text-sky-400 font-medium">
           <Shield className="w-3.5 h-3.5" />
-          <span>RANKED</span>
+          <span>Active</span>
         </div>
       </div>
 
-      {/* Avatar Container with Glowing Gradient Ring (from #7CC4FF to #FFB27A) */}
+      {/* Avatar Container with Sleek Minimalist Ring */}
       <div className="relative my-2">
-        <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full p-[3px] bg-gradient-to-tr from-[#7CC4FF] via-[#A9B8D6] to-[#FFB27A] shadow-[0_0_20px_rgba(124,196,255,0.3)] flex items-center justify-center">
-          <div className="w-full h-full rounded-full overflow-hidden bg-[#081534] flex items-center justify-center">
+        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full p-[2px] bg-gradient-to-tr from-sky-400 via-slate-500 to-sky-300 shadow-md shadow-sky-500/10 flex items-center justify-center">
+          <div className="w-full h-full rounded-full overflow-hidden bg-zinc-950 flex items-center justify-center">
             {avatarUrl ? (
               // User uploaded custom photo
               // eslint-disable-next-line @next/next/no-img-element
@@ -121,10 +103,10 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
                 className="w-full h-full object-cover"
               />
             ) : (
-              // Default Retro Arcade Gamer Avatar
-              <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-[#122452] to-[#081534] text-white">
+              // Sleek Minimal Avatar
+              <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-zinc-400">
                 <svg
-                  className="w-16 h-16 text-[#7CC4FF]"
+                  className="w-12 h-12 text-sky-400/80"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -134,18 +116,15 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
                 >
                   <circle cx="12" cy="8" r="5" />
                   <path d="M20 21a8 8 0 1 0-16 0" />
-                  <circle cx="9" cy="7" r="1" fill="#7CC4FF" />
-                  <circle cx="15" cy="7" r="1" fill="#7CC4FF" />
-                  <path d="M10 11c.7.5 1.8.5 2.5 0" />
                 </svg>
               </div>
             )}
           </div>
         </div>
 
-        {/* Level Corner Badge (Pastel Orange #FFB27A) */}
+        {/* Level Badge */}
         <div
-          className="absolute -bottom-1 -right-1 px-2.5 py-1 rounded-xl bg-[#050B1E] border-2 border-[#FFB27A] text-[#FFB27A] font-pixel text-[11px] font-bold shadow-lg shadow-black/60"
+          className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-zinc-900 border border-white/10 text-sky-300 font-mono text-[10px] font-semibold shadow-md"
           title={`Level ${profile.level}`}
         >
           LVL {profile.level}
@@ -153,7 +132,7 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
       </div>
 
       {/* Name and Rank */}
-      <div className="mt-4 mb-5">
+      <div className="mt-3 mb-4">
         <Shuffle
           text={profile.name}
           tag="h2"
@@ -163,23 +142,23 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
           triggerOnHover={true}
           color="#FFFFFF"
           accentColor="#7DD3FC"
-          style={{ fontSize: '1.25rem', letterSpacing: '0.04em' }}
+          style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
         />
-        <div className="mt-1.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#10131E] border border-sky-400/30 text-xs font-semibold text-sky-300">
+        <div className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-mono text-zinc-300">
           <span>🏆 {profile.rank}</span>
         </div>
       </div>
 
       {/* Error Message if Validation Fails */}
       {errorMsg && (
-        <div className="w-full mb-3 p-2 rounded-xl bg-[#FFB27A]/15 border border-[#FFB27A]/30 text-[#FFB27A] text-[11px] flex items-center gap-1.5 text-left">
+        <div className="w-full mb-3 p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-[11px] flex items-center gap-1.5 text-left">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {/* Photo Controls */}
-      <div className="w-full space-y-2 mt-auto">
+      <div className="w-full space-y-1.5 mt-auto">
         <input
           ref={fileInputRef}
           type="file"
@@ -193,9 +172,9 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="w-full py-2.5 px-3 rounded-xl btn-arcade-primary text-xs flex items-center justify-center gap-2"
+          className="w-full py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white text-xs font-medium flex items-center justify-center gap-2 transition-colors"
         >
-          <Camera className="w-3.5 h-3.5 text-[#06080F]" />
+          <Camera className="w-3.5 h-3.5 text-zinc-400" />
           <span>{avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
         </button>
 
@@ -203,9 +182,9 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
           <button
             type="button"
             onClick={handleRemoveAvatar}
-            className="w-full py-2 px-3 text-[11px] font-medium text-[#A9B8D6] hover:text-[#FFB27A] hover:bg-[#FFB27A]/10 rounded-xl transition-colors flex items-center justify-center gap-1.5"
+            className="w-full py-1.5 px-3 text-[11px] text-zinc-400 hover:text-rose-400 transition-colors flex items-center justify-center gap-1.5"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-3 h-3" />
             <span>Remove photo</span>
           </button>
         )}
