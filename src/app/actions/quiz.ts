@@ -3,6 +3,7 @@
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getKolkataDate, evaluateStreakCompletion, StudentStreakData, addDaysToDate, daysBetweenDates } from '@/lib/streaks';
+import { checkRateLimit } from '@/lib/rate-limits';
 
 export interface QuizOptionItem {
   id: 'A' | 'B' | 'C' | 'D';
@@ -274,6 +275,11 @@ export async function submitQuizAnswerAction(input: {
 
   if (!user) {
     return { success: false, error: 'Unauthorized: You must be logged in.' };
+  }
+
+  const rl = await checkRateLimit(user.id, 'quiz_answer');
+  if (!rl.allowed) {
+    return { success: false, error: rl.error, statusCode: 429 };
   }
 
   if (!['A', 'B', 'C', 'D'].includes(input.selectedOption)) {
@@ -738,6 +744,11 @@ export async function submitPracticeAnswerAction(input: {
 
   if (!user) {
     return { success: false, error: 'Unauthorized: You must be logged in.' };
+  }
+
+  const rl = await checkRateLimit(user.id, 'quiz_answer');
+  if (!rl.allowed) {
+    return { success: false, error: rl.error, statusCode: 429 };
   }
 
   if (!['A', 'B', 'C', 'D'].includes(input.selectedOption)) {

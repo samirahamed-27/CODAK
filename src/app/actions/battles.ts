@@ -12,6 +12,7 @@ import {
   SafeBattleQuestion,
 } from '@/lib/battles';
 import { levelFromXp } from '@/lib/levels';
+import { checkRateLimit } from '@/lib/rate-limits';
 
 function getAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -376,6 +377,11 @@ export async function submitBattleAnswerAction(input: {
     const { studentId, adminClient } = await getRequesterAuth();
     if (!studentId) {
       return { success: false, error: 'Unauthorized: Student login required' };
+    }
+
+    const rl = await checkRateLimit(studentId, 'battle_submit');
+    if (!rl.allowed) {
+      return { success: false, error: rl.error };
     }
 
     // Call submit_battle_answer database function

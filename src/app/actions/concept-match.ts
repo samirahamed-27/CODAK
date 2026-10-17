@@ -10,6 +10,7 @@ import {
   verifySignedRoundToken,
   ConceptMatchRound,
 } from '@/lib/concept-match';
+import { checkRateLimit } from '@/lib/rate-limits';
 
 function getSigningSecret(): string {
   return (
@@ -85,6 +86,18 @@ export async function submitConceptMatchAction(
       isPerfect: false,
       xpAwarded: 0,
       error: 'Unauthorized: Student session required',
+    };
+  }
+
+  const rl = await checkRateLimit(user.id, 'concept_match');
+  if (!rl.allowed) {
+    return {
+      success: false,
+      correctCount: 0,
+      totalCount: 0,
+      isPerfect: false,
+      xpAwarded: 0,
+      error: rl.error,
     };
   }
 

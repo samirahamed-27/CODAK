@@ -13,6 +13,7 @@ import {
   canEarnPairDuelXp,
 } from '@/lib/duels';
 import { levelFromXp } from '@/lib/levels';
+import { checkRateLimit } from '@/lib/rate-limits';
 
 export interface DuelSubmissionInput {
   duelId: string;
@@ -56,7 +57,7 @@ export async function createOrJoinAutoMatchAction(): Promise<{
     data: { user },
   } = await supabaseServer.auth.getUser();
 
-  let studentId = user?.id;
+  const studentId = user?.id;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -69,6 +70,11 @@ export async function createOrJoinAutoMatchAction(): Promise<{
 
   if (!studentId) {
     return { success: false, error: 'Unauthorized: Student session required' };
+  }
+
+  const rl = await checkRateLimit(studentId, 'duel_action');
+  if (!rl.allowed) {
+    return { success: false, error: rl.error };
   }
 
   const now = new Date().toISOString();
@@ -189,13 +195,18 @@ export async function challengeDirectStudentAction(targetStudentId: string): Pro
     data: { user },
   } = await supabaseServer.auth.getUser();
 
-  let studentId = user?.id;
+  const studentId = user?.id;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
   if (!studentId) return { success: false, error: 'Unauthorized: Student session required' };
+
+  const rl = await checkRateLimit(studentId, 'duel_action');
+  if (!rl.allowed) {
+    return { success: false, error: rl.error };
+  }
 
   // Block self-challenge
   const challengeCheck = validateDuelChallenge(studentId, targetStudentId);
@@ -337,13 +348,18 @@ export async function submitDuelAnswersAction(input: DuelSubmissionInput): Promi
     data: { user },
   } = await supabaseServer.auth.getUser();
 
-  let studentId = user?.id;
+  const studentId = user?.id;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
   if (!studentId) return { success: false, error: 'Unauthorized: Student session required' };
+
+  const rl = await checkRateLimit(studentId, 'duel_action');
+  if (!rl.allowed) {
+    return { success: false, error: rl.error };
+  }
 
   // 1. Verify Duel
   const { data: duel, error: duelErr } = await adminClient

@@ -8,6 +8,7 @@ import {
   SEED_PRACTICE_LINKS,
   filterPracticeLinks,
 } from '@/lib/practice';
+import { checkRateLimit } from '@/lib/rate-limits';
 
 export async function getPracticeLinksAction(filter?: PracticeFilter): Promise<{
   success: boolean;
@@ -27,6 +28,13 @@ export async function getPracticeLinksAction(filter?: PracticeFilter): Promise<{
       topics: [],
       error: 'Unauthorized',
     };
+  }
+
+  if (filter?.search) {
+    const rl = await checkRateLimit(user.id, 'search');
+    if (!rl.allowed) {
+      return { success: false, links: [], topics: [], error: rl.error };
+    }
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';

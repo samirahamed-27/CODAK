@@ -16,6 +16,8 @@ export interface AwardXpResult {
   xpAwarded?: number;
   newTotal?: number;
   eventId?: string | null;
+  reason?: string;
+  message?: string;
   error?: string;
   statusCode?: number;
 }
@@ -163,14 +165,23 @@ export async function awardXpAction(input: AwardXpInput): Promise<AwardXpResult>
 
   const result = rpcResult as {
     status: 'awarded' | 'duplicate' | 'limit_reached' | 'rule_inactive' | 'rule_not_found' | 'student_not_found';
+    reason?: string;
     xp_awarded: number;
     new_total: number;
     event_id: string | null;
   };
 
+  const friendlyMessage =
+    result.status === 'limit_reached'
+      ? 'Daily XP limit reached. Great work today! Come back tomorrow to earn more XP.'
+      : undefined;
+
   return {
     success: result.status === 'awarded',
     status: result.status,
+    reason: result.reason,
+    message: friendlyMessage,
+    error: friendlyMessage,
     xpAwarded: result.xp_awarded,
     newTotal: Number(result.new_total),
     eventId: result.event_id,
