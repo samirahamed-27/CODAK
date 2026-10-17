@@ -27,13 +27,30 @@ const CODEMONS = [
         secondary: '#9b51e0',
         dark: '#35084a',
         glow: '#ff1744'
-      }
+      },
+      description: 'A towering serpentine glitch dino with blazing syntax horns and an insatiable infinite recursion loop.',
+      moves: [
+        { name: 'Infinite Recursion', power: 18, type: 'Glitch' },
+        { name: 'Stack Overflow Flame', power: 20, type: 'Glitch' },
+        { name: 'Unhandled Exception', power: 16, type: 'Glitch' },
+        { name: 'Race Condition Burn', power: 19, type: 'Glitch' },
+        { name: 'Kernel Panic Pyro', power: 20, type: 'Glitch' },
+        { name: 'Indentation Shock', power: 15, type: 'Glitch' },
+        { name: 'Memory Spike Claws', power: 17, type: 'Glitch' },
+        { name: 'Bytecode Corruption', power: 18, type: 'Glitch' }
+      ]
     },
     moves: [
       { name: 'Indent Zap', power: 25, type: 'Python', accuracy: 0.95 },
       { name: 'List Slicing', power: 30, type: 'Python', accuracy: 0.90 },
       { name: 'Try/Except Shield', power: 0, heal: 25, type: 'Support', accuracy: 1.0 },
-      { name: 'Async Bolt', power: 45, type: 'Python', accuracy: 0.80 }
+      { name: 'Async Bolt', power: 45, type: 'Python', accuracy: 0.80 },
+      { name: 'Lambda Strike', power: 32, type: 'Python', accuracy: 0.90 },
+      { name: 'List Comprehension', power: 38, type: 'Python', accuracy: 0.85 },
+      { name: 'Generator Surge', power: 35, type: 'Python', accuracy: 0.90 },
+      { name: 'GIL Overdrive', power: 48, type: 'Python', accuracy: 0.75 },
+      { name: 'Decorator Blitz', power: 40, type: 'Python', accuracy: 0.85 },
+      { name: 'Dunder Smash', power: 50, type: 'Python', accuracy: 0.70 }
     ]
   },
   {
@@ -56,13 +73,30 @@ const CODEMONS = [
         secondary: '#8a2be2',
         dark: '#260033',
         glow: '#ea80fc'
-      }
+      },
+      description: 'An unhandled promise reaper shrouded in cyclic closures and spectral callback doom.',
+      moves: [
+        { name: 'Undefined Is Not A Function', power: 20, type: 'Glitch' },
+        { name: 'Uncaught Promise Terror', power: 18, type: 'Glitch' },
+        { name: 'Type Coercion Doom', power: 17, type: 'Glitch' },
+        { name: 'Cyclic Dependency', power: 19, type: 'Glitch' },
+        { name: 'Garbage Collector Feast', power: 16, type: 'Glitch' },
+        { name: 'Call Stack Meltdown', power: 20, type: 'Glitch' },
+        { name: 'Memory Leak Haunt', power: 18, type: 'Glitch' },
+        { name: 'NaN Phantom Strike', power: 15, type: 'Glitch' }
+      ]
     },
     moves: [
       { name: 'Promise Surge', power: 28, type: 'JavaScript', accuracy: 0.95 },
       { name: 'Event Loop', power: 34, type: 'JavaScript', accuracy: 0.85 },
       { name: 'Strict Mode', power: 0, heal: 20, type: 'Support', accuracy: 1.0 },
-      { name: 'Callback Storm', power: 46, type: 'JavaScript', accuracy: 0.80 }
+      { name: 'Callback Storm', power: 46, type: 'JavaScript', accuracy: 0.80 },
+      { name: 'Prototype Pierce', power: 30, type: 'JavaScript', accuracy: 0.90 },
+      { name: 'Destructure Jab', power: 33, type: 'JavaScript', accuracy: 0.88 },
+      { name: 'V8 Ignition', power: 42, type: 'JavaScript', accuracy: 0.82 },
+      { name: 'Closure Trap', power: 36, type: 'JavaScript', accuracy: 0.86 },
+      { name: 'Async/Await Rush', power: 40, type: 'JavaScript', accuracy: 0.85 },
+      { name: 'DOM Cataclysm', power: 52, type: 'JavaScript', accuracy: 0.70 }
     ]
   },
   {
@@ -85,13 +119,30 @@ const CODEMONS = [
         secondary: '#6a1b9a',
         dark: '#1a0033',
         glow: '#ff5252'
-      }
+      },
+      description: 'A hulking behemoth of corrupted heap memory and jagged dangling-pointer claws.',
+      moves: [
+        { name: 'Dangling Pointer Jab', power: 17, type: 'Glitch' },
+        { name: 'Segmentation Fault Slam', power: 20, type: 'Glitch' },
+        { name: 'Double Free Devastation', power: 19, type: 'Glitch' },
+        { name: 'Null Pointer Derelict', power: 18, type: 'Glitch' },
+        { name: 'Memory Corruption Vine', power: 16, type: 'Glitch' },
+        { name: 'Strict Aliasing Strike', power: 17, type: 'Glitch' },
+        { name: 'Heap Spray Stampede', power: 20, type: 'Glitch' },
+        { name: 'Buffer Overflow Crush', power: 19, type: 'Glitch' }
+      ]
     },
     moves: [
       { name: 'Pointer Jab', power: 22, type: 'C++', accuracy: 0.95 },
       { name: 'Vector Smash', power: 30, type: 'C++', accuracy: 0.85 },
       { name: 'Malloc Fortify', power: 0, heal: 35, type: 'Support', accuracy: 1.0 },
-      { name: 'Kernel Blast', power: 42, type: 'C++', accuracy: 0.75 }
+      { name: 'Kernel Blast', power: 42, type: 'C++', accuracy: 0.75 },
+      { name: 'Template Fusion', power: 36, type: 'C++', accuracy: 0.85 },
+      { name: 'Destructor Crush', power: 44, type: 'C++', accuracy: 0.80 },
+      { name: 'Const Ref Pierce', power: 28, type: 'C++', accuracy: 0.92 },
+      { name: 'RAII Bulwark', power: 0, heal: 40, type: 'Support', accuracy: 1.0 },
+      { name: 'Direct Memory Poke', power: 38, type: 'C++', accuracy: 0.85 },
+      { name: 'Zero Overhead Slam', power: 50, type: 'C++', accuracy: 0.70 }
     ]
   }
 ];
@@ -119,13 +170,30 @@ const ENEMY_BUGMON = {
       secondary: '#9c27b0',
       dark: '#1f002b',
       glow: '#ff0055'
-    }
+    },
+    description: 'The prime anomaly: a rogue kernel glitch that consumes unallocated memory blocks.',
+    moves: [
+      { name: 'Fatal Segfault Apex', power: 20, type: 'Glitch' },
+      { name: 'Kernel Panic Apocalypse', power: 20, type: 'Glitch' },
+      { name: 'Heap Overrun Frenzy', power: 19, type: 'Glitch' },
+      { name: 'Null Pointer Oblivion', power: 20, type: 'Glitch' },
+      { name: 'Stack Corruption Nova', power: 19, type: 'Glitch' },
+      { name: 'Out Of Bounds Devastation', power: 18, type: 'Glitch' },
+      { name: 'Zombie Process Swarm', power: 17, type: 'Glitch' },
+      { name: 'Hardware Interruption', power: 20, type: 'Glitch' }
+    ]
   },
   moves: [
-    { name: 'Segfault Slam', power: 26, type: 'Dark' },
-    { name: 'Memory Leak', power: 32, type: 'Dark' },
-    { name: 'Infinite Loop', power: 40, type: 'Dark' },
-    { name: 'Undefined Crush', power: 48, type: 'Dark' }
+    { name: 'Segfault Slam', power: 20, type: 'Dark' },
+    { name: 'Memory Leak Siphon', power: 18, type: 'Dark' },
+    { name: 'Infinite Loop Trap', power: 19, type: 'Dark' },
+    { name: 'Undefined Crush', power: 17, type: 'Dark' },
+    { name: 'Core Dump Catastrophe', power: 20, type: 'Dark' },
+    { name: 'Zero Day Exploit', power: 19, type: 'Dark' },
+    { name: 'Byte Corruption Shock', power: 16, type: 'Dark' },
+    { name: 'Bus Error Blast', power: 18, type: 'Dark' },
+    { name: 'Kernel Trap Wave', power: 17, type: 'Dark' },
+    { name: 'Deadlock Strangle', power: 20, type: 'Dark' }
   ]
 };
 

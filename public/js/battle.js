@@ -72,18 +72,141 @@ const SPRITE_BUGMON_FRONT = [
   [0, 0, 0, 10, 1, 10, 0, 0, 0, 0, 10, 1, 10, 0, 0, 0],
   [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
   [0, 0, 0, 1, 10, 10, 10, 10, 10, 10, 10, 10, 1, 0, 0, 0],
-  [0, 0, 1, 10, 5, 5, 10, 10, 10, 5, 5, 10, 1, 0, 0],
-  [0, 0, 1, 10, 5, 1, 10, 10, 10, 5, 1, 10, 1, 0, 0],
-  [0, 1, 1, 10, 10, 10, 8, 8, 10, 10, 10, 10, 1, 1, 0],
-  [1, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10, 1],
-  [1, 10, 1, 10, 10, 10, 10, 10, 10, 10, 10, 1, 10, 1],
-  [0, 1, 1, 10, 1, 10, 1, 1, 10, 1, 10, 1, 1, 0],
-  [0, 0, 1, 10, 10, 10, 10, 10, 10, 10, 10, 1, 0, 0],
-  [0, 0, 0, 1, 10, 10, 10, 10, 10, 10, 1, 0, 0, 0],
-  [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0],
-  [0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0],
-  [1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1]
+  [0, 0, 1, 10, 5, 5, 10, 10, 10, 5, 5, 10, 1, 0, 0, 0],
+  [0, 0, 1, 10, 5, 1, 10, 10, 10, 5, 1, 10, 1, 0, 0, 0],
+  [0, 1, 1, 10, 10, 10, 8, 8, 10, 10, 10, 10, 1, 1, 0, 0],
+  [1, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 10, 1, 0],
+  [1, 10, 1, 10, 10, 10, 10, 10, 10, 10, 10, 1, 10, 1, 0, 0],
+  [0, 1, 1, 10, 1, 10, 1, 1, 10, 1, 10, 1, 1, 0, 0, 0],
+  [0, 0, 1, 10, 10, 10, 10, 10, 10, 10, 10, 1, 0, 0, 0, 0],
+  [0, 0, 0, 1, 10, 10, 10, 10, 10, 10, 1, 0, 0, 0, 0, 0],
+  [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
+  [0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0],
+  [1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0]
 ];
+
+// Pyrawr Front View: Dragon striker with golden scales and blue crest
+const SPRITE_PYRAWR_FRONT = [
+  [0, 0, 0, 0, 12, 12, 0, 0, 0, 0, 12, 12, 0, 0, 0, 0],
+  [0, 0, 0, 12, 8, 8, 12, 0, 0, 12, 8, 8, 12, 0, 0, 0],
+  [0, 0, 12, 8, 8, 8, 8, 12, 12, 8, 8, 8, 8, 12, 0, 0],
+  [0, 0, 1, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 1, 0, 0],
+  [0, 1, 8, 5, 1, 8, 8, 8, 8, 8, 8, 1, 5, 8, 1, 0],
+  [0, 1, 8, 1, 1, 8, 8, 8, 8, 8, 8, 1, 1, 8, 1, 0],
+  [0, 1, 8, 8, 8, 8, 10, 10, 10, 10, 8, 8, 8, 8, 1, 0],
+  [0, 0, 1, 8, 8, 10, 1, 1, 1, 1, 10, 8, 8, 1, 0, 0],
+  [0, 0, 1, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 1, 0, 0],
+  [0, 1, 8, 8, 12, 12, 12, 12, 12, 12, 12, 12, 8, 8, 1, 0],
+  [0, 1, 8, 12, 1, 12, 12, 12, 12, 12, 1, 12, 8, 8, 1, 0],
+  [0, 1, 8, 12, 12, 12, 12, 12, 12, 12, 12, 12, 8, 8, 1, 0],
+  [0, 0, 1, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 1, 0, 0],
+  [0, 0, 1, 8, 1, 0, 0, 0, 0, 0, 0, 1, 8, 1, 0, 0],
+  [0, 1, 8, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 8, 1, 0],
+  [0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0]
+];
+
+// Jaskull Front View: Amber floating skull with glowing eyes and energy aura
+const SPRITE_JASKULL_FRONT = [
+  [0, 0, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 0, 0],
+  [0, 0, 0, 8, 8, 0, 0, 0, 0, 0, 0, 8, 8, 0, 0, 0],
+  [0, 0, 0, 1, 5, 5, 5, 5, 5, 5, 5, 5, 1, 0, 0, 0],
+  [0, 0, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1, 0, 0],
+  [0, 1, 5, 5, 1, 1, 5, 5, 5, 5, 1, 1, 5, 5, 1, 0],
+  [0, 1, 5, 1, 8, 8, 1, 5, 5, 1, 8, 8, 1, 5, 1, 0],
+  [0, 1, 5, 1, 8, 8, 1, 5, 5, 1, 8, 8, 1, 5, 1, 0],
+  [0, 1, 5, 5, 1, 1, 5, 5, 5, 5, 1, 1, 5, 5, 1, 0],
+  [0, 0, 1, 5, 5, 5, 5, 1, 1, 5, 5, 5, 5, 1, 0, 0],
+  [0, 0, 0, 1, 5, 5, 1, 8, 8, 1, 5, 5, 1, 0, 0, 0],
+  [0, 0, 0, 1, 5, 1, 5, 1, 1, 5, 1, 5, 1, 0, 0, 0],
+  [0, 0, 0, 1, 5, 1, 5, 1, 1, 5, 1, 5, 1, 0, 0, 0],
+  [0, 0, 1, 8, 8, 1, 1, 1, 1, 1, 1, 8, 8, 1, 0, 0],
+  [0, 1, 8, 0, 8, 8, 0, 0, 0, 0, 8, 8, 0, 8, 1, 0],
+  [0, 1, 0, 0, 0, 8, 8, 0, 0, 8, 8, 0, 0, 0, 1, 0],
+  [0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0]
+];
+
+// Cplusaur Front View: Armored C++ tank beast with pointer carapace
+const SPRITE_CPLUSAUR_FRONT = [
+  [0, 0, 0, 0, 0, 12, 12, 12, 12, 12, 12, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 12, 13, 13, 13, 13, 13, 13, 12, 0, 0, 0, 0],
+  [0, 0, 0, 1, 3, 3, 3, 3, 3, 3, 3, 3, 1, 0, 0, 0],
+  [0, 0, 1, 3, 4, 4, 3, 3, 3, 3, 4, 4, 3, 1, 0, 0],
+  [0, 1, 3, 4, 10, 1, 4, 3, 3, 4, 10, 1, 4, 3, 1, 0],
+  [0, 1, 3, 4, 1, 1, 4, 3, 3, 4, 1, 1, 4, 3, 1, 0],
+  [0, 1, 3, 3, 4, 4, 3, 3, 3, 3, 4, 4, 3, 3, 1, 0],
+  [0, 1, 3, 3, 3, 3, 1, 1, 1, 1, 3, 3, 3, 3, 1, 0],
+  [0, 1, 12, 1, 3, 1, 5, 5, 5, 5, 1, 3, 1, 12, 1, 0],
+  [1, 12, 12, 1, 3, 3, 1, 1, 1, 1, 3, 3, 1, 12, 12, 1],
+  [1, 12, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 12, 1],
+  [0, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 1, 0],
+  [0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0],
+  [0, 1, 4, 4, 1, 0, 0, 0, 0, 0, 0, 1, 4, 4, 1, 0],
+  [0, 1, 4, 4, 1, 0, 0, 0, 0, 0, 0, 1, 4, 4, 1, 0],
+  [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0]
+];
+
+// Bug-Pyrawr Variant (Front View): Corrupted glitch dino with blazing horns and bug mandibles
+const SPRITE_BUG_PYRAWR_FRONT = [
+  [0, 10, 0, 0, 4, 4, 0, 0, 0, 0, 4, 4, 0, 0, 10, 0],
+  [0, 10, 10, 0, 10, 10, 10, 0, 0, 10, 10, 10, 0, 10, 10, 0],
+  [0, 0, 10, 1, 10, 8, 10, 10, 10, 10, 8, 10, 1, 10, 0, 0],
+  [0, 0, 1, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 1, 0, 0],
+  [0, 1, 10, 5, 8, 10, 10, 10, 10, 10, 10, 8, 5, 10, 1, 0],
+  [0, 1, 10, 8, 1, 10, 10, 10, 10, 10, 10, 1, 8, 10, 1, 0],
+  [1, 4, 10, 10, 10, 10, 1, 1, 1, 1, 10, 10, 10, 10, 4, 1],
+  [1, 4, 1, 10, 10, 1, 5, 5, 5, 5, 1, 10, 10, 1, 4, 1],
+  [0, 1, 1, 10, 10, 1, 1, 1, 1, 1, 1, 10, 10, 1, 1, 0],
+  [0, 1, 10, 12, 13, 13, 8, 8, 8, 8, 13, 13, 12, 10, 1, 0],
+  [1, 10, 10, 13, 1, 13, 8, 5, 5, 8, 13, 1, 13, 10, 10, 1],
+  [1, 10, 1, 13, 13, 13, 8, 8, 8, 8, 13, 13, 13, 1, 10, 1],
+  [0, 1, 1, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 1, 1, 0],
+  [0, 0, 1, 10, 1, 0, 0, 0, 0, 0, 0, 1, 10, 1, 0, 0],
+  [0, 1, 10, 10, 1, 0, 0, 0, 0, 0, 0, 1, 10, 10, 1, 0],
+  [0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0]
+];
+
+// Bug-Jaskull Variant (Front View): Gigantic corrupted glitch skull with crimson sockets and insect mandibles
+const SPRITE_BUG_JASKULL_FRONT = [
+  [10, 0, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 0, 10],
+  [0, 10, 0, 4, 4, 0, 0, 0, 0, 0, 0, 4, 4, 0, 10, 0],
+  [0, 0, 10, 1, 7, 7, 7, 7, 7, 7, 7, 7, 1, 10, 0, 0],
+  [0, 1, 7, 7, 12, 12, 7, 7, 7, 7, 12, 12, 7, 7, 1, 0],
+  [0, 1, 7, 12, 8, 8, 12, 7, 7, 12, 8, 8, 12, 7, 1, 0],
+  [1, 4, 7, 12, 5, 8, 12, 7, 7, 12, 8, 5, 12, 7, 4, 1],
+  [1, 4, 7, 7, 12, 12, 7, 7, 7, 7, 12, 12, 7, 7, 4, 1],
+  [0, 1, 7, 7, 7, 7, 7, 8, 8, 7, 7, 7, 7, 7, 1, 0],
+  [0, 0, 1, 7, 7, 7, 1, 1, 1, 1, 7, 7, 7, 1, 0, 0],
+  [0, 0, 1, 12, 12, 1, 5, 5, 5, 5, 1, 12, 12, 1, 0, 0],
+  [0, 1, 12, 1, 12, 1, 1, 1, 1, 1, 1, 12, 1, 12, 1, 0],
+  [0, 1, 12, 1, 12, 1, 1, 1, 1, 1, 1, 12, 1, 12, 1, 0],
+  [1, 10, 1, 8, 8, 1, 4, 4, 4, 4, 1, 8, 8, 1, 10, 1],
+  [1, 10, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 10, 1],
+  [0, 1, 10, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 10, 1, 0],
+  [0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0]
+];
+
+// Bug-Cplusaur Variant (Front View): Massive corrupted tank beast with bug pincers and crimson core
+const SPRITE_BUG_CPLUSAUR_FRONT = [
+  [10, 0, 0, 0, 12, 12, 12, 12, 12, 12, 12, 12, 0, 0, 0, 10],
+  [0, 10, 0, 12, 7, 7, 7, 7, 7, 7, 7, 7, 12, 0, 10, 0],
+  [0, 0, 10, 1, 13, 13, 13, 13, 13, 13, 13, 13, 1, 10, 0, 0],
+  [0, 1, 13, 7, 7, 7, 13, 13, 13, 13, 7, 7, 7, 13, 1, 0],
+  [1, 13, 7, 8, 5, 8, 7, 13, 13, 7, 8, 5, 8, 7, 13, 1],
+  [1, 10, 7, 8, 1, 8, 7, 13, 13, 7, 8, 1, 8, 7, 10, 1],
+  [1, 10, 13, 7, 7, 7, 13, 13, 13, 13, 7, 7, 7, 13, 10, 1],
+  [0, 1, 13, 13, 13, 13, 1, 1, 1, 1, 13, 13, 13, 13, 1, 0],
+  [1, 10, 1, 13, 13, 1, 8, 8, 8, 8, 1, 13, 13, 1, 10, 1],
+  [1, 10, 10, 1, 13, 1, 5, 5, 5, 5, 1, 13, 1, 10, 10, 1],
+  [0, 1, 10, 1, 13, 13, 1, 1, 1, 1, 13, 13, 1, 10, 1, 0],
+  [0, 1, 1, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 1, 1, 0],
+  [0, 0, 1, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 1, 0, 0],
+  [0, 1, 10, 10, 1, 0, 0, 0, 0, 0, 0, 1, 10, 10, 1, 0],
+  [1, 10, 10, 10, 1, 0, 0, 0, 0, 0, 0, 1, 10, 10, 10, 1],
+  [0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0]
+];
+
+// Bug-Bugmon Prime Variant (Front View): Prime anomaly rogue glitch bugmon
+const SPRITE_BUG_BUGMON_FRONT = SPRITE_BUGMON_FRONT;
 
 // Pyrawr Player (Back View): Python Yellow / Blue Crest & Armored Spine
 const SPRITE_PYRAWR_BACK = [
@@ -92,17 +215,17 @@ const SPRITE_PYRAWR_BACK = [
   [0, 0, 0, 8, 1, 8, 8, 0, 0, 12, 1, 12, 12, 0, 0, 0],
   [0, 0, 0, 0, 8, 8, 8, 8, 12, 12, 12, 12, 0, 0, 0, 0],
   [0, 0, 0, 1, 8, 8, 8, 8, 12, 12, 12, 12, 1, 0, 0, 0],
-  [0, 0, 1, 8, 8, 8, 12, 12, 12, 12, 12, 12, 1, 0, 0],
-  [0, 0, 1, 8, 8, 12, 1, 1, 12, 12, 12, 12, 1, 0, 0],
-  [0, 1, 8, 8, 12, 12, 1, 1, 12, 12, 12, 12, 1, 0],
-  [0, 1, 8, 8, 12, 12, 12, 12, 12, 12, 13, 13, 1, 0],
-  [0, 1, 8, 12, 12, 12, 1, 1, 12, 13, 13, 13, 1, 0],
-  [0, 1, 12, 12, 12, 12, 1, 1, 13, 13, 13, 13, 1, 0],
-  [0, 0, 1, 12, 12, 13, 13, 13, 13, 13, 13, 1, 0, 0],
-  [0, 0, 1, 13, 13, 13, 13, 13, 13, 13, 13, 1, 0, 0],
-  [0, 1, 0, 1, 13, 13, 0, 0, 13, 13, 1, 0, 1, 0],
-  [0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0],
-  [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1]
+  [0, 0, 1, 8, 8, 8, 12, 12, 12, 12, 12, 12, 1, 0, 0, 0],
+  [0, 0, 1, 8, 8, 12, 1, 1, 12, 12, 12, 12, 1, 0, 0, 0],
+  [0, 1, 8, 8, 12, 12, 1, 1, 12, 12, 12, 12, 1, 0, 0, 0],
+  [0, 1, 8, 8, 12, 12, 12, 12, 12, 12, 13, 13, 1, 0, 0, 0],
+  [0, 1, 8, 12, 12, 12, 1, 1, 12, 13, 13, 13, 1, 0, 0, 0],
+  [0, 1, 12, 12, 12, 12, 1, 1, 13, 13, 13, 13, 1, 0, 0, 0],
+  [0, 0, 1, 12, 12, 13, 13, 13, 13, 13, 13, 1, 0, 0, 0, 0],
+  [0, 0, 1, 13, 13, 13, 13, 13, 13, 13, 13, 1, 0, 0, 0, 0],
+  [0, 1, 0, 1, 13, 13, 0, 0, 13, 13, 1, 0, 1, 0, 0, 0],
+  [0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0],
+  [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0]
 ];
 
 // Jaskull Player (Back View): JavaScript Amber Ghost Skull & Energy Trails
@@ -112,17 +235,17 @@ const SPRITE_JASKULL_BACK = [
   [0, 0, 0, 0, 8, 8, 0, 0, 0, 0, 8, 8, 0, 0, 0, 0],
   [0, 0, 0, 1, 5, 5, 5, 5, 5, 5, 5, 5, 1, 0, 0, 0],
   [0, 0, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1, 0, 0],
-  [0, 1, 5, 5, 5, 5, 4, 4, 4, 5, 5, 5, 5, 1, 0],
-  [0, 1, 5, 5, 5, 4, 4, 4, 4, 4, 5, 5, 5, 1, 0],
-  [0, 1, 5, 5, 5, 4, 4, 1, 4, 4, 5, 5, 5, 1, 0],
-  [0, 1, 5, 5, 5, 5, 4, 4, 4, 5, 5, 5, 5, 1, 0],
-  [0, 0, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1, 0, 0],
-  [0, 0, 0, 1, 5, 1, 5, 1, 5, 1, 5, 1, 0, 0, 0],
-  [0, 0, 0, 1, 8, 8, 8, 8, 8, 8, 8, 1, 0, 0, 0],
-  [0, 0, 1, 8, 8, 8, 8, 8, 8, 8, 8, 8, 1, 0, 0],
-  [0, 1, 8, 8, 0, 8, 8, 8, 8, 0, 8, 8, 1, 0],
-  [0, 1, 8, 0, 0, 0, 8, 8, 0, 0, 0, 8, 1, 0],
-  [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]
+  [0, 1, 5, 5, 5, 5, 4, 4, 4, 5, 5, 5, 5, 1, 0, 0],
+  [0, 1, 5, 5, 5, 4, 4, 4, 4, 4, 5, 5, 5, 1, 0, 0],
+  [0, 1, 5, 5, 5, 4, 4, 1, 4, 4, 5, 5, 5, 1, 0, 0],
+  [0, 1, 5, 5, 5, 5, 4, 4, 4, 5, 5, 5, 5, 1, 0, 0],
+  [0, 0, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1, 0, 0, 0],
+  [0, 0, 0, 1, 5, 1, 5, 1, 5, 1, 5, 1, 0, 0, 0, 0],
+  [0, 0, 0, 1, 8, 8, 8, 8, 8, 8, 8, 1, 0, 0, 0, 0],
+  [0, 0, 1, 8, 8, 8, 8, 8, 8, 8, 8, 8, 1, 0, 0, 0],
+  [0, 1, 8, 8, 0, 8, 8, 8, 8, 0, 8, 8, 1, 0, 0, 0],
+  [0, 1, 8, 0, 0, 0, 8, 8, 0, 0, 0, 8, 1, 0, 0, 0],
+  [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]
 ];
 
 // Cplusaur Player (Back View): C++ Steel-Blue Heavy Armor & Pointer Crest
@@ -133,16 +256,16 @@ const SPRITE_CPLUSAUR_BACK = [
   [0, 0, 0, 0, 12, 12, 12, 12, 12, 12, 12, 12, 0, 0, 0, 0],
   [0, 0, 0, 1, 3, 3, 3, 3, 3, 3, 3, 3, 1, 0, 0, 0],
   [0, 0, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1, 0, 0],
-  [0, 1, 3, 3, 12, 12, 3, 3, 12, 12, 3, 3, 3, 1, 0],
-  [0, 1, 3, 12, 12, 12, 12, 12, 12, 12, 12, 3, 3, 1, 0],
-  [0, 1, 3, 12, 12, 1, 12, 12, 1, 12, 12, 3, 3, 1, 0],
-  [0, 1, 3, 3, 12, 12, 12, 12, 12, 12, 3, 3, 3, 1, 0],
-  [0, 1, 3, 3, 3, 3, 12, 12, 3, 3, 3, 3, 3, 1, 0],
-  [0, 0, 1, 2, 2, 3, 3, 3, 3, 2, 2, 2, 1, 0, 0],
-  [0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0],
-  [0, 1, 4, 4, 1, 0, 0, 0, 0, 1, 4, 4, 1, 0],
-  [0, 1, 4, 4, 1, 0, 0, 0, 0, 1, 4, 4, 1, 0],
-  [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0]
+  [0, 1, 3, 3, 12, 12, 3, 3, 12, 12, 3, 3, 3, 1, 0, 0],
+  [0, 1, 3, 12, 12, 12, 12, 12, 12, 12, 12, 3, 3, 1, 0, 0],
+  [0, 1, 3, 12, 12, 1, 12, 12, 1, 12, 12, 3, 3, 1, 0, 0],
+  [0, 1, 3, 3, 12, 12, 12, 12, 12, 12, 3, 3, 3, 1, 0, 0],
+  [0, 1, 3, 3, 3, 3, 12, 12, 3, 3, 3, 3, 3, 1, 0, 0],
+  [0, 0, 1, 2, 2, 3, 3, 3, 3, 2, 2, 2, 1, 0, 0, 0],
+  [0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0],
+  [0, 1, 4, 4, 1, 0, 0, 0, 0, 1, 4, 4, 1, 0, 0, 0],
+  [0, 1, 4, 4, 1, 0, 0, 0, 0, 1, 4, 4, 1, 0, 0, 0],
+  [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0]
 ];
 
 // Helper to draw a pixel sprite from an array
@@ -631,11 +754,53 @@ function renderBattleScene(ctx, animTick = 0) {
   // -------------------------------------------------------------------------
   if (battleVisualState.enemy.visible) {
     const enemyBob = Math.sin(animTick * 0.08) * 2;
-    const enemyX = 110 + battleVisualState.enemy.offsetX;
-    const enemyY = 24 + enemyBob + battleVisualState.enemy.offsetY;
+    const enemy = (window.gameState && window.gameState.enemy) || { id: 'bugmon', name: 'Bugmon' };
+    const eId = ((enemy.id || enemy.name || '') + '').toLowerCase();
+
+    // Pick sprite grid based on enemy identity and Bugmon status
+    let enemyGrid;
+    if (isBugmon) {
+      if (eId.includes('pyrawr')) {
+        enemyGrid = SPRITE_BUG_PYRAWR_FRONT;
+      } else if (eId.includes('jaskull')) {
+        enemyGrid = SPRITE_BUG_JASKULL_FRONT;
+      } else if (eId.includes('cplusaur')) {
+        enemyGrid = SPRITE_BUG_CPLUSAUR_FRONT;
+      } else {
+        enemyGrid = SPRITE_BUG_BUGMON_FRONT;
+      }
+    } else {
+      if (eId.includes('pyrawr')) {
+        enemyGrid = SPRITE_PYRAWR_FRONT;
+      } else if (eId.includes('jaskull')) {
+        enemyGrid = SPRITE_JASKULL_FRONT;
+      } else if (eId.includes('cplusaur')) {
+        enemyGrid = SPRITE_CPLUSAUR_FRONT;
+      } else {
+        enemyGrid = SPRITE_BUGMON_FRONT;
+      }
+    }
+
+    // Bugmons are visibly BIGGER than usual: scale 2.6x (~42x42px vs standard 32x32px)
+    const enemyPixelSize = isBugmon ? 2.6 : 2;
+    const enemyBaseX = isBugmon ? 104 : 110;
+    const enemyBaseY = isBugmon ? 16 : 24;
+
+    const enemyX = enemyBaseX + battleVisualState.enemy.offsetX;
+    const enemyY = enemyBaseY + enemyBob + battleVisualState.enemy.offsetY;
+
+    // Draw enlarged boss ground shadow underneath Bugmon variants
+    if (isBugmon) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(84, 13, 26, 0.7)';
+      ctx.beginPath();
+      ctx.ellipse(enemyBaseX + 21, 57, 22, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
 
     const enemyPalette = isBugmon ? BUGMON_PALETTE : SPRITE_PALETTE;
-    drawPixelSprite(ctx, SPRITE_BUGMON_FRONT, enemyX, enemyY, 2, enemyPalette);
+    drawPixelSprite(ctx, enemyGrid, enemyX, enemyY, enemyPixelSize, enemyPalette);
   }
 
   // -------------------------------------------------------------------------
@@ -965,7 +1130,6 @@ function setCodePanelEnemyTurnUI(isEnemyTurn) {
       });
     }
   } else {
-    if (btnHolyHeal) btnHolyHeal.disabled = false;
     if (pickerBadge) {
       pickerBadge.textContent = 'SELECT DIFFICULTY TO ATTACK';
       pickerBadge.className = 'section-badge font-code text-yellow';
@@ -974,6 +1138,7 @@ function setCodePanelEnemyTurnUI(isEnemyTurn) {
       consoleBadge.textContent = 'SYS: READY';
       consoleBadge.className = 'section-badge font-code text-green';
     }
+    if (btnHolyHeal) btnHolyHeal.disabled = false;
     if (pickerContainer) {
       const cards = pickerContainer.querySelectorAll('.picker-card');
       cards.forEach((c) => {
@@ -1173,12 +1338,24 @@ async function startEnemyTurn(isBonusDamage = false) {
     return { outcome: 'aborted' };
   }
 
+  // Pick dynamic move name from active enemy / Bugmon move list
+  let moveName = isBugmon ? 'Glitch Strike' : 'Segfault Slam';
+  const movePool = (isBugmon && enemy.bugmonVariant && Array.isArray(enemy.bugmonVariant.moves) && enemy.bugmonVariant.moves.length > 0)
+    ? enemy.bugmonVariant.moves
+    : (Array.isArray(enemy.moves) && enemy.moves.length > 0 ? enemy.moves : null);
+  if (movePool && movePool.length > 0) {
+    const picked = movePool[Math.floor(Math.random() * movePool.length)];
+    if (picked && picked.name) {
+      moveName = picked.name;
+    }
+  }
+
   if (isBonusDamage) {
-    await triggerMsg(`${enemy.name.toUpperCase()} strikes with 50% BONUS DAMAGE (${enemyDmg} DMG)!`);
+    await triggerMsg(`${enemy.name.toUpperCase()} strikes with 50% BONUS DAMAGE via ${moveName} (${enemyDmg} DMG)!`);
   } else if (isBugmon) {
-    await triggerMsg(`${enemy.name.toUpperCase()} attacked with Glitch Strike (${enemyDmg} DMG)!`);
+    await triggerMsg(`${enemy.name.toUpperCase()} unleashed ${moveName} (${enemyDmg} DMG)!`);
   } else {
-    await triggerMsg(`${enemy.name.toUpperCase()} countered with Segfault Slam (${enemyDmg} DMG)!`);
+    await triggerMsg(`${enemy.name.toUpperCase()} countered with ${moveName} (${enemyDmg} DMG)!`);
   }
 
   // 3. Enemy attack animations
@@ -1290,7 +1467,15 @@ window.BattleEngine = {
 
   // Sprites
   SPRITE_PALETTE,
+  BUGMON_PALETTE,
   SPRITE_BUGMON_FRONT,
+  SPRITE_PYRAWR_FRONT,
+  SPRITE_JASKULL_FRONT,
+  SPRITE_CPLUSAUR_FRONT,
+  SPRITE_BUG_PYRAWR_FRONT,
+  SPRITE_BUG_JASKULL_FRONT,
+  SPRITE_BUG_CPLUSAUR_FRONT,
+  SPRITE_BUG_BUGMON_FRONT,
   SPRITE_PYRAWR_BACK,
   SPRITE_JASKULL_BACK,
   SPRITE_CPLUSAUR_BACK,
