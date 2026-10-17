@@ -2,6 +2,7 @@
 
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { writeAuditLog } from '@/lib/audit-logs';
 
 export interface AwardXpInput {
   studentId: string;
@@ -175,6 +176,23 @@ export async function awardXpAction(input: AwardXpInput): Promise<AwardXpResult>
     result.status === 'limit_reached'
       ? 'Daily XP limit reached. Great work today! Come back tomorrow to earn more XP.'
       : undefined;
+
+  if (result.status === 'awarded') {
+    await writeAuditLog({
+      actorId: user.id,
+      action: 'manual_award_xp',
+      targetType: 'student',
+      targetId: input.studentId,
+      reason: `Manual XP award for ${input.actionType}`,
+      details: {
+        action_type: input.actionType,
+        extra_units: units,
+        reference_id: trimmedRef,
+        xp_awarded: result.xp_awarded,
+        event_id: result.event_id,
+      },
+    });
+  }
 
   return {
     success: result.status === 'awarded',

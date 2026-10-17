@@ -3,6 +3,7 @@
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { parseAndValidateQuestionsCsv } from '@/lib/csv-questions';
+import { writeAuditLog } from '@/lib/audit-logs';
 
 export interface ManualQuestionInput {
   subjectId?: string;
@@ -254,6 +255,14 @@ export async function approveQuestionAction(questionId: string) {
     return { success: false, statusCode: 500, error: error.message };
   }
 
+  await writeAuditLog({
+    actorId: auth.user.id,
+    action: 'approve_question',
+    targetType: 'question',
+    targetId: questionId,
+    reason: 'Faculty approved question for active pool',
+  });
+
   return { success: true, statusCode: 200 };
 }
 
@@ -287,6 +296,14 @@ export async function rejectQuestionAction(questionId: string, rejectionReason: 
   if (error) {
     return { success: false, statusCode: 500, error: error.message };
   }
+
+  await writeAuditLog({
+    actorId: auth.user.id,
+    action: 'reject_question',
+    targetType: 'question',
+    targetId: questionId,
+    reason: rejectionReason.trim(),
+  });
 
   return { success: true, statusCode: 200 };
 }

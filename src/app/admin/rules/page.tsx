@@ -6,6 +6,7 @@ import { Navbar } from '@/components/Navbar';
 import { createClient } from '@/lib/supabase/client';
 import { XpRule } from '@/types/database';
 import { Sliders, ArrowLeft, History, Check, X, AlertCircle, Edit2 } from 'lucide-react';
+import { updateXpRuleAction } from '@/app/actions/rules';
 
 interface RuleHistoryRow {
   id: string;
@@ -73,20 +74,18 @@ export default function AdminRulesPage() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    // Attempt direct update using authenticated client (RLS policy enforces get_my_role() = 'admin')
-    const { error } = await supabase
-      .from('xp_rules')
-      .update({
-        display_name: editingRule.display_name,
-        base_xp: Number(editingRule.base_xp),
-        extra_xp: Number(editingRule.extra_xp),
-        daily_limit: editingRule.daily_limit ? Number(editingRule.daily_limit) : null,
-        active: editingRule.active,
-      })
-      .eq('id', editingRule.id);
+    const res = await updateXpRuleAction({
+      id: editingRule.id,
+      displayName: editingRule.display_name,
+      baseXp: Number(editingRule.base_xp),
+      extraXp: Number(editingRule.extra_xp),
+      dailyLimit: editingRule.daily_limit ? Number(editingRule.daily_limit) : null,
+      active: editingRule.active,
+      reason: `Admin updated rule for ${editingRule.action_type}`,
+    });
 
-    if (error) {
-      setErrorMessage(error.message);
+    if (!res.success) {
+      setErrorMessage(res.error || 'Failed to update rule');
       setSaving(false);
     } else {
       setSuccessMessage(`Rule "${editingRule.action_type}" updated successfully! Change recorded in audit log.`);
