@@ -732,32 +732,358 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // VSCODE-LIKE CODE EDITOR CONTROLLER (AUTO-CLOSE, AUTO-INDENT, TABS & STATUS)
+  // -------------------------------------------------------------------------
+
+  // Auto-close pairs mapping
+  const AUTO_CLOSE_PAIRS = {
+    '(': ')',
+    '[': ']',
+    '{': '}',
+    '"': '"',
+    "'": "'",
+    '`': '`'
+  };
+
+  const CLOSING_CHARS = new Set([')', ']', '}', '"', "'", '`']);
+
+  // Updates Ln X, Col Y and selection count in the VSCode status bar
+  function updateCursorPos() {
+    if (!codeTextarea) return;
+    const pos = codeTextarea.selectionStart || 0;
+    const val = codeTextarea.value || '';
+    const lines = val.substring(0, pos).split('\n');
+    const lineNum = lines.length;
+    const colNum = lines[lines.length - 1].length + 1;
+
+    const cursorEl = document.getElementById('editor-cursor-pos');
+    if (cursorEl) {
+      cursorEl.textContent = `Ln ${lineNum}, Col ${colNum}`;
+    }
+
+    const selEl = document.getElementById('editor-selection-pos');
+    if (selEl) {
+      const selLen = Math.abs((codeTextarea.selectionEnd || 0) - (codeTextarea.selectionStart || 0));
+      selEl.textContent = selLen > 0 ? `(${selLen} selected)` : '';
+    }
+
+    // Keep active line in gutter highlighted
+    updateGutter(lineNum);
+  }
+
   // Gutter line numbers and scroll synchronization
-  function updateGutter() {
+  function updateGutter(activeLineNum) {
     if (!editorGutter || !codeTextarea) return;
-    const lines = (codeTextarea.value.split('\n').length) || 1;
-    editorGutter.textContent = Array.from({ length: lines }, (_, i) => i + 1).join('\n');
+    const val = codeTextarea.value || '';
+    const linesCount = (val.split('\n').length) || 1;
+    
+    // Determine active line if not explicitly passed
+    let activeLine = activeLineNum;
+    if (typeof activeLine !== 'number') {
+      const pos = codeTextarea.selectionStart || 0;
+      activeLine = (val.substring(0, pos).split('\n').length) || 1;
+    }
+
+    // Build line numbers HTML
+    let html = '';
+    for (let i = 1; i <= linesCount; i++) {
+      const isActive = i === activeLine;
+      html += `<div class="gutter-line ${isActive ? 'active' : ''}">${i}</div>`;
+    }
+    editorGutter.innerHTML = html;
     editorGutter.scrollTop = codeTextarea.scrollTop;
   }
 
+  // VSCode Undo/Redo stack for programmatic edits
+  const editorHistory = {
+    undoStack: [],
+    redoStack: [],
+    maxSize: 50,
+    push(val, start, end) {
+      if (this.undoStack.length > 0) {
+        const last = this.undoStack[this.undoStack.length - 1];
+        if (last.val === val) return;
+      }
+      this.undoStack.push({ val, start, end });
+      if (this.undoStack.length > this.maxSize) {
+        this.undoStack.shift();
+      }
+      this.redoStack = [];
+    },
+    undo(textarea) {
+      if (this.undoStack.length <= 1) return false;
+      const current = this.undoStack.pop();
+      this.redoStack.push(current);
+      const prev = this.undoStack[this.undoStack.length - 1];
+      textarea.value = prev.val;
+      textarea.selectionStart = prev.start;
+      textarea.selectionEnd = prev.end;
+      return true;
+    },
+    redo(textarea) {
+      if (this.redoStack.length === 0) return false;
+      const next = this.redoStack.pop();
+      this.undoStack.push(next);
+      textarea.value = next.val;
+      textarea.selectionStart = next.start;
+      textarea.selectionEnd = next.end;
+      return true;
+    }
+  };
+
   if (codeTextarea) {
-    codeTextarea.addEventListener('input', updateGutter);
+    // Record initial state
+    editorHistory.push(codeTextarea.value, 0, 0);
+
+    codeTextarea.addEventListener('input', () => {
+      editorHistory.push(codeTextarea.value, codeTextarea.selectionStart, codeTextarea.selectionEnd);
+      updateGutter();
+      updateCursorPos();
+    });
+
     codeTextarea.addEventListener('scroll', () => {
       if (editorGutter) {
         editorGutter.scrollTop = codeTextarea.scrollTop;
       }
     });
 
-    // Tab key inserts 2 spaces instead of changing focus
+    codeTextarea.addEventListener('click', updateCursorPos);
+    codeTextarea.addEventListener('keyup', (e) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.key)) {
+        updateCursorPos();
+      }
+    });
+    codeTextarea.addEventListener('select', updateCursorPos);
+
     codeTextarea.addEventListener('keydown', (e) => {
+      const start = codeTextarea.selectionStart;
+      const end = codeTextarea.selectionEnd;
+      const val = codeTextarea.value;
+      const hasSelection = start !== end;
+
+      // 1. Undo / Redo (Ctrl+Z / Cmd+Z, Ctrl+Y / Cmd+Shift+Z)
+      if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+        if (e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          if (e.shiftKey) {
+            editorHistory.redo(codeTextarea);
+          } else {
+            editorHistory.undo(codeTextarea);
+          }
+          updateGutter();
+          updateCursorPos();
+          return;
+        } else if (e.key.toLowerCase() === 'y') {
+          e.preventDefault();
+          editorHistory.redo(codeTextarea);
+          updateGutter();
+          updateCursorPos();
+          return;
+        }
+      }
+
+      // 2. Auto-close opening brackets & quotes: (, [, {, ", ', `
+      if (AUTO_CLOSE_PAIRS[e.key]) {
+        const openChar = e.key;
+        const closeChar = AUTO_CLOSE_PAIRS[openChar];
+
+        // 2a. Text is selected: wrap selection with pair!
+        if (hasSelection) {
+          e.preventDefault();
+          const selectedText = val.substring(start, end);
+          codeTextarea.value = val.substring(0, start) + openChar + selectedText + closeChar + val.substring(end);
+          codeTextarea.selectionStart = start + 1;
+          codeTextarea.selectionEnd = end + 1;
+          editorHistory.push(codeTextarea.value, codeTextarea.selectionStart, codeTextarea.selectionEnd);
+          updateGutter();
+          updateCursorPos();
+          return;
+        }
+
+        // 2b. Quotes: don't auto-close if cursor is immediately before an identifier character
+        if ((openChar === "'" || openChar === '"' || openChar === '`') && start < val.length) {
+          const nextChar = val[start];
+          if (/[a-zA-Z0-9_]/.test(nextChar)) {
+            // Let normal typing occur
+            return;
+          }
+        }
+
+        // 2c. Insert pair and position cursor inside: (|)
+        e.preventDefault();
+        codeTextarea.value = val.substring(0, start) + openChar + closeChar + val.substring(end);
+        codeTextarea.selectionStart = codeTextarea.selectionEnd = start + 1;
+        editorHistory.push(codeTextarea.value, codeTextarea.selectionStart, codeTextarea.selectionEnd);
+        updateGutter();
+        updateCursorPos();
+        return;
+      }
+
+      // 3. Overtyping closing characters: ), ], }, ", ', `
+      if (CLOSING_CHARS.has(e.key) && !hasSelection) {
+        if (start < val.length && val[start] === e.key) {
+          e.preventDefault();
+          codeTextarea.selectionStart = codeTextarea.selectionEnd = start + 1;
+          updateCursorPos();
+          return;
+        }
+
+        // Auto-dedent when typing closing bracket on a line that has only spaces
+        if (e.key === '}' || e.key === ']' || e.key === ')') {
+          const lastNl = val.lastIndexOf('\n', start - 1);
+          const lineStart = lastNl === -1 ? 0 : lastNl + 1;
+          const lineBefore = val.substring(lineStart, start);
+          if (lineBefore.length >= 2 && /^ +$/.test(lineBefore)) {
+            e.preventDefault();
+            // Dedent 2 spaces and insert closing bracket
+            codeTextarea.value = val.substring(0, start - 2) + e.key + val.substring(start);
+            codeTextarea.selectionStart = codeTextarea.selectionEnd = start - 1;
+            editorHistory.push(codeTextarea.value, codeTextarea.selectionStart, codeTextarea.selectionEnd);
+            updateGutter();
+            updateCursorPos();
+            return;
+          }
+        }
+      }
+
+      // 4. Backspace with empty pair: () -> backspace deletes both!
+      if (e.key === 'Backspace' && !hasSelection && start > 0 && start < val.length) {
+        const prev = val[start - 1];
+        const next = val[start];
+        const isPair = (
+          (prev === '(' && next === ')') ||
+          (prev === '[' && next === ']') ||
+          (prev === '{' && next === '}') ||
+          (prev === '"' && next === '"') ||
+          (prev === "'" && next === "'") ||
+          (prev === '`' && next === '`')
+        );
+        if (isPair) {
+          e.preventDefault();
+          codeTextarea.value = val.substring(0, start - 1) + val.substring(start + 1);
+          codeTextarea.selectionStart = codeTextarea.selectionEnd = start - 1;
+          editorHistory.push(codeTextarea.value, codeTextarea.selectionStart, codeTextarea.selectionEnd);
+          updateGutter();
+          updateCursorPos();
+          return;
+        }
+      }
+
+      // 5. Enter key: Auto-Indentation and Split-Braces Expansion
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const lastNl = val.lastIndexOf('\n', start - 1);
+        const lineStart = lastNl === -1 ? 0 : lastNl + 1;
+        const lineBeforeCursor = val.substring(lineStart, start);
+        const indentMatch = lineBeforeCursor.match(/^[ \t]*/);
+        const baseIndent = indentMatch ? indentMatch[0] : '';
+
+        // Check if cursor is directly between opening and closing brackets: {|} or (|) or [|]
+        const prevChar = start > 0 ? val[start - 1] : '';
+        const nextChar = start < val.length ? val[start] : '';
+        const isSplitBrackets = (
+          (prevChar === '{' && nextChar === '}') ||
+          (prevChar === '(' && nextChar === ')') ||
+          (prevChar === '[' && nextChar === ']')
+        );
+
+        if (isSplitBrackets) {
+          // VSCode style expansion:
+          // {\n  [cursor]\n}
+          const extraIndent = '  ';
+          const insertion = '\n' + baseIndent + extraIndent + '\n' + baseIndent;
+          codeTextarea.value = val.substring(0, start) + insertion + val.substring(end);
+          codeTextarea.selectionStart = codeTextarea.selectionEnd = start + 1 + baseIndent.length + extraIndent.length;
+          editorHistory.push(codeTextarea.value, codeTextarea.selectionStart, codeTextarea.selectionEnd);
+          updateGutter();
+          updateCursorPos();
+          return;
+        }
+
+        // Check if current line opens a block (ends with {, [, (, or :)
+        const trimmedBefore = lineBeforeCursor.trimEnd();
+        const opensBlock = /[{[(:]$/.test(trimmedBefore);
+        const nextIndent = baseIndent + (opensBlock ? '  ' : '');
+        const insertion = '\n' + nextIndent;
+
+        codeTextarea.value = val.substring(0, start) + insertion + val.substring(end);
+        codeTextarea.selectionStart = codeTextarea.selectionEnd = start + insertion.length;
+        editorHistory.push(codeTextarea.value, codeTextarea.selectionStart, codeTextarea.selectionEnd);
+        updateGutter();
+        updateCursorPos();
+        return;
+      }
+
+      // 6. Tab / Shift+Tab indentation
       if (e.key === 'Tab') {
         e.preventDefault();
-        const start = codeTextarea.selectionStart;
-        const end = codeTextarea.selectionEnd;
-        const val = codeTextarea.value;
+        // Multi-line selection indent/outdent
+        if (hasSelection && val.substring(start, end).includes('\n')) {
+          const firstLineStart = val.lastIndexOf('\n', start - 1) + 1;
+          const nextNl = val.indexOf('\n', end);
+          const lastLineEnd = nextNl === -1 ? val.length : nextNl;
+
+          const block = val.substring(firstLineStart, lastLineEnd);
+          const lines = block.split('\n');
+
+          let newBlock;
+          let delta = 0;
+          if (e.shiftKey) {
+            // Unindent lines
+            newBlock = lines.map(line => {
+              if (line.startsWith('  ')) {
+                delta -= 2;
+                return line.substring(2);
+              } else if (line.startsWith(' ')) {
+                delta -= 1;
+                return line.substring(1);
+              }
+              return line;
+            }).join('\n');
+          } else {
+            // Indent lines
+            newBlock = lines.map(line => {
+              delta += 2;
+              return '  ' + line;
+            }).join('\n');
+          }
+
+          codeTextarea.value = val.substring(0, firstLineStart) + newBlock + val.substring(lastLineEnd);
+          codeTextarea.selectionStart = start;
+          codeTextarea.selectionEnd = Math.max(start, end + delta);
+          editorHistory.push(codeTextarea.value, codeTextarea.selectionStart, codeTextarea.selectionEnd);
+          updateGutter();
+          updateCursorPos();
+          return;
+        }
+
+        // Single line Shift+Tab unindent
+        if (e.shiftKey) {
+          const lastNl = val.lastIndexOf('\n', start - 1);
+          const lineStart = lastNl === -1 ? 0 : lastNl + 1;
+          const lineText = val.substring(lineStart);
+          if (lineText.startsWith('  ')) {
+            codeTextarea.value = val.substring(0, lineStart) + lineText.substring(2);
+            codeTextarea.selectionStart = Math.max(lineStart, start - 2);
+            codeTextarea.selectionEnd = Math.max(lineStart, end - 2);
+          } else if (lineText.startsWith(' ')) {
+            codeTextarea.value = val.substring(0, lineStart) + lineText.substring(1);
+            codeTextarea.selectionStart = Math.max(lineStart, start - 1);
+            codeTextarea.selectionEnd = Math.max(lineStart, end - 1);
+          }
+          editorHistory.push(codeTextarea.value, codeTextarea.selectionStart, codeTextarea.selectionEnd);
+          updateGutter();
+          updateCursorPos();
+          return;
+        }
+
+        // Standard Tab: insert 2 spaces
         codeTextarea.value = val.substring(0, start) + '  ' + val.substring(end);
         codeTextarea.selectionStart = codeTextarea.selectionEnd = start + 2;
+        editorHistory.push(codeTextarea.value, codeTextarea.selectionStart, codeTextarea.selectionEnd);
         updateGutter();
+        updateCursorPos();
       }
     });
   }
@@ -1225,6 +1551,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     updateGutter();
 
+    const breadcrumbFunc = document.getElementById('vscode-breadcrumb-func');
+    if (breadcrumbFunc && challenge) {
+      breadcrumbFunc.textContent = `${challenge.functionName || 'solution'}.js`;
+    }
+    const filenameEl = document.getElementById('vscode-filename');
+    if (filenameEl && challenge) {
+      filenameEl.textContent = `${challenge.functionName || 'solution'}.js`;
+    }
+    updateCursorPos();
+
     if (btnRunTests) btnRunTests.disabled = false;
     if (btnDevPower) btnDevPower.disabled = false;
     if (btnHolyHeal) btnHolyHeal.disabled = false;
@@ -1287,6 +1623,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       playSound('click');
       codeTextarea.value = activeChallenge.starterCode || `function ${activeChallenge.functionName}() {\n  \n}`;
       updateGutter();
+      updateCursorPos();
       codeTextarea.focus();
       appendConsoleLine('> Editor code restored to original starter signature.', 'console-info');
     });

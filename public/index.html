@@ -355,6 +355,18 @@
             </div>
           </div>
 
+          <!-- VSCode Tabs & Breadcrumbs Bar -->
+          <div class="vscode-tabs-bar font-code">
+            <div class="vscode-tab active">
+              <span class="vscode-file-icon">JS</span>
+              <span id="vscode-filename" class="vscode-file-name">solution.js</span>
+              <span class="vscode-tab-close" aria-hidden="true">✕</span>
+            </div>
+            <div class="vscode-breadcrumbs">
+              <span>codemons</span> <span class="breadcrumb-sep">&gt;</span> <span>challenges</span> <span class="breadcrumb-sep">&gt;</span> <span id="vscode-breadcrumb-func" class="text-yellow">solution.js</span>
+            </div>
+          </div>
+
           <!-- Code Editor Body: Line numbers in a gutter + Textarea -->
           <div class="editor-container font-code">
             <div id="editor-gutter" class="editor-gutter" aria-hidden="true">1</div>
@@ -368,6 +380,20 @@
               aria-label="JavaScript Code Editor"
               placeholder="// Select a challenge card above to write your attack function..."
             ></textarea>
+          </div>
+
+          <!-- VSCode Status Bar -->
+          <div class="vscode-status-bar font-code" aria-label="Editor Status Bar">
+            <div class="vscode-status-left">
+              <span class="status-chip branch-chip">⎇ main</span>
+              <span class="status-chip" id="editor-cursor-pos">Ln 1, Col 1</span>
+              <span class="status-chip" id="editor-selection-pos"></span>
+            </div>
+            <div class="vscode-status-right">
+              <span class="status-chip">Spaces: 2</span>
+              <span class="status-chip">UTF-8</span>
+              <span class="status-chip badge-js">JavaScript</span>
+            </div>
           </div>
 
           <!-- Editor Actions Toolbar: RUN TESTS, DEV POWER, HOLY HEAL, HINT, RESET CODE -->

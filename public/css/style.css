@@ -1499,43 +1499,131 @@ html, body {
   margin-right: 6px;
 }
 
+/* =========================================================================
+   VSCode-like Code Editor Enhancements
+   ========================================================================= */
+
+/* VSCode Tabs & Breadcrumbs Bar */
+.vscode-tabs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #121820;
+  border-bottom: 1px solid #1f2b38;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px 0 0;
+  user-select: none;
+  font-family: var(--font-code);
+  font-size: 13px;
+  overflow: hidden;
+}
+
+.vscode-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #0a0d12;
+  color: #eef5fc;
+  padding: 0 14px;
+  height: 100%;
+  border-right: 1px solid #1f2b38;
+  border-top: 2px solid #38bdf8;
+  font-size: 13px;
+  cursor: pointer;
+  position: relative;
+}
+
+.vscode-file-icon {
+  background-color: #f4b41b;
+  color: #0c1015;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 2px;
+  letter-spacing: -0.5px;
+}
+
+.vscode-file-name {
+  color: #eef5fc;
+  font-weight: 500;
+}
+
+.vscode-tab-close {
+  color: #526f8a;
+  font-size: 11px;
+  margin-left: 4px;
+  transition: color 0.1s;
+}
+
+.vscode-tab-close:hover {
+  color: #ff5252;
+}
+
+.vscode-breadcrumbs {
+  color: #607b99;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.breadcrumb-sep {
+  color: #3b4e63;
+}
+
 /* Code Editor Body: Line numbers gutter + Textarea */
 .editor-container {
   flex: 1;
   min-height: 0;
   display: flex;
-  background-color: var(--pixel-black);
+  background-color: #0a0d12;
   position: relative;
   overflow: hidden;
-  border-bottom: 2px solid var(--pixel-dark);
+  border-bottom: 1px solid #1f2b38;
 }
 
 .editor-gutter {
-  width: 44px;
-  min-width: 44px;
-  background-color: #0f141b;
-  border-right: 2px solid var(--gb-mid);
-  color: var(--gb-light);
-  font-family: var(--font-code);
-  font-size: 20px;
-  line-height: 1.45;
+  width: 48px;
+  min-width: 48px;
+  background-color: #0d1219;
+  border-right: 1px solid #1f2b38;
+  color: #526f8a;
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 16px;
+  line-height: 1.5;
   text-align: right;
-  padding: 8px 8px 8px 0;
+  padding: 10px 8px 10px 0;
   user-select: none;
   overflow: hidden;
   white-space: pre;
+}
+
+.gutter-line {
+  line-height: 1.5;
+  padding-right: 6px;
+  color: #48617a;
+  transition: color 0.08s ease;
+}
+
+.gutter-line.active {
+  color: #ffffff;
+  font-weight: bold;
 }
 
 .code-textarea {
   flex: 1;
   height: 100%;
   width: 100%;
-  background-color: var(--pixel-black);
-  color: var(--pixel-white);
-  font-family: var(--font-code);
-  font-size: 20px;
-  line-height: 1.45;
-  padding: 8px 12px;
+  background-color: #0a0d12;
+  color: #eef5fc;
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 10px 14px;
   border: none;
   outline: none;
   resize: none;
@@ -1544,12 +1632,52 @@ html, body {
   word-wrap: normal;
   overflow-x: auto;
   overflow-y: auto;
-  caret-color: var(--pixel-green);
+  caret-color: #38bdf8;
 }
 
 .code-textarea::selection {
-  background-color: var(--gb-mid);
-  color: var(--pixel-white);
+  background-color: #264f78;
+  color: #ffffff;
+}
+
+/* VSCode Status Bar */
+.vscode-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #0f1722;
+  border-top: 1px solid #1b2632;
+  color: #8da4be;
+  font-family: var(--font-code);
+  font-size: 12px;
+  padding: 3px 12px;
+  min-height: 24px;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.vscode-status-left,
+.vscode-status-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: default;
+}
+
+.branch-chip {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.badge-js {
+  color: #f4b41b;
+  font-weight: 600;
 }
 
 /* Editor Toolbar */
