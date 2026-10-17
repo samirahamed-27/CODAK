@@ -21,9 +21,23 @@ import {
   RefreshCw,
   Swords,
   Award,
+  Play,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Timer,
+  Zap,
 } from 'lucide-react';
 import clsx from 'clsx';
 import Aurora from '@/components/Aurora';
+import {
+  getMyDuelsAction,
+  createOrJoinAutoMatchAction,
+  getDuelSessionAction,
+  submitDuelAnswersAction,
+  DuelSummary,
+} from '@/app/actions/duels';
+import { SafeDuelQuestion } from '@/lib/duels';
 
 export default function StudentCompetePage() {
   const [activeTab, setActiveTab] = useState<'league' | 'leaderboard' | 'duels'>('league');
@@ -35,6 +49,29 @@ export default function StudentCompetePage() {
   const [lbTimeframe, setLbTimeframe] = useState<'weekly' | 'all-time'>('weekly');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [lbLoading, setLbLoading] = useState(false);
+
+  // Duels state
+  const [duels, setDuels] = useState<DuelSummary[]>([]);
+  const [duelsLoading, setDuelsLoading] = useState(false);
+  const [quickMatching, setQuickMatching] = useState(false);
+  const [quickMatchMsg, setQuickMatchMsg] = useState<string | null>(null);
+
+  // Active duel playing state
+  const [playingDuelId, setPlayingDuelId] = useState<string | null>(null);
+  const [duelQuestions, setDuelQuestions] = useState<SafeDuelQuestion[]>([]);
+  const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
+  const [selectedChoices, setSelectedChoices] = useState<Record<string, string>>({});
+  const [questionStartTimes, setQuestionStartTimes] = useState<Record<string, number>>({});
+  const [questionDurations, setQuestionDurations] = useState<Record<string, number>>({});
+  const [duelStartTime, setDuelStartTime] = useState<number>(0);
+  const [submittingAnswers, setSubmittingAnswers] = useState(false);
+  const [duelResult, setDuelResult] = useState<{
+    score: number;
+    isCompleted?: boolean;
+    isWinner?: boolean;
+    isDraw?: boolean;
+  } | null>(null);
+  const [duelError, setDuelError] = useState<string | null>(null);
 
   const fetchLeague = async () => {
     try {
@@ -64,6 +101,20 @@ export default function StudentCompetePage() {
     }
   };
 
+  const fetchDuels = async () => {
+    setDuelsLoading(true);
+    try {
+      const res = await getMyDuelsAction();
+      if (res.success) {
+        setDuels(res.duels);
+      }
+    } catch (e) {
+      console.error('Error fetching duels:', e);
+    } finally {
+      setDuelsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchLeague();
   }, []);
@@ -71,6 +122,8 @@ export default function StudentCompetePage() {
   useEffect(() => {
     if (activeTab === 'leaderboard') {
       fetchLeaderboard(lbScope, lbTimeframe);
+    } else if (activeTab === 'duels') {
+      fetchDuels();
     }
   }, [activeTab, lbScope, lbTimeframe]);
 
@@ -80,7 +133,124 @@ export default function StudentCompetePage() {
       fetchLeague();
     } else if (activeTab === 'leaderboard') {
       fetchLeaderboard(lbScope, lbTimeframe);
+    } else if (activeTab === 'duels') {
+      fetchDuels().finally(() => setRefreshing(false));
     }
+  };
+
+  const handleQuickMatch = async () => {
+    setQuickMatching(true);
+    setQuickMatchMsg(null);
+    try {
+      const res = await createOrJoinAutoMatchAction();
+      if (res.success && res.duelId) {
+        setQuickMatchMsg(
+          res.isNew
+            ? 'New open duel created! Waiting for a peer to match.'
+            : 'Matched with an opponent! Starting duel now...'
+        );
+        await fetchDuels();
+        if (!res.isNew) {
+          handleStartDuel(res.duelId);
+        }
+      } else {
+        setQuickMatchMsg(res.error || 'Failed to find match');
+      }
+    } catch (e: any) {
+      setQuickMatchMsg(e.message || 'Matchmaking error');
+    } finally {
+      setQuickMatching(false);
+    }
+  };
+
+  const handleStartDuel = async (duelId: string) => {
+    setDuelError(null);
+    setDuelResult(null);
+    setSubmittingAnswers(false);
+    try {
+      const res = await getDuelSessionAction(duelId);
+      if (res.success && res.questions && res.questions.length > 0) {
+        setPlayingDuelId(duelId);
+        setDuelQuestions(res.questions);
+        setCurrentQuestionIdx(0);
+        setSelectedChoices({});
+        const now = Date.now();
+        setDuelStartTime(now);
+        setQuestionStartTimes({ [res.questions[0].id]: now });
+        setQuestionDurations({});
+      } else {
+        setDuelError(res.error || 'Could not load questions for this duel');
+      }
+    } catch (e: any) {
+      setDuelError(e.message || 'Error opening duel');
+    }
+  };
+
+  const handleSelectChoice = (questionId: string, choiceKey: string) => {
+    setSelectedChoices((prev) => ({ ...prev, [questionId]: choiceKey }));
+  };
+
+  const handleNextQuestion = () => {
+    const currentQ = duelQuestions[currentQuestionIdx];
+    const now = Date.now();
+    const duration = Math.round((now - (questionStartTimes[currentQ.id] || now)) / 1000);
+    setQuestionDurations((prev) => ({ ...prev, [currentQ.id]: duration }));
+
+    if (currentQuestionIdx < duelQuestions.length - 1) {
+      const nextQ = duelQuestions[currentQuestionIdx + 1];
+      setCurrentQuestionIdx((prev) => prev + 1);
+      setQuestionStartTimes((prev) => ({ ...prev, [nextQ.id]: Date.now() }));
+    }
+  };
+
+  const handleSubmitDuel = async () => {
+    if (!playingDuelId) return;
+    setSubmittingAnswers(true);
+    setDuelError(null);
+
+    const currentQ = duelQuestions[currentQuestionIdx];
+    const now = Date.now();
+    const finalDuration = Math.round((now - (questionStartTimes[currentQ.id] || now)) / 1000);
+    const updatedDurations = { ...questionDurations, [currentQ.id]: finalDuration };
+    const totalTime = Math.round((now - duelStartTime) / 1000);
+
+    const answersPayload = duelQuestions.map((q) => ({
+      questionId: q.id,
+      selectedChoice: selectedChoices[q.id] || '',
+      timeSpentSeconds: updatedDurations[q.id] || 0,
+    }));
+
+    try {
+      const res = await submitDuelAnswersAction({
+        duelId: playingDuelId,
+        answers: answersPayload,
+        totalTimeSeconds: totalTime,
+      });
+
+      if (res.success) {
+        setDuelResult({
+          score: res.score ?? 0,
+          isCompleted: res.isCompleted,
+          isWinner: res.isWinner,
+          isDraw: res.isDraw,
+        });
+        await fetchDuels();
+      } else {
+        setDuelError(res.error || 'Failed to submit answers');
+      }
+    } catch (e: any) {
+      setDuelError(e.message || 'Submission error');
+    } finally {
+      setSubmittingAnswers(false);
+    }
+  };
+
+  const handleCloseDuelModal = () => {
+    setPlayingDuelId(null);
+    setDuelQuestions([]);
+    setDuelResult(null);
+    setDuelError(null);
+    fetchDuels();
   };
 
   const getTierColor = (tierId: string) => {
@@ -521,10 +691,347 @@ export default function StudentCompetePage() {
             </div>
           )}
 
-          {/* TAB 3: DUELS PLACEHOLDER */}
+          {/* TAB 3: ASYNC QUIZ DUELS */}
           {activeTab === 'duels' && (
-            <div className="p-8 text-center text-xs text-slate-400 border border-dashed border-slate-800 rounded-3xl">
-              Loading Async Quiz Duels...
+            <div className="space-y-6">
+              {/* Quick Match Action Card */}
+              <div className="p-5 rounded-3xl bg-gradient-to-br from-indigo-950/40 via-purple-950/30 to-slate-900/40 border border-indigo-500/30 shadow-xl space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2.5 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-400">
+                      <Swords className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                        Async Quiz Duels
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400">
+                          +25 XP Win
+                        </span>
+                      </h2>
+                      <p className="text-xs text-slate-400">
+                        Identical 5 approved questions • 24h timer • Speed tie-breaker • No XP deducted on loss
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                  <button
+                    onClick={handleQuickMatch}
+                    disabled={quickMatching}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <Zap className="w-4 h-4 text-amber-300" />
+                    {quickMatching ? 'Finding Match...' : '⚡ Quick Match / Create Duel'}
+                  </button>
+
+                  {quickMatchMsg && (
+                    <span className="text-xs text-indigo-300 font-mono animate-fade-in text-center sm:text-left">
+                      {quickMatchMsg}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Duels List Section */}
+              <div className="space-y-4">
+                {duelsLoading ? (
+                  <div className="p-8 text-center text-xs text-slate-500 border border-slate-800 rounded-3xl">
+                    Loading your duels...
+                  </div>
+                ) : duels.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-slate-400 border border-dashed border-slate-800 rounded-3xl space-y-2">
+                    <Swords className="w-8 h-8 text-slate-600 mx-auto" />
+                    <p className="font-medium text-slate-300">No active or past duels found.</p>
+                    <p className="text-slate-500">
+                      Hit Quick Match above to challenge a peer student on a 5-question battle!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Active & Open Matches */}
+                    {duels.filter((d) => d.status === 'open' || d.status === 'active').length > 0 && (
+                      <div className="space-y-2">
+                        <h3 className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-wider">
+                          Active & Open Duels ({duels.filter((d) => d.status === 'open' || d.status === 'active').length})
+                        </h3>
+
+                        {duels
+                          .filter((d) => d.status === 'open' || d.status === 'active')
+                          .map((duel) => (
+                            <div
+                              key={duel.id}
+                              className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                            >
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-slate-200">
+                                    vs. {duel.opponentName}
+                                  </span>
+                                  {duel.opponentRollNo && (
+                                    <span className="text-[10px] font-mono text-slate-500">
+                                      ({duel.opponentRollNo})
+                                    </span>
+                                  )}
+                                  <span
+                                    className={clsx(
+                                      'text-[10px] font-mono px-2 py-0.5 rounded-full border',
+                                      duel.status === 'open'
+                                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                                        : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300'
+                                    )}
+                                  >
+                                    {duel.status === 'open' ? 'Open Matchmaking' : 'Active Duel'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono">
+                                  <Clock className="w-3 h-3" />
+                                  <span>Expires: {new Date(duel.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({new Date(duel.expiresAt).toLocaleDateString()})</span>
+                                </div>
+                              </div>
+
+                              <div>
+                                {!duel.mySubmitted ? (
+                                  <button
+                                    onClick={() => handleStartDuel(duel.id)}
+                                    className="px-4 py-2 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center gap-1.5 shadow-md shadow-indigo-600/20"
+                                  >
+                                    <Play className="w-3.5 h-3.5" />
+                                    Play Duel (5 Qs)
+                                  </button>
+                                ) : (
+                                  <div className="flex items-center gap-2 text-indigo-300 bg-indigo-950/40 border border-indigo-500/30 px-3 py-1.5 rounded-xl font-mono text-[11px]">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span>You: {duel.myScore}/5 ({duel.myTime}s) • Waiting for opponent</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+
+                    {/* Completed Matches History */}
+                    {duels.filter((d) => d.status === 'completed').length > 0 && (
+                      <div className="space-y-2 pt-2">
+                        <h3 className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
+                          Completed History ({duels.filter((d) => d.status === 'completed').length})
+                        </h3>
+
+                        {duels
+                          .filter((d) => d.status === 'completed')
+                          .map((duel) => (
+                            <div
+                              key={duel.id}
+                              className={clsx(
+                                'p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs',
+                                duel.isWinner
+                                  ? 'bg-emerald-950/20 border-emerald-500/30'
+                                  : duel.isDraw
+                                  ? 'bg-amber-950/20 border-amber-500/30'
+                                  : 'bg-slate-900/40 border-slate-800/80'
+                              )}
+                            >
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={clsx(
+                                      'text-[10px] font-mono font-bold px-2 py-0.5 rounded border',
+                                      duel.isWinner
+                                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                                        : duel.isDraw
+                                        ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                                        : 'bg-slate-800 border-slate-700 text-slate-300'
+                                    )}
+                                  >
+                                    {duel.isWinner ? '🏆 VICTORY (+25 XP)' : duel.isDraw ? '🤝 DRAW (+10 XP)' : '⚔️ COMPLETED (+10 XP)'}
+                                  </span>
+                                  <span className="font-bold text-slate-200">
+                                    vs. {duel.opponentName}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-3 text-[11px] font-mono text-slate-400">
+                                  <span>You: <strong className="text-white">{duel.myScore}/5</strong> ({duel.myTime}s)</span>
+                                  <span>Opponent: <strong className="text-white">{duel.opponentScore}/5</strong> ({duel.opponentTime}s)</span>
+                                </div>
+                              </div>
+
+                              <div className="text-[10px] text-slate-500 font-mono">
+                                {new Date(duel.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* INTERACTIVE DUEL PLAY MODAL */}
+              {playingDuelId && (
+                <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+                  <div className="bg-slate-900 border border-slate-700/80 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-6 animate-scale-in">
+                    {duelResult ? (
+                      /* Duel Result Screen */
+                      <div className="text-center space-y-4 py-4">
+                        <div className="w-16 h-16 rounded-3xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center mx-auto text-indigo-400">
+                          {duelResult.isWinner ? (
+                            <Trophy className="w-8 h-8 text-amber-400" />
+                          ) : (
+                            <Swords className="w-8 h-8 text-indigo-400" />
+                          )}
+                        </div>
+
+                        <div>
+                          <h3 className="text-lg font-bold text-white">
+                            {duelResult.isCompleted
+                              ? duelResult.isWinner
+                                ? '🎉 Victory!'
+                                : duelResult.isDraw
+                                ? '🤝 It’s a Draw!'
+                                : '⚔️ Duel Completed!'
+                              : '✅ Round Completed!'}
+                          </h3>
+                          <p className="text-xs text-slate-400 mt-1">
+                            Your Score:{' '}
+                            <strong className="text-indigo-400 font-bold font-mono">
+                              {duelResult.score} / 5
+                            </strong>
+                          </p>
+                          <p className="text-xs text-slate-500 mt-2">
+                            {duelResult.isCompleted
+                              ? duelResult.isWinner
+                                ? '+25 XP Victory bonus awarded to your ledger!'
+                                : '+10 XP Participation reward added to your ledger!'
+                              : 'Your answers have been securely recorded. When your opponent finishes within 24 hours, the winner will be determined!'}
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={handleCloseDuelModal}
+                          className="w-full py-3 rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-lg shadow-indigo-600/20"
+                        >
+                          Return to Duels
+                        </button>
+                      </div>
+                    ) : duelQuestions.length > 0 ? (
+                      /* Active Question Flow */
+                      <div className="space-y-4">
+                        {/* Progress Header */}
+                        <div className="flex items-center justify-between text-xs font-mono">
+                          <span className="text-indigo-400 font-bold">
+                            Question {currentQuestionIdx + 1} of {duelQuestions.length}
+                          </span>
+                          <span className="text-slate-400 flex items-center gap-1">
+                            <Timer className="w-3.5 h-3.5 text-amber-400" />
+                            Timed Battle
+                          </span>
+                        </div>
+
+                        {/* Question Text */}
+                        <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800">
+                          <p className="text-sm font-semibold text-slate-100 leading-relaxed">
+                            {duelQuestions[currentQuestionIdx].question_text}
+                          </p>
+                        </div>
+
+                        {/* Choices */}
+                        <div className="space-y-2">
+                          {[
+                            { key: 'a', text: duelQuestions[currentQuestionIdx].choice_a },
+                            { key: 'b', text: duelQuestions[currentQuestionIdx].choice_b },
+                            { key: 'c', text: duelQuestions[currentQuestionIdx].choice_c },
+                            { key: 'd', text: duelQuestions[currentQuestionIdx].choice_d },
+                          ].map((choice) => {
+                            const isSelected =
+                              selectedChoices[duelQuestions[currentQuestionIdx].id] === choice.key;
+                            return (
+                              <button
+                                key={choice.key}
+                                onClick={() =>
+                                  handleSelectChoice(
+                                    duelQuestions[currentQuestionIdx].id,
+                                    choice.key
+                                  )
+                                }
+                                className={clsx(
+                                  'w-full p-3 rounded-xl text-left text-xs font-medium border transition-all flex items-center justify-between',
+                                  isSelected
+                                    ? 'bg-indigo-600/20 border-indigo-500 text-indigo-200'
+                                    : 'bg-slate-950/40 border-slate-800/80 text-slate-300 hover:border-slate-700'
+                                )}
+                              >
+                                <span>
+                                  <strong className="font-mono uppercase mr-2 text-indigo-400">
+                                    {choice.key}.
+                                  </strong>
+                                  {choice.text}
+                                </span>
+                                {isSelected && (
+                                  <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {duelError && (
+                          <div className="p-3 rounded-xl bg-red-950/30 border border-red-500/40 text-red-300 text-xs flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 shrink-0" />
+                            <span>{duelError}</span>
+                          </div>
+                        )}
+
+                        {/* Navigation / Submit Action */}
+                        <div className="pt-2 flex items-center justify-between gap-3">
+                          <button
+                            onClick={handleCloseDuelModal}
+                            className="px-4 py-2.5 rounded-xl text-xs font-mono text-slate-400 hover:text-slate-200"
+                          >
+                            Cancel
+                          </button>
+
+                          {currentQuestionIdx < duelQuestions.length - 1 ? (
+                            <button
+                              onClick={handleNextQuestion}
+                              disabled={
+                                !selectedChoices[duelQuestions[currentQuestionIdx].id]
+                              }
+                              className="px-6 py-2.5 rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-500 text-white transition-all disabled:opacity-40"
+                            >
+                              Next Question →
+                            </button>
+                          ) : (
+                            <button
+                              onClick={handleSubmitDuel}
+                              disabled={
+                                submittingAnswers ||
+                                !selectedChoices[duelQuestions[currentQuestionIdx].id]
+                              }
+                              className="px-6 py-2.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white transition-all disabled:opacity-40 flex items-center gap-2"
+                            >
+                              {submittingAnswers ? 'Evaluating...' : 'Submit Duel ⚔️'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 space-y-4">
+                        <AlertCircle className="w-8 h-8 text-amber-400 mx-auto" />
+                        <p className="text-xs text-slate-300">
+                          {duelError || 'Failed to load duel questions.'}
+                        </p>
+                        <button
+                          onClick={handleCloseDuelModal}
+                          className="px-4 py-2 rounded-xl text-xs bg-slate-800 text-slate-200"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </main>
