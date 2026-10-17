@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Flame, Sparkles, Mail, Check, BellRing } from 'lucide-react';
+import { Flame, Sparkles, Mail, Check, BellRing, LogOut } from 'lucide-react';
 import { AnimatedCounter } from './AnimatedCounter';
 import { StudentProfile } from '@/data/studentDashboardData';
 import Shuffle from '@/components/Shuffle';
@@ -86,32 +86,43 @@ export function AcademyHeader({ profile }: AcademyHeaderProps) {
         </div>
       </div>
 
-      {/* Right: Inbox/Mail Button with Pastel Orange Badge */}
-      <div className="relative self-end sm:self-center">
-        <button
-          type="button"
-          onClick={() => setShowInbox(!showInbox)}
-          aria-expanded={showInbox}
-          aria-haspopup="dialog"
-          aria-label="Student Inbox & Quest Alerts"
-          className="relative p-3 rounded-2xl bg-[#0F2350] border-2 border-[#1E3A78] text-[#A9B8D6] hover:text-white hover:border-[#7CC4FF] shadow-[0_4px_0_#050B1E] active:translate-y-1 active:shadow-none transition-all focus:outline-none focus:ring-2 focus:ring-[#7CC4FF]"
+      {/* Right: Inbox/Mail Button & Log out Button */}
+      <div className="flex items-center gap-2.5 self-end sm:self-center">
+        <a
+          href="/api/auth/signout"
+          title="Log out"
+          aria-label="Log out of student account"
+          className="p-3 rounded-2xl bg-[#0F2350] border-2 border-rose-500/40 text-rose-300 hover:text-white hover:border-rose-400 hover:bg-rose-500/20 shadow-[0_4px_0_#050B1E] active:translate-y-1 active:shadow-none transition-all flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-rose-400"
         >
-          <Mail className="w-5 h-5" />
+          <LogOut className="w-5 h-5" />
+          <span className="hidden md:inline text-xs font-pixel font-bold">Log out</span>
+        </a>
 
-          {/* Pastel Orange Notification Dot (#FFB27A with black text) */}
-          {unreadCount > 0 && (
-            <span
-              className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#FFB27A] text-[#06080F] text-[10px] font-black font-pixel flex items-center justify-center shadow-[0_0_10px_rgba(255,178,122,0.6)] ring-2 ring-[#06080F] animate-bounce"
-              aria-label={`${unreadCount} unread messages`}
-            >
-              {unreadCount}
-            </span>
-          )}
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowInbox(!showInbox)}
+            aria-expanded={showInbox}
+            aria-haspopup="dialog"
+            aria-label="Student Inbox & Quest Alerts"
+            className="relative p-3 rounded-2xl bg-[#0F2350] border-2 border-[#1E3A78] text-[#A9B8D6] hover:text-white hover:border-[#7CC4FF] shadow-[0_4px_0_#050B1E] active:translate-y-1 active:shadow-none transition-all focus:outline-none focus:ring-2 focus:ring-[#7CC4FF]"
+          >
+            <Mail className="w-5 h-5" />
 
-        {/* Inbox Dropdown Modal / Popover */}
-        {showInbox && (
-          <div
+            {/* Pastel Orange Notification Dot (#FFB27A with black text) */}
+            {unreadCount > 0 && (
+              <span
+                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#FFB27A] text-[#06080F] text-[10px] font-black font-pixel flex items-center justify-center shadow-[0_0_10px_rgba(255,178,122,0.6)] ring-2 ring-[#06080F] animate-bounce"
+                aria-label={`${unreadCount} unread messages`}
+              >
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* Inbox Dropdown Modal / Popover */}
+          {showInbox && (
+            <div
             role="dialog"
             aria-label="Student Notifications"
             className="absolute right-0 mt-3 w-80 sm:w-96 rounded-2xl bg-[#0F2350] border-2 border-[#1E3A78] shadow-2xl z-50 p-4 animate-card-pop text-left"
@@ -163,6 +174,7 @@ export function AcademyHeader({ profile }: AcademyHeaderProps) {
           </div>
         )}
       </div>
-    </header>
-  );
+    </div>
+  </header>
+);
 }

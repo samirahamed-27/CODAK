@@ -23,11 +23,12 @@ export function AcademySidebar({ totalXp = 1420 }: AcademySidebarProps) {
     { label: 'Rank', ariaLabel: 'Go to compete and leaderboard', link: '/student/compete' },
     { label: 'Play Quiz', ariaLabel: 'Go to daily quiz and practice', link: '/student/play' },
     { label: 'Overall', ariaLabel: 'View performance overview', link: '/student/profile' },
+    { label: 'Log out', ariaLabel: 'Sign out of student account', link: '/api/auth/signout' },
   ];
 
   const accountLinks = [
     { label: 'Profile settings', link: '/student/profile' },
-    { label: 'Logout', link: '/login' },
+    { label: 'Log out', link: '/api/auth/signout' },
   ];
 
   const renderLevelCard = () => (

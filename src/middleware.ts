@@ -52,6 +52,11 @@ export async function middleware(request: NextRequest) {
       role = (profile?.role as UserRole) || 'student';
     }
 
+    // Allow auth routes like /api/auth/signout to pass through directly
+    if (request.nextUrl.pathname.startsWith('/api/auth')) {
+      return supabaseResponse;
+    }
+
     const redirectPath = computeRouteRedirect({
       pathname: request.nextUrl.pathname,
       isAuthenticated: !!user,
@@ -62,6 +67,20 @@ export async function middleware(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = redirectPath;
       return NextResponse.redirect(url);
+    }
+
+    // Attach strict no-store cache control headers for protected paths to prevent browser bfcache back-navigation exposure
+    if (
+      request.nextUrl.pathname.startsWith('/student') ||
+      request.nextUrl.pathname.startsWith('/faculty') ||
+      request.nextUrl.pathname.startsWith('/admin')
+    ) {
+      supabaseResponse.headers.set(
+        'Cache-Control',
+        'no-store, no-cache, must-revalidate, proxy-revalidate'
+      );
+      supabaseResponse.headers.set('Pragma', 'no-cache');
+      supabaseResponse.headers.set('Expires', '0');
     }
   } catch (error) {
     console.error('Middleware auth check error:', error);

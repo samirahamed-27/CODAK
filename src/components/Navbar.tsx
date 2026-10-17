@@ -30,8 +30,7 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
     } catch (e) {
       console.error('Error signing out:', e);
     }
-    router.push('/login');
-    router.refresh();
+    window.location.href = '/api/auth/signout';
   };
 
   const getRoleBadge = () => {
@@ -67,17 +66,26 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
           { label: 'Dashboard', ariaLabel: 'Go to Faculty Dashboard', link: '/faculty' },
           { label: 'Questions', ariaLabel: 'Manage Question Bank', link: '/faculty/questions' },
           { label: 'Student View', ariaLabel: 'Switch to Student View', link: '/student' },
+          { label: 'Log out', ariaLabel: 'Sign out of account', link: '/api/auth/signout' },
+        ]
+      : role === 'admin'
+      ? [
+          { label: 'Admin Hub', ariaLabel: 'Go to Admin Hub', link: '/admin' },
+          { label: 'XP Rules', ariaLabel: 'Manage XP Rules', link: '/admin/rules' },
+          { label: 'Student View', ariaLabel: 'Switch to Student View', link: '/student' },
+          { label: 'Log out', ariaLabel: 'Sign out of account', link: '/api/auth/signout' },
         ]
       : [
           { label: 'Dashboard', ariaLabel: 'Go to student dashboard', link: '/student' },
           { label: 'Learn', ariaLabel: 'Explore learning modules', link: '/student/learn' },
           { label: 'Play Quiz', ariaLabel: 'Daily quiz and practice mode', link: '/student/play' },
           { label: 'Compete', ariaLabel: 'League tables and duels', link: '/student/compete' },
+          { label: 'Log out', ariaLabel: 'Sign out of account', link: '/api/auth/signout' },
         ];
 
   const socialLinks = [
     { label: 'Leaderboard', link: '/student#leaderboard' },
-    { label: 'Community', link: 'https://discord.com', target: '_blank' },
+    { label: 'Log out', link: '/api/auth/signout' },
     { label: 'Home', link: '/' },
   ];
 
@@ -122,10 +130,12 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
           )}
           <button
             onClick={handleSignOut}
-            title="Sign out"
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors"
+            title="Log out"
+            aria-label="Log out of account"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all hover:scale-105 active:scale-95"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Log out</span>
           </button>
         </div>
       </div>

@@ -75,6 +75,11 @@ export default function LoginPage() {
 
     setTimeout(async () => {
       try {
+        await supabase.auth.signOut();
+      } catch {
+        // Ignore signout cleanup errors
+      }
+      try {
         await supabase.auth.signInWithPassword({
           email: demo.email,
           password: demo.password,
@@ -100,6 +105,11 @@ export default function LoginPage() {
       process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
 
     try {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // Ignore signout errors
+      }
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,

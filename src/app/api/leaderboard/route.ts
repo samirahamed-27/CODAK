@@ -20,6 +20,12 @@ export async function GET(req: NextRequest) {
   } = await supabaseServer.auth.getUser();
 
   const requesterId = user?.id || req.headers.get('x-test-requester-id') || undefined;
+  if (!requesterId) {
+    return NextResponse.json(
+      { error: 'Unauthorized: login required to view leaderboard' },
+      { status: 401 }
+    );
+  }
   let requesterRole: 'student' | 'faculty' | 'admin' = 'student';
 
   if (user) {
