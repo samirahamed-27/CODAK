@@ -14,6 +14,11 @@ import {
   DailyQuizSessionResult,
 } from '@/app/actions/quiz';
 import {
+  getConceptMatchRoundAction,
+  submitConceptMatchAction,
+} from '@/app/actions/concept-match';
+import { ConceptMatchRound } from '@/lib/concept-match';
+import {
   Flame,
   Award,
   CheckCircle2,
@@ -25,11 +30,14 @@ import {
   Calendar,
   ShieldAlert,
   Snowflake,
+  Puzzle,
+  Zap,
 } from 'lucide-react';
 import Shuffle from '@/components/Shuffle';
+import clsx from 'clsx';
 
 export default function StudentPlayPage() {
-  const [activeTab, setActiveTab] = useState<'daily' | 'practice'>('daily');
+  const [activeTab, setActiveTab] = useState<'daily' | 'practice' | 'match'>('daily');
 
   // Daily Quiz State
   const [dailyState, setDailyState] = useState<DailyQuizSessionResult | null>(null);
@@ -66,6 +74,19 @@ export default function StudentPlayPage() {
   const [practiceSubmitting, setPracticeSubmitting] = useState(false);
   const [practiceLoading, setPracticeLoading] = useState(false);
 
+  // Concept Match State
+  const [matchRound, setMatchRound] = useState<ConceptMatchRound | null>(null);
+  const [selectedTermId, setSelectedTermId] = useState<string | null>(null);
+  const [userMatches, setUserMatches] = useState<Record<string, string>>({});
+  const [matchLoading, setMatchLoading] = useState(false);
+  const [matchSubmitting, setMatchSubmitting] = useState(false);
+  const [matchResult, setMatchResult] = useState<{
+    correctCount: number;
+    totalCount: number;
+    isPerfect: boolean;
+    xpAwarded?: number;
+  } | null>(null);
+
   // Load Daily Quiz on mount
   async function loadDailyQuiz() {
     setDailyLoading(true);
@@ -92,6 +113,65 @@ export default function StudentPlayPage() {
       setPracticeQuestions(res.questions);
     }
     setPracticeLoading(false);
+  }
+
+  // Load Concept Match Round
+  async function loadConceptMatch() {
+    setMatchLoading(true);
+    setSelectedTermId(null);
+    setUserMatches({});
+    setMatchResult(null);
+    const res = await getConceptMatchRoundAction();
+    if (res.success && res.round) {
+      setMatchRound(res.round);
+    }
+    setMatchLoading(false);
+  }
+
+  function handleTermClick(termId: string) {
+    if (matchResult) return;
+    setSelectedTermId(termId === selectedTermId ? null : termId);
+  }
+
+  function handleDefinitionClick(defId: string) {
+    if (matchResult || !selectedTermId) return;
+    setUserMatches((prev) => ({
+      ...prev,
+      [selectedTermId]: defId,
+    }));
+    setSelectedTermId(null);
+  }
+
+  function handleRemoveMatch(termId: string) {
+    if (matchResult) return;
+    setUserMatches((prev) => {
+      const next = { ...prev };
+      delete next[termId];
+      return next;
+    });
+  }
+
+  async function handleSubmitConceptMatch() {
+    if (!matchRound || matchSubmitting) return;
+    const matchesArray = Object.entries(userMatches).map(([termId, definitionId]) => ({
+      termId,
+      definitionId,
+    }));
+
+    if (matchesArray.length < matchRound.terms.length) return;
+
+    setMatchSubmitting(true);
+    const res = await submitConceptMatchAction(matchesArray);
+    setMatchSubmitting(false);
+
+    if (res.success) {
+      setMatchResult({
+        correctCount: res.correctCount,
+        totalCount: res.totalCount,
+        isPerfect: res.isPerfect,
+        xpAwarded: res.xpAwarded,
+      });
+    }
   }
 
   // Handle Practice Option Submission (Server-side evaluation)
@@ -123,8 +203,10 @@ export default function StudentPlayPage() {
   useEffect(() => {
     if (activeTab === 'daily') {
       loadDailyQuiz();
-    } else {
+    } else if (activeTab === 'practice') {
       loadPracticeQuiz();
+    } else if (activeTab === 'match') {
+      loadConceptMatch();
     }
   }, [activeTab]);
 
@@ -210,28 +292,39 @@ export default function StudentPlayPage() {
         </div>
 
         {/* Mode Toggle Switch */}
-        <div className="grid grid-cols-2 p-1.5 rounded-2xl bg-slate-900 border border-slate-800">
+        <div className="grid grid-cols-3 p-1.5 rounded-2xl bg-slate-900 border border-slate-800 gap-1">
           <button
             onClick={() => setActiveTab('daily')}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'daily'
                 ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-md shadow-rose-500/20'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Flame className="w-4 h-4" />
-            <span>Daily Quiz (Scored)</span>
+            <Flame className="w-3.5 h-3.5" />
+            <span>Daily Quiz</span>
           </button>
           <button
             onClick={() => setActiveTab('practice')}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'practice'
                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <BookOpen className="w-4 h-4" />
-            <span>Practice Mode</span>
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Practice</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('match')}
+            className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              activeTab === 'match'
+                ? 'bg-gradient-to-r from-cyan-600 to-sky-600 text-white shadow-md shadow-sky-600/20'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Puzzle className="w-3.5 h-3.5" />
+            <span>Match</span>
           </button>
         </div>
 
@@ -648,6 +741,186 @@ export default function StudentPlayPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 3: CONCEPT MATCH MINI-GAME                                */}
+        {/* ============================================================== */}
+        {activeTab === 'match' && (
+          <div className="space-y-4">
+            {/* Header / Intro banner */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-sky-950/30 to-slate-900 border border-sky-500/30 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-sky-500/20 border border-sky-500/30 text-sky-400">
+                  <Puzzle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    Concept Match
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300">
+                      +10 XP
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Pair each term with its correct definition. Match all 4 to earn XP (Max 2/day).
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {matchLoading ? (
+              <div className="p-12 text-center text-slate-500 text-xs">
+                Generating concept match pairs...
+              </div>
+            ) : matchResult ? (
+              /* Round Result Screen */
+              <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl flex flex-col items-center text-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
+                  {matchResult.isPerfect ? (
+                    <Sparkles className="w-8 h-8 text-amber-400" />
+                  ) : (
+                    <Puzzle className="w-8 h-8 text-sky-400" />
+                  )}
+                </div>
+
+                <div>
+                  <h2 className="text-lg font-bold text-white">
+                    {matchResult.isPerfect ? '🎉 Perfect Match!' : 'Round Completed'}
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Score:{' '}
+                    <strong className="text-sky-300 font-bold font-mono">
+                      {matchResult.correctCount} / {matchResult.totalCount}
+                    </strong>{' '}
+                    matches correct
+                  </p>
+                </div>
+
+                {matchResult.xpAwarded ? (
+                  <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs w-full flex items-center justify-center gap-2 font-mono font-bold">
+                    <Zap className="w-4 h-4 text-emerald-400" />
+                    <span>+{matchResult.xpAwarded} XP awarded to your ledger!</span>
+                  </div>
+                ) : matchResult.isPerfect ? (
+                  <p className="text-xs text-slate-500">
+                    Daily match limit reached. Excellent practice!
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    Review definitions and try another round to achieve a perfect 4/4!
+                  </p>
+                )}
+
+                <button
+                  onClick={loadConceptMatch}
+                  className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all shadow-md shadow-sky-600/20"
+                >
+                  Play Another Round
+                </button>
+              </div>
+            ) : matchRound ? (
+              <div className="space-y-4">
+                {/* Instructions */}
+                <p className="text-xs text-slate-400 text-center font-mono">
+                  {selectedTermId
+                    ? '👉 Now click the matching definition on the right.'
+                    : '1. Select a Term on the left, then 2. Click its matching definition.'}
+                </p>
+
+                {/* Terms and Definitions Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Left Column: Terms */}
+                  <div className="space-y-2">
+                    <h4 className="text-[11px] font-mono font-bold text-sky-400 uppercase tracking-wider">
+                      Concepts
+                    </h4>
+                    {matchRound.terms.map((t) => {
+                      const isSelected = selectedTermId === t.id;
+                      const matchedDefId = userMatches[t.id];
+
+                      return (
+                        <div
+                          key={t.id}
+                          onClick={() => handleTermClick(t.id)}
+                          className={clsx(
+                            'p-3.5 rounded-xl border text-xs cursor-pointer transition-all flex items-center justify-between',
+                            isSelected
+                              ? 'bg-sky-500/20 border-sky-400 text-white shadow-md shadow-sky-500/20'
+                              : matchedDefId
+                              ? 'bg-indigo-950/40 border-indigo-500/40 text-indigo-200'
+                              : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                          )}
+                        >
+                          <span className="font-bold">{t.term}</span>
+                          {matchedDefId && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveMatch(t.id);
+                              }}
+                              className="text-[10px] font-mono text-rose-400 hover:text-rose-300 px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20"
+                              title="Unlink"
+                            >
+                              Unlink
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Right Column: Definitions */}
+                  <div className="space-y-2">
+                    <h4 className="text-[11px] font-mono font-bold text-sky-400 uppercase tracking-wider">
+                      Definitions
+                    </h4>
+                    {matchRound.definitions.map((d) => {
+                      const matchedTermId = Object.keys(userMatches).find(
+                        (tId) => userMatches[tId] === d.id
+                      );
+
+                      return (
+                        <div
+                          key={d.id}
+                          onClick={() => handleDefinitionClick(d.id)}
+                          className={clsx(
+                            'p-3.5 rounded-xl border text-xs cursor-pointer transition-all leading-relaxed',
+                            matchedTermId
+                              ? 'bg-indigo-950/40 border-indigo-500/40 text-indigo-200'
+                              : selectedTermId
+                              ? 'bg-slate-900/90 border-sky-500/40 hover:border-sky-400 text-slate-200'
+                              : 'bg-slate-900/60 border-slate-800 text-slate-400'
+                          )}
+                        >
+                          {matchedTermId && (
+                            <span className="block text-[10px] font-mono font-bold text-sky-400 mb-1">
+                              ✓ Paired with: {matchRound.terms.find((t) => t.id === matchedTermId)?.term}
+                            </span>
+                          )}
+                          <p className="text-[11px]">{d.definition}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Submit Action */}
+                <div className="pt-2">
+                  <button
+                    onClick={handleSubmitConceptMatch}
+                    disabled={
+                      Object.keys(userMatches).length < matchRound.terms.length ||
+                      matchSubmitting
+                    }
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-xs font-bold transition-all disabled:opacity-40 shadow-lg shadow-sky-600/20 flex items-center justify-center gap-2"
+                  >
+                    <span>{matchSubmitting ? 'Verifying Matches...' : 'Submit Matches'}</span>
+                    <CheckCircle2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
       </main>
