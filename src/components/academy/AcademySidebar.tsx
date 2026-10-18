@@ -69,7 +69,7 @@ export function AcademySidebar({ totalXp = 1420 }: AcademySidebarProps) {
   );
 
   return (
-    <div className="fixed top-5 left-5 z-40" suppressHydrationWarning>
+    <div className="fixed top-5 left-5 z-[100]" suppressHydrationWarning>
       {mounted && (
         <StaggeredMenu
           position="left"

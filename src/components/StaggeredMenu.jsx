@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
+import { X } from 'lucide-react';
 import './StaggeredMenu.css';
 
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -337,10 +338,17 @@ export const StaggeredMenu = ({
   }, [playClose, animateIcon, animateColor, animateText, onMenuClose]);
 
   useEffect(() => {
-    if (!closeOnClickAway || !open) return;
+    if (!open) return;
+
+    const handleKeyDown = event => {
+      if (event.key === 'Escape') {
+        closeMenu();
+      }
+    };
 
     const handleClickOutside = event => {
       if (
+        closeOnClickAway &&
         panelRef.current &&
         !panelRef.current.contains(event.target) &&
         toggleBtnRef.current &&
@@ -350,8 +358,10 @@ export const StaggeredMenu = ({
       }
     };
 
+    window.addEventListener('keydown', handleKeyDown);
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
+      window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [closeOnClickAway, open, closeMenu]);
@@ -414,15 +424,25 @@ export const StaggeredMenu = ({
       </header>
 
       <aside id="staggered-menu-panel" ref={panelRef} className="staggered-menu-panel" aria-hidden={!open}>
+        <div className="sm-panel-top-bar sticky top-0 z-20 flex items-center justify-between pb-3.5 mb-2 -mt-1 pt-1 bg-black/90 backdrop-blur-md border-b border-zinc-800/80">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+            <span className="font-pixel text-sm sm:text-base font-bold text-white tracking-widest uppercase">
+              {headerTitle || 'MENU'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={closeMenu}
+            className="sm-panel-close-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 hover:bg-zinc-800 active:scale-95 text-zinc-300 hover:text-white border border-zinc-700/80 hover:border-zinc-500 text-xs font-mono font-bold tracking-wider transition-all duration-150 cursor-pointer shadow-md"
+            aria-label="Close menu"
+          >
+            <X className="w-3.5 h-3.5 text-zinc-300" />
+            <span>CLOSE</span>
+          </button>
+        </div>
+
         <div className="sm-panel-inner">
-          {headerTitle && (
-            <div className="sm-panel-header mb-1">
-              <span className="font-pixel text-xl font-bold text-white tracking-wider">
-                {headerTitle}
-              </span>
-              <div className="h-[2px] w-full bg-gradient-to-r from-zinc-400 via-white to-transparent rounded-full mt-1.5 shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
-            </div>
-          )}
           <ul className="sm-panel-list" role="list" data-numbering={displayItemNumbering || undefined}>
             {items && items.length ? (
               items.map((it, idx) => (
