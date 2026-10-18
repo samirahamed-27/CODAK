@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Flame, Sparkles, Mail, Check, BellRing, LogOut } from 'lucide-react';
+import { Flame, Sparkles, Mail, Check, BellRing } from 'lucide-react';
 import { AnimatedCounter } from './AnimatedCounter';
 import { StudentProfile } from '@/data/studentDashboardData';
 import Shuffle from '@/components/Shuffle';
@@ -82,18 +82,8 @@ export function AcademyHeader({ profile }: AcademyHeaderProps) {
         </div>
       </div>
 
-      {/* Right: Inbox/Mail Button & Log out Button */}
+      {/* Right: Inbox/Mail Button */}
       <div className="flex items-center gap-2 self-end sm:self-center">
-        <a
-          href="/api/auth/signout"
-          title="Log out"
-          aria-label="Log out of student account"
-          className="px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-zinc-400 hover:text-white hover:border-white/20 transition-all flex items-center gap-1.5 text-xs font-medium"
-        >
-          <LogOut className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Sign out</span>
-        </a>
-
         <div className="relative">
           <button
             type="button"

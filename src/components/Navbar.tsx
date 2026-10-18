@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { UserRole } from '@/types/database';
-import { LogOut, GraduationCap, ShieldAlert, Award } from 'lucide-react';
+import { GraduationCap, ShieldAlert, Award } from 'lucide-react';
 
 import Shuffle from '@/components/Shuffle';
 import StaggeredMenu, { StaggeredMenuItem } from '@/components/StaggeredMenu';
@@ -23,15 +23,6 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (e) {
-      console.error('Error signing out:', e);
-    }
-    window.location.href = '/api/auth/signout';
-  };
 
   const getRoleBadge = () => {
     switch (role) {
@@ -66,21 +57,19 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
           { label: 'Dashboard', ariaLabel: 'Go to Faculty Dashboard', link: '/faculty' },
           { label: 'Questions', ariaLabel: 'Manage Question Bank', link: '/faculty/questions' },
           { label: 'Student View', ariaLabel: 'Switch to Student View', link: '/student' },
-          { label: 'Log out', ariaLabel: 'Sign out of account', link: '/api/auth/signout' },
         ]
       : role === 'admin'
       ? [
           { label: 'Admin Hub', ariaLabel: 'Go to Admin Hub', link: '/admin' },
           { label: 'XP Rules', ariaLabel: 'Manage XP Rules', link: '/admin/rules' },
           { label: 'Student View', ariaLabel: 'Switch to Student View', link: '/student' },
-          { label: 'Log out', ariaLabel: 'Sign out of account', link: '/api/auth/signout' },
         ]
       : [
           { label: 'Dashboard', ariaLabel: 'Go to student dashboard', link: '/student' },
           { label: 'Learn', ariaLabel: 'Explore learning modules', link: '/student/learn' },
           { label: 'Play Quiz', ariaLabel: 'Daily quiz and practice mode', link: '/student/play' },
           { label: 'Compete', ariaLabel: 'League tables and duels', link: '/student/compete' },
-          { label: 'Log out', ariaLabel: 'Sign out of account', link: '/api/auth/signout' },
+          { label: 'Profile', ariaLabel: 'View student profile and settings', link: '/student/profile' },
         ];
 
   const socialLinks = [
@@ -128,15 +117,6 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
               openMenuButtonColor="#7DD3FC"
             />
           )}
-          <button
-            onClick={handleSignOut}
-            title="Log out"
-            aria-label="Log out of account"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all hover:scale-105 active:scale-95"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Log out</span>
-          </button>
         </div>
       </div>
     </header>
