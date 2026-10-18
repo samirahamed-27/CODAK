@@ -387,6 +387,11 @@ export interface ComponentItem {
     href?: string;
     onClick?: () => void;
   };
+  secondaryAction?: {
+    label: string;
+    href?: string;
+    onClick?: () => void;
+  };
 }
 
 export interface ComponentProps {
@@ -490,35 +495,56 @@ const Component = forwardRef<HTMLDivElement, ComponentProps>(({ items, className
                       )}
 
                       {/* Play Option after the info */}
-                      {item.playAction && (
+                      {(item.playAction || item.secondaryAction) && (
                         <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                           <div>
                             <span className="text-xs font-mono uppercase tracking-wider text-amber-400 font-bold block">
-                              Interactive Assessment & Play
+                              Interactive Play & Challenge
                             </span>
                             <span className="text-xs text-zinc-400">
-                              Put your theory into practice and claim academic XP
+                              Launch the game arena, complete quests, and claim verifiable XP
                             </span>
                           </div>
-                          {item.playAction.href ? (
-                            <a
-                              href={item.playAction.href}
-                              onClick={item.playAction.onClick}
-                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-300 hover:to-sky-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-sky-500/25 active:scale-95"
-                            >
-                              <span>{item.playAction.label}</span>
-                              <ArrowRight className="w-4 h-4" />
-                            </a>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={item.playAction.onClick}
-                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-300 hover:to-sky-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-sky-500/25 active:scale-95"
-                            >
-                              <span>{item.playAction.label}</span>
-                              <ArrowRight className="w-4 h-4" />
-                            </button>
-                          )}
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            {item.playAction &&
+                              (item.playAction.href ? (
+                                <a
+                                  href={item.playAction.href}
+                                  onClick={item.playAction.onClick}
+                                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-300 hover:to-sky-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-sky-500/25 active:scale-95"
+                                >
+                                  <span>{item.playAction.label}</span>
+                                  <ArrowRight className="w-4 h-4" />
+                                </a>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={item.playAction.onClick}
+                                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-300 hover:to-sky-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-sky-500/25 active:scale-95"
+                                >
+                                  <span>{item.playAction.label}</span>
+                                  <ArrowRight className="w-4 h-4" />
+                                </button>
+                              ))}
+                            {item.secondaryAction &&
+                              (item.secondaryAction.href ? (
+                                <a
+                                  href={item.secondaryAction.href}
+                                  onClick={item.secondaryAction.onClick}
+                                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-slate-200 font-bold text-xs font-mono transition-all active:scale-95"
+                                >
+                                  <span>{item.secondaryAction.label}</span>
+                                </a>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={item.secondaryAction.onClick}
+                                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-slate-200 font-bold text-xs font-mono transition-all active:scale-95"
+                                >
+                                  <span>{item.secondaryAction.label}</span>
+                                </button>
+                              ))}
+                          </div>
                         </div>
                       )}
                     </DialogDescription>
