@@ -488,7 +488,7 @@ const Component = forwardRef<HTMLDivElement, ComponentProps>(({ items, className
                               key={idx}
                               className="px-2.5 py-1 text-xs font-mono rounded-lg bg-sky-500/10 border border-sky-400/20 text-sky-300"
                             >
-                              #{tag}
+                              {tag.replace(/^#/, '')}
                             </span>
                           ))}
                         </div>

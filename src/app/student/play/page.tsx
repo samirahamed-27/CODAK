@@ -17,7 +17,6 @@ const playElements: ComponentItem[] = [
     subtitle: 'ARCADE GAME • 8-BIT CYBER BATTLE',
     description:
       'Battle algorithmic bugs and conquer compiler errors in our premier retro 8-bit cyber arena. Choose your elemental starter creature—Pyrawr (Python 🔥), Jaskull (JavaScript ⚡), or Cplusaur (C++ 🌿). Each attack round tests your algorithmic problem-solving: answer correctly to charge energy, trigger critical strikes, and defeat multi-tier bug bosses. Earn +50 XP and verifiable academic ledger progression for every victorious match!',
-    tags: ['8BitPixelGame', 'Codemons', 'Python', 'JavaScript', 'Cplusplus', '+50XP'],
     playAction: {
       label: 'Launch Play Lounge',
       href: '/play.html',
@@ -36,7 +35,6 @@ const playElements: ComponentItem[] = [
     subtitle: 'QUEST LOG • VERIFIABLE LEDGER',
     description:
       'Embark on time-locked academic quests and multi-tier learning milestones. Complete weekly quiz streaks, solve curated problem benchmarks, and earn unique ledger rewards authenticated directly on the server. Unlock rare pixel avatar cosmetics, bonus streak freezes, and season league XP multipliers.',
-    tags: ['ActiveQuests', 'WeeklyMilestones', 'LedgerRewards', 'XPMultipliers', 'UpTo+75XP'],
     playAction: {
       label: 'View Active Quests',
       href: '/student/quests',
@@ -51,7 +49,6 @@ const playElements: ComponentItem[] = [
     subtitle: 'PRACTICE DRILLS • 15 PROBLEMS',
     description:
       'Tackle handpicked algorithmic challenges spanning Arrays, Dynamic Programming, Two Pointers, and Binary Trees. Curated from LeetCode, Codeforces, and HackerRank, each problem features automated solution checks, detailed Big-O analysis, and peer discussion benchmarks.',
-    tags: ['PracticeDirectory', 'LeetCode', 'Codeforces', 'HackerRank', '15Problems'],
     playAction: {
       label: 'Browse Practice Problems',
       href: '/student/practice',
