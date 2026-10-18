@@ -12,10 +12,15 @@ interface AcademySidebarProps {
 export function AcademySidebar({ totalXp = 1420 }: AcademySidebarProps) {
   const levelInfo = levelFromXp(totalXp);
   const [mounted, setMounted] = useState(false);
+  const [animProgress, setAnimProgress] = useState(0);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    const timer = setTimeout(() => {
+      setAnimProgress(levelInfo.progressPercent);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [levelInfo.progressPercent]);
 
   const menuItems: StaggeredMenuItem[] = [
     { label: 'Home', ariaLabel: 'Go to student home', link: '/student' },
@@ -53,8 +58,8 @@ export function AcademySidebar({ totalXp = 1420 }: AcademySidebarProps) {
         aria-label={`XP progress to Level ${levelInfo.level + 1}`}
       >
         <div
-          className="h-full rounded-full bg-gradient-to-r from-sky-400 via-[#7CC4FF] to-[#FFB27A] shadow-[0_0_8px_rgba(255,178,122,0.5)] transition-all duration-500 ease-out"
-          style={{ width: `${levelInfo.progressPercent}%` }}
+          className="h-full rounded-full bg-gradient-to-r from-sky-400 via-[#7CC4FF] to-[#FFB27A] shadow-[0_0_8px_rgba(255,178,122,0.5)] transition-all duration-700 ease-out"
+          style={{ width: `${animProgress}%` }}
         />
       </div>
       <div className="text-[10px] text-right text-[#6C7FAD] mt-1">

@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import Aurora from '@/components/Aurora';
+import { CelebrationManager, triggerCelebrationCheck } from '@/components/animations/CelebrationManager';
 import {
   getMyDuelsAction,
   createOrJoinAutoMatchAction,
@@ -313,11 +314,15 @@ export default function StudentCompetePage() {
   };
 
   const handleCloseDuelModal = () => {
+    const wasResultShown = Boolean(duelResult);
     setPlayingDuelId(null);
     setDuelQuestions([]);
     setDuelResult(null);
     setDuelError(null);
     fetchDuels();
+    if (wasResultShown) {
+      triggerCelebrationCheck();
+    }
   };
 
   const getTierColor = (tierId: string) => {
@@ -364,6 +369,9 @@ export default function StudentCompetePage() {
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col w-full">
+        {/* Celebration Modal Manager */}
+        <CelebrationManager />
+
         <Navbar role="student" userName="Aarav Sharma" />
 
         <main className="flex-1 max-w-lg w-full mx-auto px-4 py-6 flex flex-col gap-5">

@@ -13,6 +13,7 @@ import { ScoreCard } from '@/components/academy/ScoreCard';
 import { initialStudentProfile, StudentProfile } from '@/data/studentDashboardData';
 import { levelFromXp } from '@/lib/levels';
 import { getStudentStreakAction } from '@/app/actions/quiz';
+import { CelebrationManager, triggerCelebrationCheck } from '@/components/animations/CelebrationManager';
 
 export default function StudentDashboardPage() {
   const [profile, setProfile] = useState<StudentProfile>(initialStudentProfile);
@@ -60,6 +61,8 @@ export default function StudentDashboardPage() {
         level: newLevel,
       };
     });
+    // Check celebration after quest XP
+    triggerCelebrationCheck();
   };
 
   const handleUpdateAvatar = (newUrl: string | null) => {
@@ -71,6 +74,9 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#07080B] game-bg-grid text-white flex flex-col font-body selection:bg-sky-400 selection:text-[#07080B]">
+      {/* Level-Up & Rank-Up Celebration Manager */}
+      <CelebrationManager />
+
       {/* Sleek Floating Menu Button */}
       <AcademySidebar totalXp={profile.totalXp} />
 

@@ -54,8 +54,8 @@ export async function middleware(request: NextRequest) {
       hasCampus = !!profile?.campus_id;
     }
 
-    // Allow auth routes like /api/auth/signout to pass through directly
-    if (request.nextUrl.pathname.startsWith('/api/auth')) {
+    // Allow auth routes like /api/auth/signout and /auth/callback to pass through directly
+    if (request.nextUrl.pathname.startsWith('/api/auth') || request.nextUrl.pathname.startsWith('/auth')) {
       return supabaseResponse;
     }
 

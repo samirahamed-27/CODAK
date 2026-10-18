@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { RankProgress } from '@/lib/ranks';
 import { RankTier } from '@/types/database';
 import { RankEmblem } from './RankEmblem';
@@ -27,6 +29,17 @@ export const RankProgressSection: React.FC<RankProgressSectionProps> = ({
     maxRankProgressPercent,
     maxRank,
   } = safeProgress;
+
+  const [animPercent, setAnimPercent] = useState(0);
+  const [animMaxPercent, setAnimMaxPercent] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAnimPercent(rankProgressPercent);
+      setAnimMaxPercent(maxRankProgressPercent);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [rankProgressPercent, maxRankProgressPercent]);
 
   const maxRankMinXp = xpThresholdForLevel(maxRank.min_level);
 
@@ -120,9 +133,9 @@ export const RankProgressSection: React.FC<RankProgressSectionProps> = ({
           {/* Progress bar fill */}
           <div className="h-3 w-full bg-slate-800/80 rounded-full overflow-hidden p-0.5 border border-white/10">
             <div
-              className="h-full rounded-full transition-all duration-500 ease-out"
+              className="h-full rounded-full transition-all duration-700 ease-out"
               style={{
-                width: `${rankProgressPercent}%`,
+                width: `${animPercent}%`,
                 background: nextRank
                   ? `linear-gradient(90deg, ${currentRank.color}, ${nextRank.color})`
                   : currentRank.color,
@@ -162,9 +175,9 @@ export const RankProgressSection: React.FC<RankProgressSectionProps> = ({
           {/* Max Progress bar fill */}
           <div className="h-3 w-full bg-slate-800/80 rounded-full overflow-hidden p-0.5 border border-white/10">
             <div
-              className="h-full rounded-full transition-all duration-500 ease-out"
+              className="h-full rounded-full transition-all duration-700 ease-out"
               style={{
-                width: `${maxRankProgressPercent}%`,
+                width: `${animMaxPercent}%`,
                 background: `linear-gradient(90deg, #38BDF8, #818CF8, #A855F7)`,
                 boxShadow: '0 0 10px rgba(168, 85, 247, 0.4)',
               }}

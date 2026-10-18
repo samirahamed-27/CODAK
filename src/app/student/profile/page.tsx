@@ -17,6 +17,7 @@ import { RankProgressSection } from '@/components/ranks/RankProgressSection';
 import { getMyRankProgressAction, getRankTiersAction } from '@/app/actions/ranks';
 import { RankTier } from '@/types/database';
 import { RankProgress } from '@/lib/ranks';
+import { CelebrationManager } from '@/components/animations/CelebrationManager';
 
 export default function StudentProfilePage() {
   const supabase = createClient();
@@ -183,6 +184,9 @@ export default function StudentProfilePage() {
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col w-full">
+        {/* Celebration Manager for Level-Up and Rank-Up */}
+        <CelebrationManager />
+
         <Navbar role="student" userName={studentName} />
 
         <main className="flex-1 max-w-md w-full mx-auto px-4 py-6 flex flex-col gap-6">

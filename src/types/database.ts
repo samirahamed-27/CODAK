@@ -45,6 +45,8 @@ export interface Student {
   roll_no: string;
   department: string;
   year_of_study: number;
+  last_celebrated_level?: number;
+  last_celebrated_rank?: string;
   created_at: string;
 }
 

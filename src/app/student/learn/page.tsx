@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import Shuffle from '@/components/Shuffle';
 import clsx from 'clsx';
+import { CelebrationManager, triggerCelebrationCheck } from '@/components/animations/CelebrationManager';
 
 export default function StudentLearnPage() {
   const [activeTab, setActiveTab] = useState<'daily' | 'practice' | 'match'>('daily');
@@ -173,6 +174,8 @@ export default function StudentLearnPage() {
         isPerfect: res.isPerfect,
         xpAwarded: res.xpAwarded,
       });
+      // Check celebration after concept match result
+      triggerCelebrationCheck();
     }
   }
 
@@ -262,6 +265,8 @@ export default function StudentLearnPage() {
         bonusAwarded: res.bonusAwarded,
         notes: res.notes,
       });
+      // Check for celebration right after quiz finalized
+      triggerCelebrationCheck();
     }
   }
 
@@ -273,6 +278,9 @@ export default function StudentLearnPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#07080B] pb-24 text-slate-100">
+      {/* Celebration Modal Manager */}
+      <CelebrationManager />
+
       <Navbar role="student" userName="Aarav Sharma" />
 
       <main className="flex-1 max-w-xl w-full mx-auto px-4 py-6 flex flex-col gap-5">

@@ -5,7 +5,9 @@ import { useState } from 'react';
 
 export interface SignIn1Props {
   onSignInSuccess?: (email: string, password?: string) => void;
+  onGoogleSignIn?: () => void;
   isLoading?: boolean;
+  isGoogleLoading?: boolean;
   externalError?: string | null;
   demoAccounts?: Array<{
     role: string;
@@ -18,7 +20,9 @@ export interface SignIn1Props {
 
 const SignIn1 = ({
   onSignInSuccess,
+  onGoogleSignIn,
   isLoading = false,
+  isGoogleLoading = false,
   externalError = null,
   demoAccounts,
   onQuickDemoSelect,
@@ -123,11 +127,16 @@ const SignIn1 = ({
             {/* Google Sign In */}
             <button
               type="button"
+              disabled={isLoading || isGoogleLoading}
               onClick={() => {
-                setEmail('student@demo.edu');
-                setPassword('Password123!');
+                if (onGoogleSignIn) {
+                  onGoogleSignIn();
+                } else {
+                  setEmail('student@demo.edu');
+                  setPassword('Password123!');
+                }
               }}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#232526] to-[#1c1d1e] border border-white/10 rounded-full px-5 py-3 font-medium text-white shadow hover:brightness-110 transition mb-2 text-sm active:scale-95"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-b from-[#232526] to-[#1c1d1e] border border-white/10 rounded-full px-5 py-3 font-medium text-white shadow hover:brightness-110 transition mb-2 text-sm active:scale-95 disabled:opacity-50"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
@@ -147,7 +156,7 @@ const SignIn1 = ({
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              <span>Continue with Google</span>
+              <span>{isGoogleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
             </button>
 
             {/* Quick Demo Access Pills */}
