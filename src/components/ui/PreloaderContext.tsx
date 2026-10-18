@@ -81,6 +81,7 @@ export function PreloaderProvider({ children }: { children: React.ReactNode }) {
       // Kick off navigation immediately so destination page mounts while preloader runs
       setTimeout(() => {
         router.push(dest);
+        router.refresh();
       }, 60);
     },
     [router]

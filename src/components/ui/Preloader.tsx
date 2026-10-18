@@ -63,36 +63,45 @@ export const Preloader: React.FC<PreloaderProps> = ({
     return () => clearInterval(interval);
   }, [active, duration]);
 
-  // Once progress reaches 100%, trigger exit when destination route is ready
+  // 1. Once progress reaches 100%, transition from 'loading' to 'exiting'
   useEffect(() => {
     if (progress < 100 || phase !== 'loading') return;
 
-    let exitTimer: NodeJS.Timeout;
-
     if (readyToExit) {
       setPhase('exiting');
-      exitTimer = setTimeout(() => {
-        setPhase('done');
-        onComplete?.();
-      }, 1250);
-    } else {
-      // Fallback: never hang indefinitely, max wait 800ms for destination route mount
-      const fallback = setTimeout(() => {
-        setPhase('exiting');
-        exitTimer = setTimeout(() => {
-          setPhase('done');
-          onComplete?.();
-        }, 1250);
-      }, 800);
-
-      return () => {
-        clearTimeout(fallback);
-        clearTimeout(exitTimer);
-      };
+      return;
     }
 
+    // Fallback: if destination route takes a moment to mount, wait at most 700ms
+    const fallbackTimer = setTimeout(() => {
+      setPhase('exiting');
+    }, 700);
+
+    return () => clearTimeout(fallbackTimer);
+  }, [progress, readyToExit, phase]);
+
+  // 2. Once in 'exiting' phase, smoothly wait for stairs to finish sliding up, then complete
+  useEffect(() => {
+    if (phase !== 'exiting') return;
+
+    const exitTimer = setTimeout(() => {
+      setPhase('done');
+      onComplete?.();
+    }, 1100);
+
     return () => clearTimeout(exitTimer);
-  }, [progress, readyToExit, phase, onComplete]);
+  }, [phase, onComplete]);
+
+  // 3. Absolute watchdog safety timeout: preloader can NEVER hang longer than duration + 2500ms
+  useEffect(() => {
+    if (!active) return;
+    const watchdog = setTimeout(() => {
+      setPhase('done');
+      onComplete?.();
+    }, duration + 2500);
+
+    return () => clearTimeout(watchdog);
+  }, [active, duration, onComplete]);
 
   if (!active || phase === 'done') return null;
 
@@ -113,7 +122,9 @@ export const Preloader: React.FC<PreloaderProps> = ({
           role="status"
           aria-live="polite"
           aria-label="Application loading screen"
-          className={`${position} inset-0 pointer-events-auto flex items-center justify-center overflow-hidden`}
+          className={`${position} inset-0 ${
+            isExiting ? 'pointer-events-none' : 'pointer-events-auto'
+          } flex items-center justify-center overflow-hidden`}
           style={{ zIndex }}
         >
           {/* ========================================================= */}
