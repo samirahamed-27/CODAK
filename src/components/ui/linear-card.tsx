@@ -211,11 +211,14 @@ function DialogContainer({ children, className }: DialogContainerProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     if (isOpen) {
       window.scrollTo(0, 0);
     }
-    setMounted(true);
-    return () => setMounted(false);
   }, [isOpen]);
 
   if (!mounted) return null;
@@ -481,9 +484,23 @@ const Component = forwardRef<HTMLDivElement, ComponentProps>(({ items, className
                         exit: { opacity: 0, scale: 0.95, y: -20 },
                       }}
                     >
-                      <p className="mt-4 text-sm sm:text-base leading-relaxed text-zinc-300">
-                        {item.description}
-                      </p>
+                      <div className="mt-4 space-y-3 text-sm sm:text-base leading-relaxed text-zinc-300">
+                        {item.description.split('\n\n').map((paragraph, pIdx) => {
+                          const isTip = paragraph.includes('Recommended to play on PC') || paragraph.startsWith('🖥️') || paragraph.startsWith('💡');
+                          if (isTip) {
+                            return (
+                              <div
+                                key={pIdx}
+                                className="flex items-center gap-2.5 p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-200 text-xs sm:text-sm font-mono shadow-sm"
+                              >
+                                <span className="text-base select-none">🖥️</span>
+                                <span>{paragraph.replace(/^[🖥️💡\s•\-]+/, '')}</span>
+                              </div>
+                            );
+                          }
+                          return <p key={pIdx}>{paragraph}</p>;
+                        })}
+                      </div>
 
                       {item.tags && item.tags.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-5">
