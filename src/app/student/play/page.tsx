@@ -58,7 +58,7 @@ const playElements: ComponentItem[] = [
 
 export default function StudentPlayPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#07080B] game-bg-grid pb-24 text-slate-100">
+    <div className="min-h-screen flex flex-col bg-black game-bg-grid pb-24 text-slate-100">
       <Navbar role="student" userName="Aarav Sharma" />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 flex flex-col gap-6">
@@ -71,10 +71,10 @@ export default function StudentPlayPage() {
             stagger={0.03}
             triggerOnHover={true}
             color="#FFFFFF"
-            accentColor="#7DD3FC"
+            accentColor="#A1A1AA"
             style={{ fontSize: '1.5rem', letterSpacing: '0.05em' }}
           />
-          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1 max-w-2xl">
             Codemons retro cyber arena, algorithmic bug battles, starter monsters, weekly quests, and curated competitive practice arenas.
           </p>
         </div>
@@ -85,12 +85,12 @@ export default function StudentPlayPage() {
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <h2 className="text-xs font-mono font-bold tracking-wider text-slate-300 uppercase">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              <h2 className="text-xs font-mono font-bold tracking-wider text-zinc-300 uppercase">
                 Interactive Play Arenas
               </h2>
             </div>
-            <span className="text-[11px] font-mono text-emerald-400/80">3 Experiences Available</span>
+            <span className="text-[11px] font-mono text-zinc-400">3 Experiences Available</span>
           </div>
 
           <LinearCard items={playElements} />

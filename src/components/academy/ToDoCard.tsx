@@ -103,7 +103,7 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
               stagger={0.03}
               triggerOnHover={true}
               color="#FFFFFF"
-              accentColor="#7DD3FC"
+              accentColor="#A1A1AA"
               style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
             />
           </div>
@@ -112,9 +112,9 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
         {/* Counter Chip */}
         <div
           suppressHydrationWarning
-          className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-mono text-sky-300"
+          className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-mono text-zinc-200"
         >
-          <Sparkles className="w-3 h-3 text-sky-400" />
+          <Sparkles className="w-3 h-3 text-white" />
           <span suppressHydrationWarning>
             {completedCount}/{quests.length} Done
           </span>
@@ -148,7 +148,7 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
                 {isAnimating && (
                   <div
                     aria-hidden="true"
-                    className="absolute -top-3 left-6 font-mono text-xs font-bold text-sky-300 animate-float-xp pointer-events-none z-30"
+                    className="absolute -top-3 left-6 font-mono text-xs font-bold text-white animate-float-xp pointer-events-none z-30"
                   >
                     +{quest.xpReward} XP!
                   </div>
@@ -166,8 +166,8 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
                     }`}
                     className={`w-5 h-5 shrink-0 rounded-full border flex items-center justify-center transition-all ${
                       quest.completed
-                        ? 'bg-sky-400 border-sky-400 text-black shadow-sm'
-                        : 'border-white/20 bg-zinc-900 hover:border-sky-400'
+                        ? 'bg-white border-white text-black shadow-sm'
+                        : 'border-white/20 bg-zinc-900 hover:border-white'
                     }`}
                   >
                     {quest.completed && <Check className="w-3 h-3 stroke-[3] text-black" />}
@@ -189,7 +189,7 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
                   type="button"
                   onClick={() => handleDeleteQuest(quest.id)}
                   aria-label={`Delete quest: ${quest.title}`}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-zinc-500 hover:text-rose-400 transition-all"
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-zinc-500 hover:text-white transition-all"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -207,11 +207,11 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
           onChange={(e) => setNewTitle(e.target.value)}
           placeholder="New task (e.g. Master DP)..."
           maxLength={80}
-          className="flex-1 px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-sky-400"
+          className="flex-1 px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-white"
         />
         <button
           type="submit"
-          className="px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-black font-semibold text-xs flex items-center justify-center gap-1 shrink-0 transition-colors"
+          className="px-3 py-1.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-semibold text-xs flex items-center justify-center gap-1 shrink-0 transition-colors"
           aria-label="Add task"
         >
           <Plus className="w-3.5 h-3.5" />

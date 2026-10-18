@@ -30,8 +30,8 @@ function BottomNavContent() {
       icon: item.icon,
       active: isActive,
       tint: isActive 
-        ? (['#38BDF8', '#0284C7'] as [string, string])
-        : (['#161B26', '#0D111A'] as [string, string]),
+        ? (['#FFFFFF', '#71717A'] as [string, string])
+        : (['#18181B', '#09090B'] as [string, string]),
     };
   });
 

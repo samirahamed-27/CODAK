@@ -27,8 +27,8 @@ export const Preloader: React.FC<PreloaderProps> = ({
   duration = 2000,
   text = 'Authenticating CODAK Session...',
   subtext = 'Preparing your personalized academic dashboard',
-  bgColor = '#070D19',
-  accentColor = '#38BDF8',
+  bgColor = '#000000',
+  accentColor = '#FFFFFF',
   zIndex = 99999,
   position = 'fixed',
   stairCount = 6,
@@ -132,12 +132,12 @@ export const Preloader: React.FC<PreloaderProps> = ({
           {/* ========================================================= */}
           {variant === 'stairs' && (
             <div className="absolute inset-0 flex w-full h-full overflow-hidden">
-              {/* Ambient light blue background glow (fades out as stairs lift) */}
+              {/* Ambient duotone background glow (fades out as stairs lift) */}
               <motion.div
                 initial={{ opacity: 1 }}
                 animate={isExiting ? { opacity: 0 } : { opacity: 1 }}
                 transition={{ duration: 0.55 }}
-                className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-sky-900/25 via-[#060c18]/95 to-[#04070d] pointer-events-none -z-10"
+                className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-800/20 via-[#000000]/95 to-[#000000] pointer-events-none -z-10"
               />
 
               {Array.from({ length: stairCount }).map((_, i) => (
@@ -150,19 +150,19 @@ export const Preloader: React.FC<PreloaderProps> = ({
                     ease: [0.77, 0, 0.175, 1],
                     delay: isExiting ? (stairCount - i - 1) * 0.055 : 0,
                   }}
-                  className="h-full flex-1 relative border-r border-sky-400/[0.18] last:border-none overflow-hidden"
+                  className="h-full flex-1 relative border-r border-white/[0.12] last:border-none overflow-hidden"
                   style={{
                     background:
                       i % 2 === 0
-                        ? 'linear-gradient(180deg, #091528 0%, #060e1c 50%, #040812 100%)'
-                        : 'linear-gradient(180deg, #0b1a32 0%, #071222 50%, #050a16 100%)',
-                    boxShadow: 'inset 0 0 50px rgba(56, 189, 248, 0.03)',
+                        ? 'linear-gradient(180deg, #141416 0%, #0a0a0c 50%, #000000 100%)'
+                        : 'linear-gradient(180deg, #18181b 0%, #0e0e10 50%, #000000 100%)',
+                    boxShadow: 'inset 0 0 50px rgba(255, 255, 255, 0.02)',
                   }}
                 >
-                  {/* Subtle light blue vertical sheen */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-sky-400/[0.06] via-transparent to-sky-400/[0.04] pointer-events-none" />
-                  {/* Glowing light blue bottom rim that sweeps upward */}
-                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-sky-500/20 via-sky-300 to-sky-500/20 shadow-[0_0_15px_rgba(56,189,248,0.7)]" />
+                  {/* Subtle white vertical sheen */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-white/[0.06] via-transparent to-white/[0.04] pointer-events-none" />
+                  {/* Glowing white bottom rim that sweeps upward */}
+                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-white/20 via-white to-white/20 shadow-[0_0_15px_rgba(255,255,255,0.7)]" />
                 </motion.div>
               ))}
 
@@ -173,33 +173,33 @@ export const Preloader: React.FC<PreloaderProps> = ({
                 transition={{ duration: 0.45, ease: 'easeOut' }}
                 className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 pointer-events-none"
               >
-                {/* Center light blue ambient halo */}
-                <div className="absolute w-[440px] h-[440px] rounded-full bg-sky-500/12 blur-[90px] pointer-events-none -z-10" />
+                {/* Center duotone ambient halo */}
+                <div className="absolute w-[440px] h-[440px] rounded-full bg-white/5 blur-[90px] pointer-events-none -z-10" />
 
                 <div className="relative mb-5">
-                  <div className="w-16 h-16 rounded-2xl bg-sky-950/40 border border-sky-400/50 flex items-center justify-center text-3xl shadow-[0_0_25px_rgba(56,189,248,0.25)] backdrop-blur-md">
+                  <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-white/30 flex items-center justify-center text-3xl shadow-[0_0_25px_rgba(255,255,255,0.15)] backdrop-blur-md">
                     🎮
                   </div>
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ repeat: Infinity, duration: 5, ease: 'linear' }}
-                    className="absolute -inset-1.5 rounded-2xl border-2 border-dashed border-sky-400/35 pointer-events-none"
+                    className="absolute -inset-1.5 rounded-2xl border-2 border-dashed border-white/35 pointer-events-none"
                   />
                 </div>
 
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-xl font-bold tracking-wider text-white">CODAK</span>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-mono font-bold border border-sky-400/40 shadow-[0_0_10px_rgba(56,189,248,0.2)]">
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/10 text-white font-mono font-bold border border-white/30 shadow-[0_0_10px_rgba(255,255,255,0.2)]">
                     ACADEMY
                   </span>
                 </div>
 
-                <p className="text-sm font-medium text-slate-200 mb-1 max-w-sm">{text}</p>
-                <p className="text-xs text-sky-300/60 max-w-xs">{subtext}</p>
+                <p className="text-sm font-medium text-zinc-200 mb-1 max-w-sm">{text}</p>
+                <p className="text-xs text-zinc-400 max-w-xs">{subtext}</p>
 
-                <div className="w-52 h-1.5 rounded-full bg-white/10 mt-6 overflow-hidden p-0.5 border border-sky-400/20">
+                <div className="w-52 h-1.5 rounded-full bg-white/10 mt-6 overflow-hidden p-0.5 border border-white/20">
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-sky-400 via-cyan-300 to-indigo-400 shadow-[0_0_12px_rgba(56,189,248,0.5)]"
+                    className="h-full rounded-full bg-gradient-to-r from-zinc-400 via-white to-zinc-200 shadow-[0_0_12px_rgba(255,255,255,0.6)]"
                     style={{ width: `${progress}%` }}
                     transition={{ duration: 0.1 }}
                   />
@@ -226,18 +226,18 @@ export const Preloader: React.FC<PreloaderProps> = ({
                   </div>
                   <span className="text-sm font-bold tracking-wider text-white">CODAK</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                   AUTHENTICATING
                 </div>
               </div>
 
               {/* Big Percentage Number */}
               <div className="my-auto">
-                <div className="text-[clamp(5rem,14vw,11rem)] font-black leading-none tracking-tight font-mono text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-200 to-slate-600">
+                <div className="text-[clamp(5rem,14vw,11rem)] font-black leading-none tracking-tight font-mono text-transparent bg-clip-text bg-gradient-to-b from-white via-zinc-200 to-zinc-600">
                   {progress}%
                 </div>
-                <p className="text-sm font-mono text-sky-400 tracking-wide mt-2">
+                <p className="text-sm font-mono text-white tracking-wide mt-2">
                   {getStageLabel(progress)}
                 </p>
               </div>
@@ -246,11 +246,11 @@ export const Preloader: React.FC<PreloaderProps> = ({
               <div className="space-y-3">
                 <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-sky-400 via-indigo-400 to-emerald-400 transition-all duration-75"
+                    className="h-full rounded-full bg-gradient-to-r from-zinc-400 via-white to-zinc-200 transition-all duration-75"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-xs text-slate-500 font-mono">
+                <div className="flex justify-between text-xs text-zinc-500 font-mono">
                   <span>{text}</span>
                   <span>{progress}/100</span>
                 </div>
@@ -302,7 +302,7 @@ export const Preloader: React.FC<PreloaderProps> = ({
                 {/* Inner Center Orb */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                   <span className="text-3xl font-black font-mono text-white">{progress}%</span>
-                  <span className="text-[10px] uppercase font-bold text-sky-400 tracking-wider mt-1">
+                  <span className="text-[10px] uppercase font-bold text-white tracking-wider mt-1">
                     READY
                   </span>
                 </div>
@@ -310,7 +310,7 @@ export const Preloader: React.FC<PreloaderProps> = ({
 
               <div className="mt-8 text-center max-w-xs px-4">
                 <h3 className="text-sm font-semibold text-white tracking-wide">{text}</h3>
-                <p className="text-xs text-slate-500 mt-1">{subtext}</p>
+                <p className="text-xs text-zinc-500 mt-1">{subtext}</p>
               </div>
             </motion.div>
           )}
@@ -325,11 +325,11 @@ export const Preloader: React.FC<PreloaderProps> = ({
                 initial={{ y: 0 }}
                 animate={isExiting ? { y: '-100%' } : { y: 0 }}
                 transition={{ duration: 0.65, ease: [0.76, 0, 0.24, 1] }}
-                className="w-full flex-1 border-b border-sky-400/20 flex items-end justify-center pb-6"
+                className="w-full flex-1 border-b border-white/20 flex items-end justify-center pb-6"
                 style={{ backgroundColor: bgColor }}
               >
                 <div className="text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 border border-sky-400/40 mx-auto flex items-center justify-center text-2xl shadow-lg shadow-sky-500/10 mb-2">
+                  <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/30 mx-auto flex items-center justify-center text-2xl shadow-lg shadow-white/10 mb-2">
                     🎮
                   </div>
                   <h2 className="text-base font-bold text-white tracking-wide">CODAK PLATFORM</h2>
@@ -340,7 +340,7 @@ export const Preloader: React.FC<PreloaderProps> = ({
               <motion.div
                 animate={isExiting ? { opacity: 0 } : { opacity: [0.4, 1, 0.4] }}
                 transition={{ repeat: Infinity, duration: 1.5 }}
-                className="h-[2px] w-full bg-gradient-to-r from-transparent via-sky-400 to-transparent z-20 shadow-[0_0_12px_#38BDF8]"
+                className="h-[2px] w-full bg-gradient-to-r from-transparent via-white to-transparent z-20 shadow-[0_0_12px_#ffffff]"
               />
 
               {/* Bottom Half */}
@@ -351,10 +351,10 @@ export const Preloader: React.FC<PreloaderProps> = ({
                 className="w-full flex-1 flex flex-col items-center justify-start pt-6 text-center px-4"
                 style={{ backgroundColor: bgColor }}
               >
-                <p className="text-xs font-mono text-sky-400">{getStageLabel(progress)}</p>
+                <p className="text-xs font-mono text-white">{getStageLabel(progress)}</p>
                 <div className="w-44 h-1 rounded-full bg-white/10 mt-3 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-sky-400 transition-all duration-75"
+                    className="h-full rounded-full bg-white transition-all duration-75"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -372,12 +372,12 @@ export const Preloader: React.FC<PreloaderProps> = ({
                 initial={{ x: 0 }}
                 animate={isExiting ? { x: '-100%' } : { x: 0 }}
                 transition={{ duration: 0.7, ease: [0.76, 0, 0.24, 1] }}
-                className="h-full w-1/2 border-r border-sky-400/30 flex items-center justify-end pr-6 sm:pr-12"
+                className="h-full w-1/2 border-r border-white/20 flex items-center justify-end pr-6 sm:pr-12"
                 style={{ backgroundColor: bgColor }}
               >
                 <div className="text-right">
                   <span className="text-2xl sm:text-4xl font-black text-white block">COD</span>
-                  <span className="text-xs font-mono text-slate-500">ACADEMIC</span>
+                  <span className="text-xs font-mono text-zinc-500">ACADEMIC</span>
                 </div>
               </motion.div>
 
@@ -386,12 +386,12 @@ export const Preloader: React.FC<PreloaderProps> = ({
                 initial={{ x: 0 }}
                 animate={isExiting ? { x: '100%' } : { x: 0 }}
                 transition={{ duration: 0.7, ease: [0.76, 0, 0.24, 1] }}
-                className="h-full w-1/2 border-l border-sky-400/30 flex items-center justify-start pl-6 sm:pl-12"
+                className="h-full w-1/2 border-l border-white/20 flex items-center justify-start pl-6 sm:pl-12"
                 style={{ backgroundColor: bgColor }}
               >
                 <div className="text-left">
-                  <span className="text-2xl sm:text-4xl font-black text-sky-400 block">AK</span>
-                  <span className="text-xs font-mono text-slate-500">PROGRESSION</span>
+                  <span className="text-2xl sm:text-4xl font-black text-white block">AK</span>
+                  <span className="text-xs font-mono text-zinc-500">PROGRESSION</span>
                 </div>
               </motion.div>
 
@@ -401,7 +401,7 @@ export const Preloader: React.FC<PreloaderProps> = ({
                 transition={{ duration: 0.3 }}
                 className="absolute inset-0 flex items-center justify-center pointer-events-none"
               >
-                <div className="w-14 h-14 rounded-full bg-slate-900 border border-sky-400 flex items-center justify-center text-xl shadow-[0_0_20px_rgba(56,189,248,0.4)]">
+                <div className="w-14 h-14 rounded-full bg-zinc-900 border border-white flex items-center justify-center text-xl shadow-[0_0_20px_rgba(255,255,255,0.3)]">
                   🎮
                 </div>
               </motion.div>

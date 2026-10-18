@@ -336,7 +336,11 @@ function DialogImage({ src, alt, className, style }: DialogImageProps) {
       alt={alt}
       className={cn(className)}
       layoutId={`dialog-img-${uniqueId}`}
-      style={style}
+      style={{
+        ...style,
+        filter: 'none',
+        WebkitFilter: 'none',
+      }}
     />
   );
 }
@@ -416,20 +420,20 @@ const Component = forwardRef<HTMLDivElement, ComponentProps>(({ items, className
                 style={{
                   borderRadius: '16px',
                 }}
-                className="group flex w-full flex-col overflow-hidden border border-white/10 bg-[#0B0F19] hover:border-sky-400/50 hover:bg-[#101726] transition-all duration-300 shadow-xl shadow-black/40"
+                className="group flex w-full flex-col overflow-hidden border border-white/10 bg-[#0c0c0e] hover:border-white/40 hover:bg-[#141416] transition-all duration-300 shadow-xl shadow-black/40"
               >
-                <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-950">
+                <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-zinc-950">
                   <DialogImage
                     src={item.url.src}
                     alt={item.title}
                     className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-transparent to-transparent opacity-90" />
+                  <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0c0c0e] via-[#0c0c0e]/50 to-transparent pointer-events-none" />
                 </div>
-                <div className="relative flex flex-grow flex-row items-end justify-between p-4 -mt-6 z-10">
+                <div className="relative flex flex-grow flex-row items-end justify-between p-4 -mt-4 z-10">
                   <div className="pr-2">
                     {item.subtitle && (
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-sky-400 block mb-0.5">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-300 block mb-0.5">
                         {item.subtitle}
                       </span>
                     )}
@@ -437,7 +441,7 @@ const Component = forwardRef<HTMLDivElement, ComponentProps>(({ items, className
                       {item.title}
                     </DialogTitle>
                   </div>
-                  <div className="p-2 bg-white/10 group-hover:bg-sky-400 group-hover:text-black rounded-full text-white transition-all shadow-md shrink-0">
+                  <div className="p-2 bg-white/10 group-hover:bg-white group-hover:text-black rounded-full text-white transition-all shadow-md shrink-0">
                     <Plus className="w-4 h-4" />
                   </div>
                 </div>
@@ -448,20 +452,20 @@ const Component = forwardRef<HTMLDivElement, ComponentProps>(({ items, className
                   style={{
                     borderRadius: '24px',
                   }}
-                  className="relative flex h-full max-h-[85vh] mx-auto flex-col overflow-y-auto border border-white/15 bg-[#090D17] text-white shadow-2xl lg:w-[850px] w-full"
+                  className="relative flex h-full max-h-[85vh] mx-auto flex-col overflow-y-auto border border-white/15 bg-[#09090b] text-white shadow-2xl lg:w-[850px] w-full"
                 >
-                  <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-slate-950 shrink-0">
+                  <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-zinc-950 shrink-0">
                     <DialogImage
                       src={item.url.src}
                       alt={item.title}
                       className="h-full w-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#090D17] via-transparent to-transparent opacity-90" />
+                    <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#09090b] via-[#09090b]/50 to-transparent pointer-events-none" />
                   </div>
 
                   <div className="p-6 sm:p-8 flex-1">
                     {item.subtitle && (
-                      <DialogSubtitle className="text-xs font-mono font-bold uppercase tracking-widest text-sky-400 mb-1">
+                      <DialogSubtitle className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-400 mb-1">
                         {item.subtitle}
                       </DialogSubtitle>
                     )}
@@ -486,7 +490,7 @@ const Component = forwardRef<HTMLDivElement, ComponentProps>(({ items, className
                           {item.tags.map((tag, idx) => (
                             <span
                               key={idx}
-                              className="px-2.5 py-1 text-xs font-mono rounded-lg bg-sky-500/10 border border-sky-400/20 text-sky-300"
+                              className="px-2.5 py-1 text-xs font-mono rounded-lg bg-white/10 border border-white/20 text-white"
                             >
                               {tag.replace(/^#/, '')}
                             </span>
@@ -498,7 +502,7 @@ const Component = forwardRef<HTMLDivElement, ComponentProps>(({ items, className
                       {(item.playAction || item.secondaryAction) && (
                         <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                           <div>
-                            <span className="text-xs font-mono uppercase tracking-wider text-amber-400 font-bold block">
+                            <span className="text-xs font-mono uppercase tracking-wider text-white font-bold block">
                               Interactive Play & Challenge
                             </span>
                             <span className="text-xs text-zinc-400">
@@ -511,7 +515,7 @@ const Component = forwardRef<HTMLDivElement, ComponentProps>(({ items, className
                                 <a
                                   href={item.playAction.href}
                                   onClick={item.playAction.onClick}
-                                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-300 hover:to-sky-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-sky-500/25 active:scale-95"
+                                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-white/10 active:scale-95"
                                 >
                                   <span>{item.playAction.label}</span>
                                   <ArrowRight className="w-4 h-4" />
@@ -520,7 +524,7 @@ const Component = forwardRef<HTMLDivElement, ComponentProps>(({ items, className
                                 <button
                                   type="button"
                                   onClick={item.playAction.onClick}
-                                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-300 hover:to-sky-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-sky-500/25 active:scale-95"
+                                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-white/10 active:scale-95"
                                 >
                                   <span>{item.playAction.label}</span>
                                   <ArrowRight className="w-4 h-4" />
@@ -531,7 +535,7 @@ const Component = forwardRef<HTMLDivElement, ComponentProps>(({ items, className
                                 <a
                                   href={item.secondaryAction.href}
                                   onClick={item.secondaryAction.onClick}
-                                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-slate-200 font-bold text-xs font-mono transition-all active:scale-95"
+                                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-zinc-200 font-bold text-xs font-mono transition-all active:scale-95"
                                 >
                                   <span>{item.secondaryAction.label}</span>
                                 </a>
@@ -539,7 +543,7 @@ const Component = forwardRef<HTMLDivElement, ComponentProps>(({ items, className
                                 <button
                                   type="button"
                                   onClick={item.secondaryAction.onClick}
-                                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-slate-200 font-bold text-xs font-mono transition-all active:scale-95"
+                                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-zinc-200 font-bold text-xs font-mono transition-all active:scale-95"
                                 >
                                   <span>{item.secondaryAction.label}</span>
                                 </button>
@@ -549,7 +553,7 @@ const Component = forwardRef<HTMLDivElement, ComponentProps>(({ items, className
                       )}
                     </DialogDescription>
                   </div>
-                  <DialogClose className="text-white bg-slate-900/80 border border-white/20 p-2.5 hover:bg-sky-500 hover:text-black rounded-full shadow-xl transition-all" />
+                  <DialogClose className="text-white bg-zinc-900 border border-white/20 p-2.5 hover:bg-white hover:text-black rounded-full shadow-xl transition-all" />
                 </DialogContent>
               </DialogContainer>
             </Dialog>

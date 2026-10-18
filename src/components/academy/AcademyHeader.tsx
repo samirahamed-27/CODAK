@@ -34,13 +34,13 @@ export function AcademyHeader({ profile }: AcademyHeaderProps) {
               stagger={0.03}
               triggerOnHover={true}
               color="#FFFFFF"
-              accentColor="#7DD3FC"
+              accentColor="#A1A1AA"
               style={{ fontSize: 'clamp(1.35rem, 2.5vw, 1.85rem)', letterSpacing: '0.02em', fontWeight: 700 }}
             />
 
             {/* Game Title Tag Badge */}
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-sky-500/10 border border-sky-500/20 text-sky-300">
-              <Sparkles className="w-3 h-3 text-sky-400" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-white/10 border border-white/20 text-white">
+              <Sparkles className="w-3 h-3 text-white" />
               {profile.titleTag}
             </span>
           </div>
@@ -54,10 +54,10 @@ export function AcademyHeader({ profile }: AcademyHeaderProps) {
         <div className="flex items-center gap-2 mt-1 sm:mt-0 font-mono text-xs">
           {/* Day Streak */}
           <div
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08] hover:border-white/15 transition-all text-amber-300"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08] hover:border-white/15 transition-all text-zinc-300"
             title={`${profile.currentStreak} day learning streak`}
           >
-            <Flame className="w-4 h-4 fill-amber-400/80 text-amber-400" />
+            <Flame className="w-4 h-4 fill-white text-white" />
             <div className="flex items-baseline gap-1">
               <span className="font-bold text-white text-xs">
                 <AnimatedCounter value={profile.currentStreak} suffix="d" />
@@ -68,10 +68,10 @@ export function AcademyHeader({ profile }: AcademyHeaderProps) {
 
           {/* Total XP */}
           <div
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08] hover:border-white/15 transition-all text-sky-300"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08] hover:border-white/15 transition-all text-zinc-300"
             title={`Total Earned: ${profile.totalXp} XP`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+            <Sparkles className="w-3.5 h-3.5 text-white" />
             <div className="flex items-baseline gap-1">
               <span className="font-bold text-white text-xs">
                 <AnimatedCounter value={profile.totalXp} suffix=" XP" />
@@ -97,7 +97,7 @@ export function AcademyHeader({ profile }: AcademyHeaderProps) {
 
             {unreadCount > 0 && (
               <span
-                className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-sky-400 text-black text-[9px] font-bold flex items-center justify-center ring-2 ring-[#07080B]"
+                className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-black text-[9px] font-bold flex items-center justify-center ring-2 ring-black"
                 aria-label={`${unreadCount} unread messages`}
               >
                 {unreadCount}
@@ -110,11 +110,11 @@ export function AcademyHeader({ profile }: AcademyHeaderProps) {
             <div
               role="dialog"
               aria-label="Student Notifications"
-              className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-[#0B0E17]/95 border border-white/10 shadow-2xl z-50 p-4 backdrop-blur-2xl text-left"
+              className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-zinc-950/95 border border-white/15 shadow-2xl z-50 p-4 backdrop-blur-2xl text-left"
             >
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
-                  <BellRing className="w-4 h-4 text-sky-400" />
+                  <BellRing className="w-4 h-4 text-white" />
                   <span className="font-semibold text-xs text-white">
                     Notifications
                   </span>
@@ -123,7 +123,7 @@ export function AcademyHeader({ profile }: AcademyHeaderProps) {
                   <button
                     type="button"
                     onClick={handleMarkAllRead}
-                    className="text-[11px] text-sky-400 hover:underline flex items-center gap-1 font-medium"
+                    className="text-[11px] text-white hover:underline flex items-center gap-1 font-medium"
                   >
                     <Check className="w-3 h-3" /> Mark all read
                   </button>

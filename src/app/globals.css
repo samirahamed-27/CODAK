@@ -1,53 +1,114 @@
 @import "tailwindcss";
 
+@theme {
+  --color-sky-50: #ffffff;
+  --color-sky-100: #fafafa;
+  --color-sky-200: #f4f4f5;
+  --color-sky-300: #e4e4e7;
+  --color-sky-400: #ffffff;
+  --color-sky-500: #d4d4d8;
+  --color-sky-600: #a1a1aa;
+  --color-sky-700: #71717a;
+  --color-sky-800: #3f3f46;
+  --color-sky-900: #18181b;
+  --color-sky-950: #09090b;
+
+  --color-blue-50: #ffffff;
+  --color-blue-100: #fafafa;
+  --color-blue-200: #f4f4f5;
+  --color-blue-300: #e4e4e7;
+  --color-blue-400: #ffffff;
+  --color-blue-500: #d4d4d8;
+  --color-blue-600: #a1a1aa;
+  --color-blue-700: #71717a;
+  --color-blue-800: #3f3f46;
+  --color-blue-900: #18181b;
+  --color-blue-950: #09090b;
+
+  --color-cyan-50: #ffffff;
+  --color-cyan-100: #fafafa;
+  --color-cyan-200: #f4f4f5;
+  --color-cyan-300: #e4e4e7;
+  --color-cyan-400: #ffffff;
+  --color-cyan-500: #d4d4d8;
+  --color-cyan-600: #a1a1aa;
+  --color-cyan-700: #71717a;
+  --color-cyan-800: #3f3f46;
+  --color-cyan-900: #18181b;
+  --color-cyan-950: #09090b;
+
+  --color-indigo-400: #ffffff;
+  --color-indigo-500: #d4d4d8;
+  --color-indigo-600: #a1a1aa;
+  --color-indigo-700: #71717a;
+  --color-indigo-800: #3f3f46;
+  --color-indigo-900: #18181b;
+
+  --color-emerald-400: #ffffff;
+  --color-emerald-500: #d4d4d8;
+  --color-emerald-600: #a1a1aa;
+
+  --color-purple-400: #ffffff;
+  --color-purple-500: #d4d4d8;
+  --color-purple-600: #a1a1aa;
+
+  --color-amber-400: #ffffff;
+  --color-amber-500: #d4d4d8;
+  --color-amber-600: #a1a1aa;
+
+  --color-rose-400: #ffffff;
+  --color-rose-500: #d4d4d8;
+  --color-rose-600: #a1a1aa;
+}
+
 :root {
   /* ==========================================================================
-     B&W & DUSKY THEME WITH HINTS OF LIGHT BLUE
-     (Dusky Charcoal, Monochrome Grayscale, Icy Sky Blue Accents)
+     STRICT DUOTONE BLACK & WHITE THEME
+     (Pitch Black, Charcoal/Zinc Grayscale, Crisp Pure White Accents)
      ========================================================================== */
-  --bg-page: #07080B;
-  --bg-pattern: #0B0D14;
-  --bg-sidebar: #0C0F17;
-  --bg-card: #10131E;
-  --bg-card-dark: #090B12;
-  --border-card: #1D2233;
-  --border-card-subtle: #131724;
-  --shadow-card-3d: 0 6px 0 #030406;
-  --shadow-card-hover: 0 8px 0 #030406, 0 0 24px rgba(125, 211, 252, 0.2);
+  --bg-page: #000000;
+  --bg-pattern: #050505;
+  --bg-sidebar: #09090b;
+  --bg-card: #0c0c0e;
+  --bg-card-dark: #000000;
+  --border-card: #27272a;
+  --border-card-subtle: #18181b;
+  --shadow-card-3d: 0 6px 0 #000000;
+  --shadow-card-hover: 0 8px 0 #000000, 0 0 24px rgba(255, 255, 255, 0.15);
 
-  /* Primary Accent: Crisp Light Blue */
-  --accent-primary: #7DD3FC;
-  --accent-primary-hover: #BAE6FD;
-  --accent-primary-dark: #0284C7;
-  --accent-primary-glow: rgba(125, 211, 252, 0.3);
+  /* Primary Accent: Pure White */
+  --accent-primary: #FFFFFF;
+  --accent-primary-hover: #E4E4E7;
+  --accent-primary-dark: #71717A;
+  --accent-primary-glow: rgba(255, 255, 255, 0.25);
 
   /* Highlight Accent: Monochrome Dusky Silver / White */
-  --accent-highlight: #F1F5F9;
-  --accent-highlight-hover: #FFFFFF;
-  --accent-highlight-dark: #64748B;
-  --accent-highlight-glow: rgba(241, 245, 249, 0.35);
+  --accent-highlight: #FFFFFF;
+  --accent-highlight-hover: #F4F4F5;
+  --accent-highlight-dark: #52525B;
+  --accent-highlight-glow: rgba(255, 255, 255, 0.35);
 
-  /* Light Blue Hint Tint */
-  --accent-ice: #38BDF8;
-  --accent-ice-glow: rgba(56, 189, 248, 0.25);
+  /* Monochrome Tint */
+  --accent-ice: #FFFFFF;
+  --accent-ice-glow: rgba(255, 255, 255, 0.2);
 
-  /* Chart Colors (Dusky Grayscale with Light Blue Peak) */
-  --chart-average: #334155;
-  --chart-average-hover: #475569;
-  --chart-gridlines: #1E293B;
+  /* Chart Colors (Monochrome Duotone) */
+  --chart-average: #27272a;
+  --chart-average-hover: #3f3f46;
+  --chart-gridlines: #18181b;
 
   /* Typography Colors */
   --text-white: #FFFFFF;
-  --text-muted: #94A3B8;
-  --text-dim: #64748B;
-  --text-contrast-dark: #07080B;
+  --text-muted: #A1A1AA;
+  --text-dim: #71717A;
+  --text-contrast-dark: #000000;
 
-  /* Heatmap 5-level palette: Dusky Charcoal -> Muted Slate -> Light Blue */
-  --heatmap-lvl0: #0E111B;
-  --heatmap-lvl1: #1E2638;
-  --heatmap-lvl2: #334155;
-  --heatmap-lvl3: #475569;
-  --heatmap-lvl4: #7DD3FC;
+  /* Heatmap 5-level palette: Black -> Dark Zinc -> Mid Zinc -> Silver -> Pure White */
+  --heatmap-lvl0: #09090b;
+  --heatmap-lvl1: #18181b;
+  --heatmap-lvl2: #3f3f46;
+  --heatmap-lvl3: #71717a;
+  --heatmap-lvl4: #FFFFFF;
 
   /* Fonts */
   --font-pixel: 'Pixelify Sans', 'Press Start 2P', monospace, sans-serif;
@@ -60,7 +121,7 @@
 
 html,
 body {
-  background-color: #06070a !important;
+  background-color: #000000 !important;
   color: var(--text-white);
   font-family: var(--font-body);
   margin: 0;
@@ -71,9 +132,19 @@ body {
 }
 
 ::selection {
-  background-color: var(--accent-primary);
-  color: var(--text-contrast-dark);
+  background-color: #FFFFFF;
+  color: #000000;
 }
+
+/* Preserve full natural colors for images and media */
+img,
+video,
+picture,
+[style*="background-image"] {
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+
 
 /* Smooth canvas without distracting dots to let Aurora shine smoothly */
 .game-bg-grid {
@@ -90,12 +161,12 @@ body {
   font-family: var(--font-body);
 }
 
-/* Sleek Minimalist Modern Card */
+/* Sleek Minimalist Modern Card - Duotone B&W */
 .game-card {
-  background-color: rgba(14, 18, 28, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: rgba(12, 12, 14, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 20px;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -103,24 +174,25 @@ body {
 
 .game-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.6), 0 0 20px rgba(125, 211, 252, 0.06);
-  border-color: rgba(125, 211, 252, 0.3);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.9), 0 0 20px rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
-/* Sleek Minimal Buttons */
+/* Sleek Minimal Buttons - Duotone B&W */
 .btn-arcade-primary {
-  background-color: #38BDF8;
-  color: #07080B;
+  background-color: #FFFFFF;
+  color: #000000;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   font-weight: 600;
-  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.25);
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.2);
   transition: all 0.2s ease;
 }
 
 .btn-arcade-primary:hover {
-  background-color: #7DD3FC;
-  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35);
+  background-color: #E4E4E7;
+  color: #000000;
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.35);
   transform: translateY(-1px);
 }
 
@@ -130,7 +202,7 @@ body {
 
 .btn-arcade-gold {
   background: #FFFFFF;
-  color: #07080B;
+  color: #000000;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.6);
   font-weight: 600;
@@ -139,7 +211,8 @@ body {
 }
 
 .btn-arcade-gold:hover {
-  background-color: #F1F5F9;
+  background-color: #E4E4E7;
+  color: #000000;
   box-shadow: 0 4px 16px rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
 }
@@ -149,17 +222,17 @@ body {
 }
 
 .btn-arcade-ghost {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(255, 255, 255, 0.04);
   color: var(--text-muted);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   transition: all 0.2s ease;
 }
 
 .btn-arcade-ghost:hover {
-  color: var(--text-white);
-  border-color: rgba(255, 255, 255, 0.2);
-  background-color: rgba(255, 255, 255, 0.06);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .btn-arcade-ghost:active {
@@ -207,10 +280,10 @@ body {
 
 @keyframes neonPulse {
   0%, 100% {
-    box-shadow: 0 0 12px rgba(125, 211, 252, 0.3);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
   }
   50% {
-    box-shadow: 0 0 22px rgba(125, 211, 252, 0.6);
+    box-shadow: 0 0 22px rgba(255, 255, 255, 0.55);
   }
 }
 
@@ -218,23 +291,23 @@ body {
   animation: neonPulse 2s infinite ease-in-out;
 }
 
-/* Custom Scrollbar for Dusky/Black Theme with Light Blue */
+/* Custom Scrollbar for Duotone Black & White Theme */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #07080B;
+  background: #000000;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-card);
+  background: #27272a;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-primary);
+  background: #71717a;
 }
 
 /* Respect Prefers Reduced Motion */
@@ -253,3 +326,30 @@ body {
     box-shadow: var(--shadow-card-3d) !important;
   }
 }
+
+/* ==========================================================================
+   LEGACY OVERRIDES FOR STRICT DUOTONE MONOCHROME
+   ========================================================================== */
+[class*="bg-[#07080"],
+[class*="bg-[#06070"],
+[class*="bg-[#04070"],
+[class*="bg-[#0b0f1"],
+[class*="bg-[#090d1"] {
+  background-color: #000000 !important;
+}
+
+[class*="bg-[#10131"],
+[class*="bg-[#12121"] {
+  background-color: #0c0c0e !important;
+}
+
+[class*="border-[#1D223"],
+[class*="border-[#13172"],
+[class*="border-[#1d223"] {
+  border-color: #27272a !important;
+}
+
+[class*="text-[#07080"] {
+  color: #000000 !important;
+}
+

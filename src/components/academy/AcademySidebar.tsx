@@ -36,21 +36,21 @@ export function AcademySidebar({ totalXp = 1420 }: AcademySidebarProps) {
   ];
 
   const renderLevelCard = () => (
-    <div className="p-4 rounded-2xl bg-[#10131E] border border-[#1D2233] shadow-lg mt-2">
+    <div className="p-4 rounded-2xl bg-zinc-900 border border-white/15 shadow-lg mt-2">
       <div className="flex items-center justify-between text-xs mb-1.5">
         <div className="flex items-center gap-1.5">
-          <Zap className="w-3.5 h-3.5 text-[#FFB27A] fill-[#FFB27A]" />
+          <Zap className="w-3.5 h-3.5 text-white fill-white" />
           <span className="font-pixel font-bold text-white text-[12px]">
             LVL {levelInfo.level}
           </span>
         </div>
-        <span className="text-[11px] text-[#A9B8D6] font-medium">
+        <span className="text-[11px] text-zinc-400 font-medium">
           {levelInfo.xpIntoLevel} / {levelInfo.xpForNextLevel} XP
         </span>
       </div>
 
       <div
-        className="w-full h-2 rounded-full bg-[#14214A] overflow-hidden p-0.5 border border-[#1E3A78]"
+        className="w-full h-2 rounded-full bg-black overflow-hidden p-0.5 border border-white/20"
         role="progressbar"
         aria-valuenow={levelInfo.progressPercent}
         aria-valuemin={0}
@@ -58,11 +58,11 @@ export function AcademySidebar({ totalXp = 1420 }: AcademySidebarProps) {
         aria-label={`XP progress to Level ${levelInfo.level + 1}`}
       >
         <div
-          className="h-full rounded-full bg-gradient-to-r from-sky-400 via-[#7CC4FF] to-[#FFB27A] shadow-[0_0_8px_rgba(255,178,122,0.5)] transition-all duration-700 ease-out"
+          className="h-full rounded-full bg-gradient-to-r from-zinc-400 via-white to-zinc-200 shadow-[0_0_8px_rgba(255,255,255,0.4)] transition-all duration-700 ease-out"
           style={{ width: `${animProgress}%` }}
         />
       </div>
-      <div className="text-[10px] text-right text-[#6C7FAD] mt-1">
+      <div className="text-[10px] text-right text-zinc-400 mt-1">
         {levelInfo.xpForNextLevel - levelInfo.xpIntoLevel} XP to Level {levelInfo.level + 1}
       </div>
     </div>
@@ -78,10 +78,10 @@ export function AcademySidebar({ totalXp = 1420 }: AcademySidebarProps) {
           socialItems={accountLinks}
           displaySocials={true}
           displayItemNumbering={true}
-          colors={['#081024', '#101B3B', '#162854']}
-          accentColor="#7DD3FC"
-          menuButtonColor="#F1F5F9"
-          openMenuButtonColor="#7DD3FC"
+          colors={['#18181b', '#121214', '#09090b']}
+          accentColor="#FFFFFF"
+          menuButtonColor="#FFFFFF"
+          openMenuButtonColor="#FFFFFF"
         >
           {renderLevelCard()}
         </StaggeredMenu>

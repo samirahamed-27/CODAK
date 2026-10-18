@@ -47,10 +47,10 @@ export function ScoreCard({ scores = initialSubjectScores }: ScoreCardProps) {
               stagger={0.03}
               triggerOnHover={true}
               color="#FFFFFF"
-              accentColor="#7DD3FC"
+              accentColor="#A1A1AA"
               style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
             />
-            <BarChart3 className="w-4 h-4 text-sky-400" />
+            <BarChart3 className="w-4 h-4 text-white" />
           </div>
         </div>
 
@@ -61,7 +61,7 @@ export function ScoreCard({ scores = initialSubjectScores }: ScoreCardProps) {
             <span className="text-zinc-400">Class Average</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-sky-400 inline-block" />
+            <span className="w-2.5 h-2.5 rounded-sm bg-white inline-block" />
             <span className="text-white font-medium">Yours</span>
           </div>
         </div>
@@ -73,21 +73,21 @@ export function ScoreCard({ scores = initialSubjectScores }: ScoreCardProps) {
         {activeTooltip && (
           <div
             role="tooltip"
-            className="absolute z-50 pointer-events-none px-3 py-1.5 rounded-xl bg-zinc-950 border border-white/10 shadow-2xl text-xs whitespace-nowrap -translate-x-1/2 -translate-y-12"
+            className="absolute z-50 pointer-events-none px-3 py-1.5 rounded-xl bg-zinc-950 border border-white/20 shadow-2xl text-xs whitespace-nowrap -translate-x-1/2 -translate-y-12"
             style={{ left: `${activeTooltip.x}px`, top: `${activeTooltip.y}px` }}
           >
             <div className="font-semibold text-white">
               {activeTooltip.subject}
             </div>
             <div className="flex items-center gap-1.5 text-[11px] font-mono mt-0.5">
-              <span className={activeTooltip.type === 'Yours' ? 'text-sky-300' : 'text-zinc-400'}>
+              <span className={activeTooltip.type === 'Yours' ? 'text-white' : 'text-zinc-400'}>
                 {activeTooltip.type}:
               </span>
               <span className="font-bold text-white">
                 {activeTooltip.value}%
               </span>
               {activeTooltip.beatsAverage && (
-                <span className="text-emerald-400 text-[10px]">★ Above Avg</span>
+                <span className="text-white text-[10px]">★ Above Avg</span>
               )}
             </div>
           </div>
@@ -135,10 +135,10 @@ export function ScoreCard({ scores = initialSubjectScores }: ScoreCardProps) {
                     <div className="h-5 flex items-center justify-center mb-1">
                       {beatsAvg && (
                         <div
-                          className="flex items-center justify-center text-amber-400"
+                          className="flex items-center justify-center text-white"
                           title={`Above class average by ${item.studentScore - item.classAverage}%`}
                         >
-                          <Star className="w-3.5 h-3.5 fill-amber-400/80 text-amber-400" />
+                          <Star className="w-3.5 h-3.5 fill-white text-white" />
                         </div>
                       )}
                     </div>
@@ -201,7 +201,7 @@ export function ScoreCard({ scores = initialSubjectScores }: ScoreCardProps) {
                           });
                         }}
                         onBlur={() => setActiveTooltip(null)}
-                        className="w-4 sm:w-5 bg-sky-400 hover:bg-sky-300 rounded-t transition-all duration-700 ease-out shadow-sm shadow-sky-400/30 focus:outline-none"
+                        className="w-4 sm:w-5 bg-white hover:bg-zinc-200 rounded-t transition-all duration-700 ease-out shadow-sm shadow-white/30 focus:outline-none"
                         style={{
                           height: isLoaded ? `${item.studentScore}%` : '0%',
                         }}
@@ -228,7 +228,7 @@ export function ScoreCard({ scores = initialSubjectScores }: ScoreCardProps) {
       {/* Footer Info */}
       <div className="pt-2.5 border-t border-white/[0.06] flex flex-wrap items-center justify-between text-[11px] font-mono text-zinc-500">
         <span>Class percentile: Top 5%</span>
-        <span className="text-emerald-400 font-semibold">
+        <span className="text-white font-semibold">
           4 / 5 SUBJECTS ABOVE AVERAGE
         </span>
       </div>

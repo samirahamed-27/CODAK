@@ -129,7 +129,7 @@ export function WorkReportCard({ activityData = mockActivityCalendar }: WorkRepo
             stagger={0.03}
             triggerOnHover={true}
             color="#FFFFFF"
-            accentColor="#7DD3FC"
+            accentColor="#A1A1AA"
             style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
           />
         </div>
@@ -162,24 +162,24 @@ export function WorkReportCard({ activityData = mockActivityCalendar }: WorkRepo
 
       {/* Relative container for Heatmap Grid + Floating Tooltip */}
       <div className="relative my-2">
-        {/* Floating Tooltip (bg #06080F, border #1E3A78, white text, XP in orange #FFB27A) */}
+        {/* Floating Tooltip - Duotone B&W */}
         {hoveredDay && (
           <div
             role="tooltip"
-            className="absolute -top-11 left-1/2 -translate-x-1/2 z-50 pointer-events-none px-3 py-1.5 rounded-xl bg-[#06080F] border border-[#1E3A78] shadow-[0_4px_16px_rgba(0,0,0,0.85)] text-xs whitespace-nowrap animate-card-pop"
+            className="absolute -top-11 left-1/2 -translate-x-1/2 z-50 pointer-events-none px-3 py-1.5 rounded-xl bg-black border border-white/20 shadow-[0_4px_16px_rgba(0,0,0,0.95)] text-xs whitespace-nowrap animate-card-pop"
           >
             <span className="font-semibold text-white">
               {hoveredDay.weekdayName}, {hoveredDay.dayNum}{' '}
               {MONTH_NAMES[month].slice(0, 3)}:
             </span>{' '}
             {hoveredDay.xp > 0 ? (
-              <span className="font-bold text-[#FFB27A] font-pixel">
+              <span className="font-bold text-white font-pixel">
                 +{hoveredDay.xp} XP
               </span>
             ) : (
-              <span className="text-[#6C7FAD]">No quest completed</span>
+              <span className="text-zinc-500">No quest completed</span>
             )}
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#06080F] border-r border-b border-[#1E3A78] rotate-45" />
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-black border-r border-b border-white/20 rotate-45" />
           </div>
         )}
 
@@ -188,7 +188,7 @@ export function WorkReportCard({ activityData = mockActivityCalendar }: WorkRepo
           {WEEKDAY_HEADERS.map((dayLabel, idx) => (
             <div
               key={idx}
-              className="text-[11px] font-pixel font-bold text-[#6C7FAD]"
+              className="text-[11px] font-pixel font-bold text-zinc-400"
             >
               {dayLabel}
             </div>
@@ -209,14 +209,10 @@ export function WorkReportCard({ activityData = mockActivityCalendar }: WorkRepo
             }
 
             const { color, hasGlow, level } = getHeatmapColorLevel(cell.xp);
-            // Outline rule: Orange (#FFB27A) unless it's highest level (level 4), then white
-            const todayOutlineClass =
-              level === 4
-                ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0F2350]'
-                : 'ring-2 ring-[#FFB27A] ring-offset-2 ring-offset-[#0F2350]';
+            const todayOutlineClass = 'ring-2 ring-white ring-offset-2 ring-offset-black';
 
-            // Text contrast: black on light blue / orange (levels 3 and 4), white/muted on dark navy
-            const textColor = level >= 3 ? '#06080F' : '#A9B8D6';
+            // Text contrast: black on bright white/silver (levels 3 and 4), crisp light on dark
+            const textColor = level >= 3 ? '#000000' : '#d4d4d8';
 
             return (
               <button
@@ -245,19 +241,17 @@ export function WorkReportCard({ activityData = mockActivityCalendar }: WorkRepo
                 }`}
                 className={`w-full aspect-square rounded-lg flex items-center justify-center text-[10px] font-pixel font-bold transition-all relative ${
                   cell.isToday ? todayOutlineClass : ''
-                } hover:scale-110 focus:outline-none focus:ring-2 focus:ring-[#7CC4FF]`}
+                } hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white`}
                 style={{
                   backgroundColor: color,
                   color: textColor,
-                  boxShadow: hasGlow ? '0 0 12px rgba(255, 178, 122, 0.55)' : undefined,
+                  boxShadow: hasGlow ? '0 0 12px rgba(255, 255, 255, 0.45)' : undefined,
                 }}
               >
                 <span>{cell.dayNum}</span>
                 {cell.isToday && (
                   <span
-                    className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
-                      level === 4 ? 'bg-white shadow-[0_0_6px_#ffffff]' : 'bg-[#FFB27A] shadow-[0_0_6px_#FFB27A]'
-                    }`}
+                    className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-white shadow-[0_0_6px_#ffffff]"
                     title="Today"
                   />
                 )}
@@ -272,26 +266,26 @@ export function WorkReportCard({ activityData = mockActivityCalendar }: WorkRepo
         {/* Legend */}
         <div className="flex items-center gap-1.5 font-mono text-[10px]">
           <span className="text-zinc-500">Less</span>
-          <div className="w-3 h-3 rounded-sm bg-zinc-900 border border-white/5" title="0 XP" />
-          <div className="w-3 h-3 rounded-sm bg-sky-950" title="1 - 40 XP" />
-          <div className="w-3 h-3 rounded-sm bg-sky-800" title="41 - 80 XP" />
-          <div className="w-3 h-3 rounded-sm bg-sky-600" title="81 - 120 XP" />
-          <div className="w-3 h-3 rounded-sm bg-sky-400" title="121+ XP" />
-          <span className="text-sky-400">More</span>
+          <div className="w-3 h-3 rounded-sm bg-[#121214] border border-white/10" title="0 XP" />
+          <div className="w-3 h-3 rounded-sm bg-[#27272a]" title="1 - 40 XP" />
+          <div className="w-3 h-3 rounded-sm bg-[#52525b]" title="41 - 80 XP" />
+          <div className="w-3 h-3 rounded-sm bg-[#a1a1aa]" title="81 - 120 XP" />
+          <div className="w-3 h-3 rounded-sm bg-[#ffffff]" title="121+ XP" />
+          <span className="text-white">More</span>
         </div>
 
         {/* Monthly Summary Badges */}
         <div className="flex items-center gap-3 font-mono text-[11px]">
           <div className="flex items-center gap-1 text-zinc-400">
-            <Zap className="w-3.5 h-3.5 text-sky-400" />
+            <Zap className="w-3.5 h-3.5 text-white" />
             <span>XP:</span>
             <span className="font-bold text-white">
               <AnimatedCounter value={monthlyTotalXp} />
             </span>
           </div>
 
-          <div className="flex items-center gap-1 text-amber-300">
-            <Flame className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+          <div className="flex items-center gap-1 text-zinc-300">
+            <Flame className="w-3.5 h-3.5 fill-white text-white" />
             <span>Best:</span>
             <span className="font-bold text-white">
               {bestMonthlyStreak}d

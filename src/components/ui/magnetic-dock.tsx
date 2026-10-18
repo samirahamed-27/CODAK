@@ -7,10 +7,7 @@ import { twMerge } from "tailwind-merge";
 /* Magnetic Dock — from Motiq (https://motiq.dev/components/magnetic-dock).
    MIT licensed. Zero runtime dependencies. */
 
-/* -------------------------------------------------------------------------- */
-/* Motiq design tokens                                                        */
-/* -------------------------------------------------------------------------- */
-const MOTIQ_TOKENS = "@layer motiq{:root{--motiq-accent:#38bdf8;--motiq-accent-text:#0284c7;--motiq-bg:#07080b;--motiq-border:#1d2233;--motiq-border-strong:#2a3449;--motiq-fg:#f8fafc;--motiq-fg-secondary:#cbd5e1;--motiq-muted:#94a3b8;--motiq-secondary-accent:#22d3ee;--motiq-success:#34d399;--motiq-surface:#0d111a;--motiq-surface-2:#161c28;--motiq-warning:#fbbf24}}@layer motiq{.dark,[data-theme=\"dark\"]{--motiq-accent:#38bdf8;--motiq-accent-text:#7dd3fc;--motiq-bg:#07080b;--motiq-border:#1d2233;--motiq-border-strong:#2a3449;--motiq-fg:#f8fafc;--motiq-fg-secondary:#cbd5e1;--motiq-muted:#94a3b8;--motiq-secondary-accent:#22d3ee;--motiq-success:#34d399;--motiq-surface:#0d111a;--motiq-surface-2:#161c28;--motiq-warning:#fbbf24}}";
+const MOTIQ_TOKENS = "@layer motiq{:root{--motiq-accent:#ffffff;--motiq-accent-text:#ffffff;--motiq-bg:#000000;--motiq-border:#27272a;--motiq-border-strong:#3f3f46;--motiq-fg:#ffffff;--motiq-fg-secondary:#d4d4d8;--motiq-muted:#71717a;--motiq-secondary-accent:#e4e4e7;--motiq-success:#ffffff;--motiq-surface:#0c0c0e;--motiq-surface-2:#18181b;--motiq-warning:#ffffff}}@layer motiq{.dark,[data-theme=\"dark\"]{--motiq-accent:#ffffff;--motiq-accent-text:#ffffff;--motiq-bg:#000000;--motiq-border:#27272a;--motiq-border-strong:#3f3f46;--motiq-fg:#ffffff;--motiq-fg-secondary:#d4d4d8;--motiq-muted:#71717a;--motiq-secondary-accent:#e4e4e7;--motiq-success:#ffffff;--motiq-surface:#0c0c0e;--motiq-surface-2:#18181b;--motiq-warning:#ffffff}}";
 
 /** Merge Tailwind class names; later/consumer classes win on conflict. */
 function cn(...inputs: ClassValue[]): string {
@@ -459,9 +456,9 @@ function MagneticDockBase({
           aria-hidden="true"
           className="pointer-events-none absolute left-0 top-0 z-20 whitespace-nowrap rounded-lg px-2.5 py-1 text-[11px] font-semibold opacity-0 shadow-lg border border-[#1D2233]"
           style={{
-            background: "#07080B",
-            color: "#38BDF8",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.6)",
+            background: "#000000",
+            color: "#ffffff",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.8)",
             transform: "translate3d(-999px,-999px,0)",
             willChange: "transform, opacity",
           }}

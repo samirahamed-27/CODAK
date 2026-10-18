@@ -29,12 +29,12 @@ export function DeadlinesCard({ deadlines = [] }: DeadlinesCardProps) {
             stagger={0.03}
             triggerOnHover={true}
             color="#FFFFFF"
-            accentColor="#7DD3FC"
+            accentColor="#A1A1AA"
             style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
           />
         </div>
 
-        <div className="w-7 h-7 rounded-lg bg-white/[0.03] border border-white/10 flex items-center justify-center text-sky-400">
+        <div className="w-7 h-7 rounded-lg bg-white/[0.03] border border-white/10 flex items-center justify-center text-white">
           <Scroll className="w-3.5 h-3.5" />
         </div>
       </div>
@@ -65,7 +65,7 @@ export function DeadlinesCard({ deadlines = [] }: DeadlinesCardProps) {
                   <h4 className="font-medium text-white leading-tight">
                     {item.title}
                   </h4>
-                  <span className="text-[10px] text-sky-400 font-mono">
+                  <span className="text-[10px] text-zinc-300 font-mono">
                     {item.subject}
                   </span>
                 </div>
@@ -82,7 +82,7 @@ export function DeadlinesCard({ deadlines = [] }: DeadlinesCardProps) {
       {/* Footer Info */}
       <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-zinc-500 font-mono">
         <span className="flex items-center gap-1.5">
-          <Calendar className="w-3 h-3 text-sky-400" />
+          <Calendar className="w-3 h-3 text-white" />
           <span>Faculty sync active</span>
         </span>
         <span className="text-zinc-400 font-medium">0 PENDING</span>

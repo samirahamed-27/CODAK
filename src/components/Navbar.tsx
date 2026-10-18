@@ -28,23 +28,23 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
     switch (role) {
       case 'admin':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-900 border border-slate-700 text-slate-300">
-            <ShieldAlert className="w-3.5 h-3.5 text-sky-400" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-900 border border-white/20 text-zinc-300">
+            <ShieldAlert className="w-3.5 h-3.5 text-white" />
             Admin
           </span>
         );
       case 'faculty':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-500/10 border border-sky-500/30 text-sky-300">
-            <Award className="w-3.5 h-3.5 text-sky-400" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/10 border border-white/20 text-white">
+            <Award className="w-3.5 h-3.5 text-white" />
             Faculty
           </span>
         );
       case 'student':
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#10131E] border border-sky-400/30 text-sky-300 shadow-[0_0_10px_rgba(125,211,252,0.1)]">
-            <GraduationCap className="w-3.5 h-3.5 text-sky-400" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-900 border border-white/20 text-zinc-200">
+            <GraduationCap className="w-3.5 h-3.5 text-white" />
             Student
           </span>
         );
@@ -79,10 +79,10 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[#1D2233] bg-[#07080B]/90 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-black/90 backdrop-blur-md">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link href={`/${role}`} className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-[#10131E] border border-sky-400/40 flex items-center justify-center text-white shadow-lg shadow-sky-500/10 group-hover:scale-105 transition-transform">
+          <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-white/20 flex items-center justify-center text-white shadow-none group-hover:scale-105 transition-transform">
             🎮
           </div>
           <Shuffle
@@ -93,7 +93,7 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
             stagger={0.02}
             triggerOnHover={true}
             color="#FFFFFF"
-            accentColor="#7DD3FC"
+            accentColor="#A1A1AA"
             style={{ fontSize: '1.1rem', letterSpacing: '0.06em' }}
           />
         </Link>
@@ -101,7 +101,7 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
         <div className="flex items-center gap-2.5 sm:gap-3" suppressHydrationWarning>
           {getRoleBadge()}
           {userName && (
-            <span className="hidden sm:inline text-xs text-slate-400 font-medium">
+            <span className="hidden sm:inline text-xs text-zinc-400 font-medium">
               {userName}
             </span>
           )}
@@ -111,10 +111,10 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
               socialItems={socialLinks}
               displaySocials={true}
               displayItemNumbering={true}
-              colors={['#10131E', '#1D2233', '#162846']}
-              accentColor="#7DD3FC"
-              menuButtonColor="#E2E8F0"
-              openMenuButtonColor="#7DD3FC"
+              colors={['#18181b', '#121214', '#09090b']}
+              accentColor="#FFFFFF"
+              menuButtonColor="#FFFFFF"
+              openMenuButtonColor="#FFFFFF"
             />
           )}
         </div>

@@ -71,11 +71,11 @@ export interface DeadlineItem {
  * Level 4: 121+ XP -> #FFB27A (with soft glow)
  */
 export const HEATMAP_THRESHOLDS = {
-  level0: { max: 0, color: '#14214A', label: '0 XP' },
-  level1: { min: 1, max: 40, color: '#1F4E8C', label: '1 - 40 XP' },
-  level2: { min: 41, max: 80, color: '#4A97D6', label: '41 - 80 XP' },
-  level3: { min: 81, max: 120, color: '#8FD0FF', label: '81 - 120 XP' },
-  level4: { min: 121, color: '#FFB27A', label: '121+ XP' },
+  level0: { max: 0, color: '#121214', label: '0 XP' },
+  level1: { min: 1, max: 40, color: '#27272a', label: '1 - 40 XP' },
+  level2: { min: 41, max: 80, color: '#52525b', label: '41 - 80 XP' },
+  level3: { min: 81, max: 120, color: '#a1a1aa', label: '81 - 120 XP' },
+  level4: { min: 121, color: '#ffffff', label: '121+ XP' },
 } as const;
 
 export function getHeatmapColorLevel(xp: number): {
@@ -83,11 +83,11 @@ export function getHeatmapColorLevel(xp: number): {
   color: string;
   hasGlow: boolean;
 } {
-  if (xp <= 0) return { level: 0, color: '#14214A', hasGlow: false };
-  if (xp <= 40) return { level: 1, color: '#1F4E8C', hasGlow: false };
-  if (xp <= 80) return { level: 2, color: '#4A97D6', hasGlow: false };
-  if (xp <= 120) return { level: 3, color: '#8FD0FF', hasGlow: false };
-  return { level: 4, color: '#FFB27A', hasGlow: true };
+  if (xp <= 0) return { level: 0, color: '#121214', hasGlow: false };
+  if (xp <= 40) return { level: 1, color: '#27272a', hasGlow: false };
+  if (xp <= 80) return { level: 2, color: '#52525b', hasGlow: false };
+  if (xp <= 120) return { level: 3, color: '#a1a1aa', hasGlow: false };
+  return { level: 4, color: '#ffffff', hasGlow: true };
 }
 
 /**

@@ -142,7 +142,7 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
           stagger={0.03}
           triggerOnHover={true}
           color="#FFFFFF"
-          accentColor="#7DD3FC"
+          accentColor="#A1A1AA"
           style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
         />
         <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
@@ -155,8 +155,8 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
 
       {/* Error Message if Validation Fails */}
       {errorMsg && (
-        <div className="w-full mb-3 p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-[11px] flex items-center gap-1.5 text-left">
-          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+        <div className="w-full mb-3 p-2 rounded-xl bg-white/10 border border-white/20 text-zinc-200 text-[11px] flex items-center gap-1.5 text-left">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-white" />
           <span>{errorMsg}</span>
         </div>
       )}
