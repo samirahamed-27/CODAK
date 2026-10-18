@@ -459,9 +459,29 @@ export default function StudentLearnPage() {
                 </button>
               </div>
             ) : dailyState?.status === 'error' ? (
-              <div className="p-6 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-3">
-                <ShieldAlert className="w-5 h-5 shrink-0" />
-                <span>{dailyState.error}</span>
+              <div className="p-6 rounded-3xl bg-slate-900/80 border border-rose-500/30 flex flex-col items-center text-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                  <ShieldAlert className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Daily Quiz Unavailable</h3>
+                  <p className="text-xs text-rose-300/80 mt-1 max-w-md">{dailyState.error}</p>
+                </div>
+                <div className="flex items-center gap-3 mt-1">
+                  <button
+                    onClick={() => loadDailyQuiz()}
+                    className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md shadow-rose-600/20 flex items-center gap-1.5"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Retry Daily Quiz</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('practice')}
+                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
+                  >
+                    Switch to Practice
+                  </button>
+                </div>
               </div>
             ) : currentDailyQuestion ? (
               /* Active Daily Quiz Question Screen */

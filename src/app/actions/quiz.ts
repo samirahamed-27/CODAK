@@ -4,6 +4,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getKolkataDate, evaluateStreakCompletion, StudentStreakData, addDaysToDate, daysBetweenDates } from '@/lib/streaks';
 import { checkRateLimit } from '@/lib/rate-limits';
+import { ensureStudentRecord } from '@/lib/auth/ensure-student';
 
 export interface QuizOptionItem {
   id: 'A' | 'B' | 'C' | 'D';
@@ -72,6 +73,9 @@ export async function getDailyQuizSessionAction(): Promise<DailyQuizSessionResul
 
   const todayDate = getKolkataDate();
   const adminClient = getAdminClient();
+
+  // Defensively guarantee profile and student rows exist for user (prevents FK violations)
+  await ensureStudentRecord(adminClient, user);
 
   // 1. Check for existing daily attempt on this IST date
   const { data: existingAttempt } = await adminClient
@@ -168,14 +172,15 @@ export async function getDailyQuizSessionAction(): Promise<DailyQuizSessionResul
       .single();
 
     if (insertError) {
-      // If another request inserted it concurrently, fetch it
+      console.error('Quiz attempt insert error:', insertError);
+      // If another request inserted it concurrently, fetch it safely with maybeSingle
       const { data: raceAttempt } = await adminClient
         .from('quiz_attempts')
         .select('*')
         .eq('student_id', user.id)
         .eq('quiz_date', todayDate)
         .eq('mode', 'daily')
-        .single();
+        .maybeSingle();
       attempt = raceAttempt;
     } else {
       attempt = newAttempt;
@@ -183,7 +188,8 @@ export async function getDailyQuizSessionAction(): Promise<DailyQuizSessionResul
   }
 
   if (!attempt) {
-    return { status: 'error', quizDate: todayDate, error: 'Failed to create quiz session.' };
+    console.error('Failed to create or retrieve quiz session for user:', user.id);
+    return { status: 'error', quizDate: todayDate, error: 'Failed to create quiz session. Please click Retry.' };
   }
 
   // 3. Fetch answered questions for this attempt
@@ -245,6 +251,48 @@ export async function getDailyQuizSessionAction(): Promise<DailyQuizSessionResul
         options,
         isAnswered: false,
       });
+    }
+  }
+
+  // Auto-heal if attempt question_ids reference missing questions
+  if (clientQuestions.length === 0 && attempt.status === 'in_progress') {
+    const { data: freshQuestions } = await adminClient
+      .from('questions')
+      .select('id, topic, question_text, option_a, option_b, option_c, option_d')
+      .eq('status', 'approved')
+      .eq('is_active', true)
+      .limit(5);
+
+    if (freshQuestions && freshQuestions.length >= 3) {
+      const freshIds = freshQuestions.map((q) => q.id);
+      const newOptionsOrder: Record<string, ('A' | 'B' | 'C' | 'D')[]> = {};
+      const defaultKeys: ('A' | 'B' | 'C' | 'D')[] = ['A', 'B', 'C', 'D'];
+      for (const q of freshQuestions) {
+        newOptionsOrder[q.id] = shuffleArray(defaultKeys);
+      }
+      await adminClient
+        .from('quiz_attempts')
+        .update({
+          question_ids: freshIds,
+          options_order: newOptionsOrder,
+          total_questions: freshQuestions.length,
+        })
+        .eq('id', attempt.id);
+
+      for (const q of freshQuestions) {
+        const order = newOptionsOrder[q.id] || defaultKeys;
+        const options: QuizOptionItem[] = order.map((key) => {
+          const field = `option_${key.toLowerCase()}` as keyof typeof q;
+          return { id: key, text: q[field] as string };
+        });
+        clientQuestions.push({
+          id: q.id,
+          topic: q.topic,
+          questionText: q.question_text,
+          options,
+          isAnswered: false,
+        });
+      }
     }
   }
 
@@ -442,6 +490,7 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
   }
 
   const adminClient = getAdminClient();
+  await ensureStudentRecord(adminClient, user);
 
   // 1. Fetch attempt
   const { data: attempt, error: attemptError } = await adminClient
