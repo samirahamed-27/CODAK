@@ -22,7 +22,15 @@
   justify-content: flex-end;
   gap: 0.75rem;
   background: transparent;
-  z-index: 1003;
+  z-index: 1000;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+[data-open] .staggered-menu-header {
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
 }
 
 .staggered-menu-wrapper.fixed-wrapper .staggered-menu-header {
