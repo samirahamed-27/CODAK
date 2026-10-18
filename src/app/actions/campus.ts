@@ -14,6 +14,13 @@ function getAdminClient() {
   return createAdminClient(supabaseUrl, serviceRoleKey);
 }
 
+export interface StudentOnboardingDetails {
+  fullName?: string;
+  rollNo?: string;
+  department?: string;
+  yearOfStudy?: number;
+}
+
 /**
  * Server Action: Fetches active campuses.
  */
@@ -32,12 +39,100 @@ export async function getCampusesAction(): Promise<{
 }
 
 /**
- * Server Action: Initial campus assignment for users without a campus.
+ * Server Action: Fetches user and student onboarding details + active campuses.
+ * Pre-populates the onboarding form with authenticated user details.
+ */
+export async function getStudentOnboardingInfoAction(): Promise<{
+  success: boolean;
+  campuses: Campus[];
+  user?: {
+    id: string;
+    email: string;
+    fullName: string;
+    rollNo: string;
+    department: string;
+    yearOfStudy: number;
+    campusId: string | null;
+  };
+  error?: string;
+}> {
+  try {
+    const supabaseServer = await createServerClient();
+    const {
+      data: { user },
+    } = await supabaseServer.auth.getUser();
+
+    const campuses = await getActiveCampuses(supabaseServer);
+
+    if (!user) {
+      return { success: true, campuses };
+    }
+
+    const adminClient = getAdminClient();
+    const { data: profile } = await adminClient
+      .from('profiles')
+      .select('id, email, full_name, campus_id')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const { data: student } = await adminClient
+      .from('students')
+      .select('roll_no, department, year_of_study')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const metadataName =
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      user.user_metadata?.display_name ||
+      '';
+
+    const emailName = user.email ? user.email.split('@')[0] : '';
+    const formattedEmailName = emailName
+      ? emailName.charAt(0).toUpperCase() + emailName.slice(1)
+      : '';
+
+    const initialFullName =
+      profile?.full_name &&
+      profile.full_name !== 'Student User' &&
+      !profile.full_name.startsWith('user_')
+        ? profile.full_name
+        : metadataName || formattedEmailName || '';
+
+    return {
+      success: true,
+      campuses,
+      user: {
+        id: user.id,
+        email: user.email || '',
+        fullName: initialFullName,
+        rollNo: student?.roll_no?.startsWith('ROLL-') ? '' : student?.roll_no || '',
+        department:
+          student?.department && student.department !== 'General Studies'
+            ? student.department
+            : '',
+        yearOfStudy: student?.year_of_study || 1,
+        campusId: profile?.campus_id || null,
+      },
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      campuses: [],
+      error: err.message || 'Failed to fetch onboarding info',
+    };
+  }
+}
+
+/**
+ * Server Action: Initial campus & student profile assignment for users without a campus.
  * Enforces that campus is fixed once assigned (cannot be overwritten by user).
+ * Persists student name, roll number, department, and year of study.
  */
 export async function assignInitialCampusAction(
   campusId: string,
-  otherName?: string
+  otherName?: string,
+  studentDetails?: StudentOnboardingDetails
 ): Promise<{
   success: boolean;
   error?: string;
@@ -56,7 +151,7 @@ export async function assignInitialCampusAction(
   // 1. Fetch user's current profile to check if campus is already set
   const { data: profile, error: profErr } = await adminClient
     .from('profiles')
-    .select('id, campus_id')
+    .select('id, campus_id, full_name')
     .eq('id', user.id)
     .single();
 
@@ -75,17 +170,82 @@ export async function assignInitialCampusAction(
     return { success: false, error: validation.error || 'Invalid campus' };
   }
 
-  // 3. Update profile with campus_id and campus_other_name
+  // 3. Update profile with campus_id, campus_other_name, and optional full_name
+  const profileUpdates: Record<string, any> = {
+    campus_id: validation.campus.id,
+    campus_other_name: validation.sanitizedOtherName || null,
+  };
+
+  if (studentDetails?.fullName && studentDetails.fullName.trim().length >= 2) {
+    profileUpdates.full_name = studentDetails.fullName.trim();
+  }
+
   const { error: updateErr } = await adminClient
     .from('profiles')
-    .update({
-      campus_id: validation.campus.id,
-      campus_other_name: validation.sanitizedOtherName || null,
-    })
+    .update(profileUpdates)
     .eq('id', user.id);
 
   if (updateErr) {
     return { success: false, error: updateErr.message || 'Failed to assign campus' };
+  }
+
+  // 4. Update or upsert student record with academic details
+  const trimmedRollNo = studentDetails?.rollNo?.trim();
+  const trimmedDept = studentDetails?.department?.trim();
+  const validYear =
+    typeof studentDetails?.yearOfStudy === 'number' &&
+    studentDetails.yearOfStudy >= 1 &&
+    studentDetails.yearOfStudy <= 6
+      ? studentDetails.yearOfStudy
+      : 1;
+
+  const { data: existingStudent } = await adminClient
+    .from('students')
+    .select('id, roll_no, department, year_of_study')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (existingStudent) {
+    const studentUpdates: Record<string, any> = {
+      year_of_study: validYear,
+    };
+    if (trimmedDept) {
+      studentUpdates.department = trimmedDept;
+    }
+    if (trimmedRollNo && trimmedRollNo !== existingStudent.roll_no) {
+      studentUpdates.roll_no = trimmedRollNo;
+    }
+
+    const { error: studentUpdErr } = await adminClient
+      .from('students')
+      .update(studentUpdates)
+      .eq('id', user.id);
+
+    if (studentUpdErr) {
+      if (studentUpdErr.code === '23505') {
+        return {
+          success: false,
+          error: `Roll number "${trimmedRollNo}" is already taken by another student. Please enter your unique roll number.`,
+        };
+      }
+      console.warn('Student academic details update warning:', studentUpdErr.message);
+    }
+  } else {
+    const cleanId = user.id.replace(/-/g, '').toUpperCase();
+    const fallbackRoll = trimmedRollNo || `ROLL-${cleanId.slice(0, 12)}`;
+    const { error: studentInsErr } = await adminClient.from('students').insert({
+      id: user.id,
+      roll_no: fallbackRoll,
+      department: trimmedDept || 'General Studies',
+      year_of_study: validYear,
+    });
+
+    if (studentInsErr && studentInsErr.code === '23505') {
+      return {
+        success: false,
+        error: `Roll number "${trimmedRollNo}" is already taken. Please enter your unique roll number.`,
+      };
+    }
   }
 
   return { success: true };

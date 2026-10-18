@@ -43,6 +43,7 @@ export interface QuestItem {
   completed: boolean;
   xpReward: number;
   createdAt: string;
+  hasClaimedXp?: boolean;
 }
 
 export interface SubjectScore {

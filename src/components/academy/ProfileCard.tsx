@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Trash2, Shield, AlertTriangle, Sparkles } from 'lucide-react';
+import Link from 'next/link';
+import { Camera, Trash2, Shield, AlertTriangle, Sparkles, ExternalLink } from 'lucide-react';
 import { StudentProfile } from '@/data/studentDashboardData';
 import Shuffle from '@/components/Shuffle';
 import { RankChip } from '@/components/ranks/RankChip';
@@ -181,6 +182,14 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
           <Camera className="w-3.5 h-3.5 text-zinc-400" />
           <span>{avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
         </button>
+
+        <Link
+          href="/student/profile"
+          className="w-full py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white text-xs font-medium flex items-center justify-center gap-2 transition-colors"
+        >
+          <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
+          <span>Academic Profile Index</span>
+        </Link>
 
         {avatarUrl && (
           <button

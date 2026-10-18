@@ -13,10 +13,12 @@ import { ScoreCard } from '@/components/academy/ScoreCard';
 import { initialStudentProfile, StudentProfile } from '@/data/studentDashboardData';
 import { levelFromXp } from '@/lib/levels';
 import { getStudentStreakAction } from '@/app/actions/quiz';
+import { getStudentDashboardDataAction } from '@/app/actions/student-dashboard';
 import { CelebrationManager, triggerCelebrationCheck } from '@/components/animations/CelebrationManager';
 
 export default function StudentDashboardPage() {
   const [profile, setProfile] = useState<StudentProfile>(initialStudentProfile);
+  const [activityCalendar, setActivityCalendar] = useState<Record<string, number> | undefined>(undefined);
   const [streakInfo, setStreakInfo] = useState<{
     currentStreak: number;
     longestStreak: number;
@@ -37,6 +39,18 @@ export default function StudentDashboardPage() {
 
   useEffect(() => {
     let mounted = true;
+
+    // Load real student profile, ledger XP, and academic info
+    getStudentDashboardDataAction().then((res) => {
+      if (mounted && res.success && res.authenticated) {
+        setProfile(res.profile);
+        if (res.activityCalendar && Object.keys(res.activityCalendar).length > 0) {
+          setActivityCalendar(res.activityCalendar);
+        }
+      }
+    });
+
+    // Load real streak information
     getStudentStreakAction().then((data) => {
       if (mounted) {
         setStreakInfo({
@@ -45,6 +59,7 @@ export default function StudentDashboardPage() {
         });
       }
     });
+
     return () => {
       mounted = false;
     };
@@ -176,7 +191,7 @@ export default function StudentDashboardPage() {
 
             {/* Card 2: Work Report Card (Middle, Widest, 5 cols) */}
             <div className="lg:col-span-5 flex flex-col">
-              <WorkReportCard />
+              <WorkReportCard activityData={activityCalendar} />
             </div>
 
             {/* Card 3: To do Card (Right, 4 cols) */}

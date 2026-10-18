@@ -10,13 +10,24 @@ interface ToDoCardProps {
 }
 
 const STORAGE_KEY = 'academy_student_quests';
+const DAILY_XP_KEY_PREFIX = 'academy_student_tasks_daily_xp_';
+
+function getTodayDateKey(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
 
 export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
   const [quests, setQuests] = useState<QuestItem[]>(initialQuests);
   const [newTitle, setNewTitle] = useState('');
-  const [animatingQuestId, setAnimatingQuestId] = useState<string | null>(null);
+  const [dailyCount, setDailyCount] = useState<number>(0);
+  const [animationInfo, setAnimationInfo] = useState<{
+    id: string;
+    text: string;
+    positive: boolean;
+  } | null>(null);
 
-  // Hydrate quests from localStorage on client mount
+  // Hydrate quests and daily claim count from localStorage on client mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -24,6 +35,15 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
           setQuests(parsed);
+        }
+      }
+
+      const todayKey = `${DAILY_XP_KEY_PREFIX}${getTodayDateKey()}`;
+      const savedDaily = localStorage.getItem(todayKey);
+      if (savedDaily) {
+        const parsedNum = parseInt(savedDaily, 10);
+        if (!isNaN(parsedNum) && parsedNum >= 0) {
+          setDailyCount(Math.min(5, parsedNum));
         }
       }
     } catch {
@@ -47,13 +67,55 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
     const willBeCompleted = !targetQuest.completed;
 
     if (willBeCompleted) {
-      setAnimatingQuestId(id);
-      setTimeout(() => setAnimatingQuestId(null), 900);
-      onQuestCompleted?.(targetQuest.xpReward || 10);
+      // Check if XP has already been claimed for this specific task
+      if (!targetQuest.hasClaimedXp) {
+        // Enforce daily 5-task XP cap (50 XP max per day from to-dos)
+        if (dailyCount < 5) {
+          const reward = targetQuest.xpReward || 10;
+          const nextCount = dailyCount + 1;
+          setDailyCount(nextCount);
+          try {
+            localStorage.setItem(
+              `${DAILY_XP_KEY_PREFIX}${getTodayDateKey()}`,
+              String(nextCount)
+            );
+          } catch {
+            // Storage unavailable
+          }
+          setAnimationInfo({
+            id,
+            text: `+${reward} XP (${nextCount}/5 today)`,
+            positive: true,
+          });
+          onQuestCompleted?.(reward);
+        } else {
+          // Daily cap reached: task can be completed for productivity, but awards 0 XP
+          setAnimationInfo({
+            id,
+            text: 'Daily XP cap reached (5/5)',
+            positive: false,
+          });
+        }
+      } else {
+        // Already claimed earlier: 0 XP
+        setAnimationInfo({
+          id,
+          text: 'XP already claimed',
+          positive: false,
+        });
+      }
+      setTimeout(() => setAnimationInfo(null), 1200);
     }
 
+    // When marking complete, lock hasClaimedXp = true so unchecking & re-checking awards 0 XP
     const updated = quests.map((q) =>
-      q.id === id ? { ...q, completed: willBeCompleted } : q
+      q.id === id
+        ? {
+            ...q,
+            completed: willBeCompleted,
+            hasClaimedXp: q.hasClaimedXp || willBeCompleted,
+          }
+        : q
     );
     saveQuests(updated);
   };
@@ -69,6 +131,7 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
       completed: false,
       xpReward: 10,
       createdAt: new Date().toISOString(),
+      hasClaimedXp: false,
     };
 
     const updated = [newQuest, ...quests];
@@ -109,15 +172,29 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
           </div>
         </div>
 
-        {/* Counter Chip */}
-        <div
-          suppressHydrationWarning
-          className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-mono text-zinc-200"
-        >
-          <Sparkles className="w-3 h-3 text-white" />
-          <span suppressHydrationWarning>
-            {completedCount}/{quests.length} Done
-          </span>
+        {/* Counter Chips */}
+        <div className="flex items-center gap-2">
+          {/* Daily XP Cap Counter */}
+          <div
+            suppressHydrationWarning
+            title="Up to 5 completed tasks per day award XP (max 50 XP/day)"
+            className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-mono text-zinc-300"
+          >
+            <Sparkles className="w-3 h-3 text-white" />
+            <span suppressHydrationWarning>
+              XP: {dailyCount}/5
+            </span>
+          </div>
+
+          {/* Tasks Done Counter */}
+          <div
+            suppressHydrationWarning
+            className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-mono text-zinc-400"
+          >
+            <span suppressHydrationWarning>
+              {completedCount}/{quests.length} Done
+            </span>
+          </div>
         </div>
       </div>
 
@@ -133,7 +210,7 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
           </div>
         ) : (
           quests.map((quest) => {
-            const isAnimating = animatingQuestId === quest.id;
+            const isAnimating = animationInfo?.id === quest.id;
 
             return (
               <div
@@ -144,13 +221,15 @@ export function ToDoCard({ onQuestCompleted }: ToDoCardProps) {
                     : 'bg-white/[0.03] border-white/[0.08] hover:border-white/20 text-white'
                 }`}
               >
-                {/* Floating "+10 XP" Particle */}
+                {/* Floating XP / Status Particle */}
                 {isAnimating && (
                   <div
                     aria-hidden="true"
-                    className="absolute -top-3 left-6 font-mono text-xs font-bold text-white animate-float-xp pointer-events-none z-30"
+                    className={`absolute -top-3 left-6 font-mono text-xs font-bold animate-float-xp pointer-events-none z-30 ${
+                      animationInfo?.positive ? 'text-white' : 'text-zinc-400'
+                    }`}
                   >
-                    +{quest.xpReward} XP!
+                    {animationInfo?.text}
                   </div>
                 )}
 
