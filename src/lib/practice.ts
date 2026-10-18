@@ -7,6 +7,11 @@ export interface PracticeLink {
   difficulty: 'Easy' | 'Medium' | 'Hard';
   link: string;
   created_at?: string;
+  is_competition?: boolean;
+  created_by?: string;
+  instructions?: string;
+  deadline?: string;
+  xp_reward?: number;
 }
 
 export interface PracticeFilter {
@@ -14,6 +19,7 @@ export interface PracticeFilter {
   difficulty?: string;
   platform?: string;
   search?: string;
+  isCompetition?: boolean | 'All';
 }
 
 /**
@@ -164,7 +170,7 @@ export const SEED_PRACTICE_LINKS: PracticeLink[] = [
 ];
 
 /**
- * Pure function: Filters practice links by topic, difficulty, platform, or search query.
+ * Pure function: Filters practice links by topic, difficulty, platform, competition, or search query.
  */
 export function filterPracticeLinks(
   links: PracticeLink[],
@@ -173,6 +179,11 @@ export function filterPracticeLinks(
   if (!filter) return links;
 
   return links.filter((link) => {
+    if (filter.isCompetition !== undefined && filter.isCompetition !== 'All') {
+      const isComp = Boolean(link.is_competition);
+      if (filter.isCompetition && !isComp) return false;
+      if (!filter.isCompetition && isComp) return false;
+    }
     if (filter.topic && filter.topic !== 'All' && link.topic !== filter.topic) {
       return false;
     }
@@ -191,6 +202,21 @@ export function filterPracticeLinks(
     }
     return true;
   });
+}
+
+/**
+ * Validates that a HackerRank competition URL is properly formed.
+ */
+export function validateHackerRankCompetitionUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url.trim());
+    const validProtocol = parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    const isHackerRank = parsed.hostname.toLowerCase().includes('hackerrank.com');
+    return validProtocol && isHackerRank;
+  } catch {
+    return false;
+  }
 }
 
 /**

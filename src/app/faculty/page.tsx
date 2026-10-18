@@ -21,6 +21,7 @@ import {
   ArrowRight,
   ShieldAlert,
   Building2,
+  Trophy,
 } from 'lucide-react';
 import { RankChip } from '@/components/ranks/RankChip';
 
@@ -88,6 +89,13 @@ export default function FacultyDashboardPage() {
             >
               <BookOpen className="w-4 h-4 text-indigo-400" />
               <span>Question Review</span>
+            </Link>
+            <Link
+              href="/faculty/competitions"
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-semibold transition-all"
+            >
+              <Trophy className="w-4 h-4 text-purple-400" />
+              <span>HackerRank Contests</span>
             </Link>
             <Link
               href="/faculty/award-xp"

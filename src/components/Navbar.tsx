@@ -55,6 +55,7 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
     role === 'faculty'
       ? [
           { label: 'Dashboard', ariaLabel: 'Go to Faculty Dashboard', link: '/faculty' },
+          { label: 'Competitions', ariaLabel: 'Manage HackerRank Competitions', link: '/faculty/competitions' },
           { label: 'Questions', ariaLabel: 'Manage Question Bank', link: '/faculty/questions' },
           { label: 'Student View', ariaLabel: 'Switch to Student View', link: '/student' },
         ]

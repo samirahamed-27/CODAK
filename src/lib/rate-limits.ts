@@ -13,6 +13,8 @@ const DEFAULT_LIMITS: Record<string, number> = {
   concept_match: 15,
   battle_submit: 30,
   search: 30,
+  practice_claim: 10,
+  competition_create: 10,
 };
 
 export async function checkRateLimit(
