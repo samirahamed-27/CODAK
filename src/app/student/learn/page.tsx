@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import Shuffle from '@/components/Shuffle';
 import clsx from 'clsx';
+import { LinearCard, ComponentItem } from '@/components/ui/linear-card';
 
 export default function StudentLearnPage() {
   const [activeTab, setActiveTab] = useState<'daily' | 'practice' | 'match'>('daily');
@@ -271,14 +272,77 @@ export default function StudentLearnPage() {
   const allDailyQuestionsAnswered =
     dailyState?.questions && dailyState.questions.every((q) => q.isAnswered);
 
+  const learnModules: ComponentItem[] = [
+    {
+      id: 1,
+      url: {
+        src: 'https://images.unsplash.com/photo-1516116211227-bbc042971c08?auto=format&fit=crop&w=800&q=80',
+      },
+      title: 'Data Structures & Algorithms',
+      subtitle: 'CS201 • Foundation Track',
+      description:
+        'Master asymptotic Big-O efficiency, recursive divide-and-conquer, dynamic programming state transitions, binary heaps, and graph traversals (BFS, DFS, Dijkstra). Develop systematic problem-solving intuition for high-throughput technical evaluations.',
+      tags: ['Algorithms', 'DataStructures', 'BigO', 'DynamicProgramming', 'Trees'],
+      playAction: {
+        label: 'Play Practice Quiz',
+        onClick: () => {
+          setActiveTab('practice');
+          setTimeout(() => {
+            document.getElementById('quiz-section')?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        },
+      },
+    },
+    {
+      id: 2,
+      url: {
+        src: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
+      },
+      title: 'Computer Architecture & Systems',
+      subtitle: 'CS301 • Systems Track',
+      description:
+        'Explore CPU register pipelines, cache hierarchies (L1/L2/L3), memory alignment, virtual memory page tables, and process context switches. Understand how spatial locality and thread synchronization dictate real-world latency.',
+      tags: ['OperatingSystems', 'MemoryPaging', 'CPUArchitecture', 'Concurrency', 'Locality'],
+      playAction: {
+        label: 'Play Daily Challenge',
+        onClick: () => {
+          setActiveTab('daily');
+          setTimeout(() => {
+            document.getElementById('quiz-section')?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        },
+      },
+    },
+    {
+      id: 3,
+      url: {
+        src: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80',
+      },
+      title: 'Syntax Paradigms & Cyber Arena',
+      subtitle: 'CS102 • Applied Track',
+      description:
+        'Compare type inference, ownership models, and runtime compilation between Python, JavaScript, and C++. Master memory safety, event loops, and battle algorithmic bug monsters in our retro Codemons arena.',
+      tags: ['Python', 'JavaScript', 'Cplusplus', 'Runtimes', 'Codemons'],
+      playAction: {
+        label: 'Play Concept Match',
+        onClick: () => {
+          setActiveTab('match');
+          setTimeout(() => {
+            document.getElementById('quiz-section')?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        },
+      },
+    },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col bg-[#07080B] pb-24 text-slate-100">
       <Navbar role="student" userName="Aarav Sharma" />
 
-      <main className="flex-1 max-w-xl w-full mx-auto px-4 py-6 flex flex-col gap-5">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 flex flex-col gap-8">
         <div>
           <Shuffle
-            text="PLAY AREA"
+            text="ACADEMIC LEARNING HUB"
             tag="h1"
             effect="slide"
             duration={0.35}
@@ -286,14 +350,47 @@ export default function StudentLearnPage() {
             triggerOnHover={true}
             color="#FFFFFF"
             accentColor="#7DD3FC"
-            style={{ fontSize: '1.25rem', letterSpacing: '0.05em' }}
+            style={{ fontSize: '1.5rem', letterSpacing: '0.05em' }}
           />
-          <p className="text-xs text-slate-400 mt-1">
-            Test your mastery with daily scored quizzes and unlimited practice.
+          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
+            Explore interactive core CS curriculum modules, expand cards for in-depth technical analysis, and test your mastery directly with daily quizzes & concept matchmaking.
           </p>
         </div>
 
-        {/* Mode Toggle Switch */}
+        {/* ============================================================== */}
+        {/* LINEAR CARDS: CORE CURRICULUM MODULES                         */}
+        {/* ============================================================== */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+              <h2 className="text-xs font-mono font-bold tracking-wider text-slate-300 uppercase">
+                Interactive Curriculum Tracks (Click to Expand)
+              </h2>
+            </div>
+            <span className="text-[11px] font-mono text-sky-400/80">3 Tracks Available</span>
+          </div>
+
+          <LinearCard items={learnModules} />
+        </section>
+
+        {/* ============================================================== */}
+        {/* QUIZ & PRACTICE ARENA                                         */}
+        {/* ============================================================== */}
+        <div id="quiz-section" className="flex flex-col gap-4 max-w-xl w-full mx-auto pt-6 border-t border-white/10">
+          <div>
+            <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+              <span>Quiz & Concept Arena</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/30">
+                XP VERIFIED
+              </span>
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Complete today&apos;s daily quiz to maintain your streak or practice unlimited concept rounds.
+            </p>
+          </div>
+
+          {/* Mode Toggle Switch */}
         <div className="grid grid-cols-3 p-1.5 rounded-2xl bg-slate-900 border border-slate-800 gap-1">
           <button
             onClick={() => setActiveTab('daily')}
@@ -925,6 +1022,7 @@ export default function StudentLearnPage() {
             ) : null}
           </div>
         )}
+        </div>
       </main>
 
       <BottomNav />
