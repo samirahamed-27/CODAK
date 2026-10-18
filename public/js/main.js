@@ -4,13 +4,22 @@
  */
 
 // Global Game State
-window.gameState = window.gameState || {
+window.gameState = Object.assign({
   player: null,
   enemy: null,
   turn: 1,
   score: 0,
-  phase: 'idle'
-};
+  phase: 'idle',
+  inventory: { low: 0, normal: 0, advance: 0 }
+}, window.gameState);
+
+if (!window.gameState.inventory) {
+  window.gameState.inventory = (typeof loadInventory === 'function')
+    ? loadInventory()
+    : { low: 0, normal: 0, advance: 0 };
+} else if (typeof loadInventory === 'function') {
+  window.gameState.inventory = loadInventory();
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Elements
@@ -53,6 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Code Panel DOM Elements
   const pickerCardsContainer = document.getElementById('picker-cards-container');
+  const pickerDifficultyBar = document.getElementById('picker-difficulty-bar');
   const pickerStatusBadge = document.getElementById('picker-status-badge');
   const pickerBody = document.getElementById('picker-body');
   const pickerExpandedOverlay = document.getElementById('picker-expanded-overlay');
@@ -74,9 +84,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const btnRunTests = document.getElementById('btn-run-tests');
   const btnDevPower = document.getElementById('btn-dev-power');
+  const btnInventory = document.getElementById('btn-inventory');
+  const btnInventoryBattle = document.getElementById('btn-inventory-battle');
   const btnHolyHeal = document.getElementById('btn-holy-heal');
   const btnHint = document.getElementById('btn-hint');
   const btnResetCode = document.getElementById('btn-reset-code');
+
+  const inventoryOverlay = document.getElementById('inventory-overlay');
+  const btnInventoryClose = document.getElementById('btn-inventory-close');
+  const btnInventoryCloseBottom = document.getElementById('btn-inventory-close-bottom');
+  const inventoryItemsContainer = document.getElementById('inventory-items-container');
+  const invActiveCodemon = document.getElementById('inv-active-codemon');
+  const invActiveHp = document.getElementById('inv-active-hp');
+  const invActiveTurns = document.getElementById('inv-active-turns');
 
   const consoleStatusBadge = document.getElementById('console-status-badge');
   const consoleOutput = document.getElementById('console-output');
@@ -335,6 +355,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         playTone(659.25, 0.08, 0.08, 'triangle', 0.18);
         playTone(783.99, 0.16, 0.08, 'triangle', 0.18);
         playTone(1046.50, 0.24, 0.20, 'triangle', 0.20);
+      } else if (t === 'item_found' || t === 'item_found_chip' || t === 'chip_found') {
+        // Rising chime sound (C5 -> E5 -> G5 -> B5 -> C6)
+        playTone(523.25, 0.00, 0.08, 'triangle', 0.18);
+        playTone(659.25, 0.07, 0.08, 'triangle', 0.18);
+        playTone(783.99, 0.14, 0.08, 'triangle', 0.18);
+        playTone(987.77, 0.21, 0.08, 'triangle', 0.20);
+        playTone(1046.50, 0.28, 0.25, 'triangle', 0.22);
+      } else if (t === 'item_found_advance') {
+        // Golden advance chip chime sound (larger, sparkling higher chords)
+        playTone(523.25, 0.00, 0.07, 'square', 0.14);
+        playTone(659.25, 0.06, 0.07, 'square', 0.15);
+        playTone(783.99, 0.12, 0.07, 'square', 0.16);
+        playTone(1046.50, 0.18, 0.08, 'square', 0.18);
+        playTone(1318.51, 0.25, 0.30, 'square', 0.22);
       } else if (t === 'static') {
         playNoiseBurst(0.28, 1400, 0.25);
       }
@@ -525,6 +559,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (dialogueOverlay) {
       if (targetScreen === 'battle') {
         dialogueOverlay.classList.add('active');
+        if (window.updateChipInventoryBar) {
+          window.updateChipInventoryBar();
+        }
       } else {
         dialogueOverlay.classList.remove('active');
       }
@@ -699,6 +736,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     playSound('battle');
+    if (typeof clearInventory === 'function') {
+      clearInventory();
+    } else if (typeof window !== 'undefined' && typeof window.clearInventory === 'function') {
+      window.clearInventory();
+    }
     initBattle();
   }
 
@@ -1169,6 +1211,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (codeTextarea) codeTextarea.disabled = true;
     if (btnRunTests) btnRunTests.disabled = true;
     if (btnDevPower) btnDevPower.disabled = true;
+    if (btnInventory) btnInventory.disabled = true;
+    if (btnInventoryBattle) btnInventoryBattle.disabled = true;
     if (btnHolyHeal) btnHolyHeal.disabled = true;
     if (btnHint) btnHint.disabled = true;
     if (btnResetCode) btnResetCode.disabled = true;
@@ -1212,9 +1256,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (window.BattleEngine && typeof window.BattleEngine.setCodePanelEnemyTurnUI === 'function') {
       window.BattleEngine.setCodePanelEnemyTurnUI(false);
     }
+    if (window.gameState) {
+      window.gameState.isEnemyTurn = false;
+      window.gameState.isEnemyAttacking = false;
+    }
+    if (window.resetChipsUsedThisTurn) {
+      window.resetChipsUsedThisTurn();
+    }
+    if (window.updateChipInventoryBar) {
+      window.updateChipInventoryBar();
+    }
+    if (window.selectChipSlot) {
+      window.selectChipSlot(null);
+    }
 
     activeChallenge = null;
     hintUsedThisTurn = false;
+    if (window.gameState) {
+      window.gameState.hintUsedThisTurn = false;
+    }
     stopTurnTimer();
 
     // Check if Bugmon battle is active
@@ -1240,6 +1300,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const hardCard = pickRandomChallenge('hard');
 
     currentTurnCards = [easyCard, mediumCard, hardCard].filter(Boolean);
+    const rewardHelper = window.getRewardChipForDifficulty || (typeof getRewardChipForDifficulty === 'function' ? getRewardChipForDifficulty : null);
+    currentTurnCards.forEach((c) => {
+      if (c && !c.locked) {
+        const diff = (c.difficulty || 'easy').toLowerCase();
+        const r = rewardHelper ? rewardHelper(diff) : null;
+        if (r && Math.random() < r.dropChance) {
+          c.willReceiveItem = r;
+        } else {
+          c.willReceiveItem = null;
+        }
+      } else if (c) {
+        c.willReceiveItem = null;
+      }
+    });
     renderPickerCards(currentTurnCards);
 
     // Reset Editor Area to waiting prompt
@@ -1271,6 +1345,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (btnRunTests) btnRunTests.disabled = true;
     if (btnDevPower) btnDevPower.disabled = true;
+    if (btnInventory) btnInventory.disabled = false;
+    if (btnInventoryBattle) btnInventoryBattle.disabled = false;
     if (btnHolyHeal) btnHolyHeal.disabled = false;
     if (btnHint) {
       btnHint.disabled = true;
@@ -1385,6 +1461,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const dmg = dmgMap[currentChallenge.difficulty] || 10;
     const isLocked = currentChallenge.locked === true;
+    const currentDiff = (currentChallenge.difficulty || 'easy').toLowerCase();
+    const willReceiveExpItem = Boolean(currentChallenge && currentChallenge.willReceiveItem);
+    const expItemChip = willReceiveExpItem ? currentChallenge.willReceiveItem : null;
+    const dropLineExpanded = willReceiveExpItem && expItemChip ? `
+      <div class="picker-expanded-drop font-pixel">
+        <canvas class="picker-expanded-chip-canvas" width="20" height="20" data-chip="${expItemChip.id}"></canvas>
+        <span>ITEM REWARD: ${expItemChip.name.toUpperCase()} (${expItemChip.rarityBadge || expItemChip.rarityLabel}) &bull; +${expItemChip.heal} HP</span>
+      </div>
+    ` : '';
 
     pickerExpandedBody.className = `picker-expanded-body font-pixel ${currentChallenge.difficulty} ${isLocked ? 'locked' : ''}`;
     pickerExpandedBody.setAttribute('aria-label', `${currentChallenge.difficulty} challenge: ${currentChallenge.title}`);
@@ -1400,7 +1485,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
       <div class="picker-expanded-title font-pixel">${isLocked ? 'LOCKED MOVE' : (currentChallenge.title || 'Challenge')}</div>
       <div class="picker-expanded-desc font-code">${currentChallenge.description || ''}</div>
+      ${dropLineExpanded}
     `;
+
+    const expChipCanvas = pickerExpandedBody.querySelector('canvas.picker-expanded-chip-canvas');
+    if (expChipCanvas && expItemChip && expChipCanvas.getContext) {
+      const ctx = expChipCanvas.getContext('2d');
+      const drawFn = window.drawChipIcon || (typeof drawChipIcon === 'function' ? drawChipIcon : null);
+      if (drawFn) {
+        drawFn(ctx, expItemChip.id, 0, 0, 2);
+      }
+    }
 
     pickerExpandedBody.onclick = () => {
       if (isLocked) return;
@@ -1422,21 +1517,87 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
   }
 
+  let activeDifficultyIndex = 0;
+
   function renderPickerCards(cards) {
     if (!pickerCardsContainer) return;
     pickerCardsContainer.innerHTML = '';
+    const diffBar = document.getElementById('picker-difficulty-bar') || pickerDifficultyBar;
+    if (diffBar) diffBar.innerHTML = '';
     hideExpandedPicker();
 
+    if (pickerBody) {
+      pickerBody.classList.add('tabbed-view');
+    }
+
+    const rewardFn = window.getRewardChipForDifficulty || (typeof getRewardChipForDifficulty === 'function' ? getRewardChipForDifficulty : null);
+    const countFn = window.getChipCount || (typeof getChipCount === 'function' ? getChipCount : null);
+    const maxPerType = (window.ITEM_CONFIG && window.ITEM_CONFIG.maxPerType) || 9;
+    const dmgMap = { easy: 10, medium: 20, hard: 35 };
+
+    // Ensure willReceiveItem is determined for all cards
+    cards.forEach((challenge) => {
+      if (challenge && typeof challenge.willReceiveItem === 'undefined') {
+        if (!challenge.locked) {
+          const diff = (challenge.difficulty || 'easy').toLowerCase();
+          const r = rewardFn ? rewardFn(diff) : null;
+          challenge.willReceiveItem = (r && Math.random() < r.dropChance) ? r : null;
+        } else {
+          challenge.willReceiveItem = null;
+        }
+      }
+    });
+
+    // Determine initial active index (first non-locked challenge)
+    let defaultIndex = 0;
+    if (activeChallenge) {
+      const foundIdx = cards.findIndex(c => c && (c.id === activeChallenge.id || c.difficulty === activeChallenge.difficulty));
+      if (foundIdx !== -1) defaultIndex = foundIdx;
+    } else {
+      const nonLockedIdx = cards.findIndex(c => !c.locked);
+      if (nonLockedIdx !== -1) defaultIndex = nonLockedIdx;
+    }
+    activeDifficultyIndex = defaultIndex;
+
+    const cardElements = [];
+
+    // 1. Render all 3 cards into container (active one visible, matching Image 2)
     cards.forEach((challenge, idx) => {
-      const dmgMap = { easy: 10, medium: 20, hard: 35 };
       const dmg = dmgMap[challenge.difficulty] || 10;
       const isLocked = challenge.locked === true;
+      const diff = (challenge.difficulty || 'easy').toLowerCase();
+      const willReceiveItem = Boolean(challenge && challenge.willReceiveItem);
+      const itemChip = willReceiveItem ? challenge.willReceiveItem : null;
+      const currentCount = (itemChip && countFn) ? countFn(itemChip.id) : 0;
+      const isFull = currentCount >= maxPerType;
+      const isActive = (idx === activeDifficultyIndex);
+
+      // Show item image and reward area ONLY when we will receive the item (no chance percentages)
+      const rewardStripHtml = willReceiveItem && itemChip ? `
+        <div class="picker-card-reward-strip font-pixel">
+          <div class="card-chip-wrapper">
+            <canvas class="card-chip-canvas" width="40" height="40" data-chip="${itemChip.id}"></canvas>
+            <span class="chip-full-badge font-pixel ${isFull ? 'visible' : ''}">FULL</span>
+          </div>
+          <div class="card-chip-info">
+            <div class="card-chip-top-row">
+              <span class="card-chip-name font-pixel">${itemChip.name.toUpperCase()}</span>
+              <span class="card-chip-heal font-pixel">${itemChip.healText || `+${itemChip.heal} HP`}</span>
+            </div>
+            <div class="card-chip-bottom-row">
+              <span class="card-chip-rarity font-pixel ${itemChip.isAdvance ? 'rarity-golden' : ''}">${itemChip.rarityBadge || itemChip.rarityLabel}</span>
+              <span class="card-chip-reward-badge font-pixel">ITEM REWARD</span>
+            </div>
+          </div>
+        </div>
+      ` : '';
 
       const card = document.createElement('div');
-      card.className = `picker-card ${challenge.difficulty} ${isLocked ? 'card-disabled locked' : ''}`;
+      card.className = `picker-card ${challenge.difficulty} ${isActive ? 'active' : ''} ${isLocked ? 'card-disabled locked' : ''}`;
       card.id = `card-${challenge.id}`;
       card.setAttribute('tabindex', isLocked ? '-1' : '0');
       card.setAttribute('role', 'button');
+      card.setAttribute('aria-selected', isActive ? 'true' : 'false');
       card.setAttribute('aria-label', isLocked
         ? 'Easy challenge is locked in Bugmon battle'
         : `${challenge.difficulty.toUpperCase()} challenge: ${challenge.title}. Deals ${dmg} damage.`
@@ -1444,57 +1605,189 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (isLocked) {
         card.innerHTML = `
-          <div class="picker-card-header">
-            <span class="picker-badge font-pixel text-red" style="background:#540d1a;">LOCKED</span>
-            <span class="picker-card-dmg font-pixel text-red">LOCKED</span>
+          <div class="picker-card-main-col">
+            <div class="picker-card-header">
+              <span class="picker-badge font-pixel text-red" style="background:#540d1a;">LOCKED</span>
+              <span class="picker-card-topic font-pixel text-red">RESTRICTED</span>
+              <span class="picker-card-dmg font-pixel text-red">LOCKED</span>
+            </div>
+            <div class="picker-card-title font-pixel text-red">LOCKED</div>
+            <div class="picker-card-desc font-code">${challenge.description}</div>
           </div>
-          <div class="picker-card-title font-pixel text-red">LOCKED</div>
-          <div class="picker-card-desc font-code">${challenge.description}</div>
-          <div class="picker-card-topic font-pixel">RESTRICTED</div>
+          ${rewardStripHtml}
         `;
+      } else {
+        card.innerHTML = `
+          <div class="picker-card-main-col">
+            <div class="picker-card-header">
+              <span class="picker-badge font-pixel">${(challenge.difficulty || 'EASY').toUpperCase()}</span>
+              <span class="picker-card-topic font-pixel">TOPIC: ${(challenge.topic || 'LOGIC').toUpperCase()}</span>
+              <span class="picker-card-dmg font-pixel">${dmg} DMG</span>
+            </div>
+            <div class="picker-card-title font-pixel">${challenge.title || 'Challenge'}</div>
+            <div class="picker-card-desc font-code">${challenge.description || ''}</div>
+          </div>
+          ${rewardStripHtml}
+        `;
+
+        card.addEventListener('click', () => {
+          if (isTestingCode || (typeof isEnemyTurn !== 'undefined' && isEnemyTurn)) return;
+          setActiveQuestion(idx, true);
+        });
+
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (isTestingCode || (typeof isEnemyTurn !== 'undefined' && isEnemyTurn)) return;
+            setActiveQuestion(idx, true);
+          }
+        });
+      }
+
+      if (pickerBody && !pickerBody.classList.contains('tabbed-view')) {
         card.addEventListener('mouseenter', () => {
           showExpandedPicker(idx);
         });
-        card.addEventListener('focus', () => {
-          showExpandedPicker(idx);
-        });
-        pickerCardsContainer.appendChild(card);
-        return;
       }
 
-      card.innerHTML = `
-        <div class="picker-card-header">
-          <span class="picker-badge font-pixel">${(challenge.difficulty || 'EASY').toUpperCase()}</span>
-          <span class="picker-card-dmg font-pixel">${dmg} DMG</span>
-        </div>
-        <div class="picker-card-title font-pixel">${challenge.title || 'Challenge'}</div>
-        <div class="picker-card-desc font-code">${challenge.description || ''}</div>
-        <div class="picker-card-topic font-pixel">TOPIC: ${(challenge.topic || 'LOGIC').toUpperCase()}</div>
-      `;
+      pickerCardsContainer.appendChild(card);
+      cardElements.push(card);
 
-      card.addEventListener('mouseenter', () => {
-        showExpandedPicker(idx);
-      });
+      const chipCanvas = card.querySelector('canvas.card-chip-canvas');
+      if (chipCanvas && itemChip && chipCanvas.getContext) {
+        const ctx = chipCanvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        const drawFn = window.drawChipIcon || (typeof drawChipIcon === 'function' ? drawChipIcon : null);
+        if (drawFn) {
+          drawFn(ctx, itemChip.id, 0, 0, 4);
+        }
+      }
+    });
 
-      card.addEventListener('focus', () => {
-        showExpandedPicker(idx);
-      });
+    // 2. Render Difficulty Bar at top (show item image ONLY if question will grant an item)
+    if (diffBar) {
+      cards.forEach((challenge, idx) => {
+        const dmg = dmgMap[challenge.difficulty] || 10;
+        const isLocked = challenge.locked === true;
+        const willReceiveItem = Boolean(challenge && challenge.willReceiveItem);
+        const itemChip = willReceiveItem ? challenge.willReceiveItem : null;
+        const isActive = (idx === activeDifficultyIndex);
 
-      card.addEventListener('click', () => {
-        hideExpandedPicker();
-        selectChallengeCard(challenge, card);
-      });
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = `picker-diff-tab ${challenge.difficulty} ${isActive ? 'active' : ''} ${isLocked ? 'locked bugmon-locked' : ''}`;
+        tab.id = `picker-diff-tab-${challenge.difficulty}`;
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        tab.setAttribute('tabindex', isLocked ? '-1' : '0');
+        tab.title = isLocked
+          ? 'Easy challenge is locked in Bugmon battle'
+          : `${(challenge.difficulty || 'EASY').toUpperCase()} (${dmg} DMG)${willReceiveItem && itemChip ? ` • Item: ${itemChip.name}` : ''} - Click to open question`;
 
-      card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        const diffLabel = (challenge.difficulty || 'easy').toUpperCase() === 'MEDIUM' ? 'MED' : (challenge.difficulty || 'easy').toUpperCase();
+
+        tab.innerHTML = `
+          <div class="picker-diff-tab-left">
+            <span class="picker-diff-tab-label font-pixel">${isLocked ? 'LOCKED' : diffLabel}</span>
+            <span class="picker-diff-tab-dmg font-pixel">${isLocked ? 'LOCKED' : `${dmg} DMG`}</span>
+          </div>
+          ${willReceiveItem && itemChip ? `
+            <div class="picker-diff-tab-chip" title="Item Reward: ${itemChip.name} (${itemChip.healText || `+${itemChip.heal} HP`})">
+              <canvas class="diff-tab-chip-canvas" width="20" height="20" data-chip="${itemChip.id}"></canvas>
+            </div>
+          ` : ''}
+        `;
+
+        if (willReceiveItem && itemChip) {
+          const tabCanvas = tab.querySelector('canvas.diff-tab-chip-canvas');
+          if (tabCanvas && tabCanvas.getContext) {
+            const ctx = tabCanvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            const drawFn = window.drawChipIcon || (typeof drawChipIcon === 'function' ? drawChipIcon : null);
+            if (drawFn) {
+              drawFn(ctx, itemChip.id, 0, 0, 2);
+            }
+          }
+        }
+
+        tab.addEventListener('click', (e) => {
           e.preventDefault();
-          hideExpandedPicker();
-          selectChallengeCard(challenge, card);
+          if (isLocked) {
+            playSound('error');
+            if (window.typeText) window.typeText('Easy challenges are locked during Bugmon battle!', 20);
+            return;
+          }
+          if (typeof isEnemyTurn !== 'undefined' && isEnemyTurn) return;
+          if (isTestingCode) return;
+          setActiveQuestion(idx, true);
+        });
+
+        tab.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            const nextIdx = (idx + 1) % cards.length;
+            const allTabs = diffBar.querySelectorAll('.picker-diff-tab');
+            if (allTabs[nextIdx]) allTabs[nextIdx].focus();
+          } else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            const prevIdx = (idx - 1 + cards.length) % cards.length;
+            const allTabs = diffBar.querySelectorAll('.picker-diff-tab');
+            if (allTabs[prevIdx]) allTabs[prevIdx].focus();
+          } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (isLocked) return;
+            if (typeof isEnemyTurn !== 'undefined' && isEnemyTurn) return;
+            if (isTestingCode) return;
+            setActiveQuestion(idx, true);
+          }
+        });
+
+        diffBar.appendChild(tab);
+      });
+    }
+
+    function setActiveQuestion(index, openInEditor = true) {
+      if (!cards[index]) return;
+      activeDifficultyIndex = index;
+      const targetChallenge = cards[index];
+      const targetCard = cardElements[index];
+
+      // Update tabs in bar
+      if (diffBar) {
+        const allTabs = diffBar.querySelectorAll('.picker-diff-tab');
+        allTabs.forEach((t, i) => {
+          if (i === index) {
+            t.classList.add('active');
+            t.setAttribute('aria-selected', 'true');
+          } else {
+            t.classList.remove('active');
+            t.setAttribute('aria-selected', 'false');
+          }
+        });
+      }
+
+      // Update cards in container
+      cardElements.forEach((c, i) => {
+        if (i === index) {
+          c.classList.add('active');
+          c.setAttribute('aria-selected', 'true');
+        } else {
+          c.classList.remove('active');
+          c.classList.remove('selected');
+          c.setAttribute('aria-selected', 'false');
         }
       });
 
-      pickerCardsContainer.appendChild(card);
-    });
+      if (openInEditor && !targetChallenge.locked) {
+        selectChallengeCard(targetChallenge, targetCard, true);
+      }
+    }
+
+    window.switchPickerQuestion = (idx) => setActiveQuestion(idx, true);
+
+    if (window.updateQuestionCardChipFullBadges) {
+      window.updateQuestionCardChipFullBadges();
+    }
 
     if (pickerBody && !pickerBody.__hasHoverListeners) {
       pickerBody.__hasHoverListeners = true;
@@ -1504,36 +1797,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  function selectChallengeCard(challenge, cardElement) {
-    if (!battleActive || activeChallenge) return;
+  function selectChallengeCard(challenge, cardElement, allowSwitch = true) {
+    if (!battleActive) return;
+    if (typeof isEnemyTurn !== 'undefined' && isEnemyTurn) return;
+    if (isTestingCode) return;
+    if (activeChallenge && activeChallenge.id === challenge.id && cardElement && cardElement.classList.contains('selected')) {
+      return;
+    }
 
     hideExpandedPicker();
     playSound('select');
     activeChallenge = challenge;
     battleUsedChallenges.add(challenge.id);
 
-    // Clicking a card selects it, locks the other two for this turn
+    // Clicking a card selects it, activates it and syncs tabs
     const allCards = pickerCardsContainer ? pickerCardsContainer.querySelectorAll('.picker-card') : [];
     allCards.forEach((c) => {
       if (c === cardElement) {
         c.classList.add('selected');
+        c.classList.add('active');
         c.classList.remove('locked');
         c.setAttribute('aria-selected', 'true');
+        c.removeAttribute('aria-disabled');
+        c.tabIndex = 0;
       } else {
-        c.classList.add('locked');
         c.classList.remove('selected');
-        c.setAttribute('aria-disabled', 'true');
-        c.tabIndex = -1;
+        c.classList.remove('active');
+        c.setAttribute('aria-selected', 'false');
       }
     });
 
-    if (pickerStatusBadge) {
-      pickerStatusBadge.textContent = `MOVE LOCKED: ${challenge.difficulty.toUpperCase()}`;
-      pickerStatusBadge.className = 'section-badge font-code text-green';
+    const diffBar = document.getElementById('picker-difficulty-bar') || pickerDifficultyBar;
+    if (diffBar) {
+      const allTabs = diffBar.querySelectorAll('.picker-diff-tab');
+      allTabs.forEach((tab) => {
+        if (tab.classList.contains(challenge.difficulty)) {
+          tab.classList.add('active');
+          tab.setAttribute('aria-selected', 'true');
+        } else {
+          tab.classList.remove('active');
+          tab.setAttribute('aria-selected', 'false');
+        }
+      });
     }
 
     const dmgMap = { easy: 10, medium: 20, hard: 35 };
     const dmg = dmgMap[challenge.difficulty] || 10;
+
+    if (pickerStatusBadge) {
+      const itemNote = (challenge && challenge.willReceiveItem) ? ` + [${challenge.willReceiveItem.name.toUpperCase()}]` : '';
+      pickerStatusBadge.textContent = `MOVE SELECTED: ${challenge.difficulty.toUpperCase()} (${dmg} DMG)${itemNote}`;
+      pickerStatusBadge.className = 'section-badge font-code text-green';
+    }
 
     // Load the challenge into editor
     if (currentChallengeBadge) {
@@ -1564,6 +1879,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (btnRunTests) btnRunTests.disabled = false;
     if (btnDevPower) btnDevPower.disabled = false;
+    if (btnInventory) btnInventory.disabled = false;
+    if (btnInventoryBattle) btnInventoryBattle.disabled = false;
     if (btnHolyHeal) btnHolyHeal.disabled = false;
     if (btnHint) {
       btnHint.disabled = false;
@@ -1594,6 +1911,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (!hintUsedThisTurn) {
         hintUsedThisTurn = true;
+        if (window.gameState) {
+          window.gameState.hintUsedThisTurn = true;
+        }
         const pts = (window.BattleEngine && window.BattleEngine.visualState) ? window.BattleEngine.visualState.points : currentPoints;
         const newPts = Math.max(0, pts - 5);
         currentPoints = newPts;
@@ -1683,6 +2003,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           appendConsoleLine(`> PASS: All ${outcome.results.length} tests passed cleanly! Unleashing attack...`, 'console-pass');
 
           if (btnDevPower) btnDevPower.disabled = true;
+          if (btnInventory) btnInventory.disabled = true;
+          if (btnInventoryBattle) btnInventoryBattle.disabled = true;
           if (btnHolyHeal) btnHolyHeal.disabled = true;
           if (btnHint) btnHint.disabled = true;
           if (btnResetCode) btnResetCode.disabled = true;
@@ -1718,6 +2040,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
           btnRunTests.disabled = false;
           if (btnDevPower) btnDevPower.disabled = false;
+          if (btnInventory) btnInventory.disabled = false;
+          if (btnInventoryBattle) btnInventoryBattle.disabled = false;
           if (btnHolyHeal) btnHolyHeal.disabled = false;
         }
 
@@ -1725,6 +2049,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         appendConsoleLine(`UNEXPECTED RUNNER ERROR: ${err.message || String(err)}`, 'console-error');
         btnRunTests.disabled = false;
         if (btnDevPower) btnDevPower.disabled = false;
+        if (btnInventory) btnInventory.disabled = false;
+        if (btnInventoryBattle) btnInventoryBattle.disabled = false;
         if (btnHolyHeal) btnHolyHeal.disabled = false;
       } finally {
         isTestingCode = false;
@@ -1744,6 +2070,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       isTestingCode = true;
       if (btnRunTests) btnRunTests.disabled = true;
       btnDevPower.disabled = true;
+      if (btnInventory) btnInventory.disabled = true;
+      if (btnInventoryBattle) btnInventoryBattle.disabled = true;
       if (btnHolyHeal) btnHolyHeal.disabled = true;
       if (btnHint) btnHint.disabled = true;
       if (btnResetCode) btnResetCode.disabled = true;
@@ -1801,11 +2129,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Holy Heal: Divine restoration for the user's Codemon
+  // Holy Heal: Full restoration for the user's Codemon
   async function holyHeal() {
     const isBattle = battleActive || (window.gameState && window.gameState.battleActive);
     if (!isBattle) {
-      appendConsoleLine('> [HOLY HEAL]: Start a battle before calling divine healing!', 'console-warn');
+      appendConsoleLine('> [HOLY HEAL]: Start a battle before calling holy healing!', 'console-warn');
       return false;
     }
 
@@ -1835,7 +2163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (restored > 0) {
       appendConsoleLine(`✨ [HOLY HEAL]: Restored ${restored} HP to ${playerName}! (${maxHp}/${maxHp} HP)`, 'console-pass');
     } else {
-      appendConsoleLine(`✨ [HOLY HEAL]: Divine light shines on ${playerName}! HP is already maxed (${maxHp}/${maxHp})!`, 'console-pass');
+      appendConsoleLine(`✨ [HOLY HEAL]: Holy light shines on ${playerName}! HP is already maxed (${maxHp}/${maxHp})!`, 'console-pass');
     }
 
     if (window.typeText) {
@@ -1853,6 +2181,221 @@ document.addEventListener('DOMContentLoaded', async () => {
       const isBattle = battleActive || (window.gameState && window.gameState.battleActive);
       if (!isBattle || isTestingCode) return;
       await holyHeal();
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // HEAL CHIPS INVENTORY MODAL SYSTEM
+  // -------------------------------------------------------------------------
+  function updateInventoryStatusBar() {
+    const player = (window.gameState && window.gameState.player) || selectedCodemon;
+    if (invActiveCodemon) {
+      invActiveCodemon.textContent = player ? `${(player.name || 'CODEMON').toUpperCase()} (LV 5)` : 'NO CODEMON ACTIVE';
+    }
+    if (invActiveHp) {
+      if (player) {
+        const maxHp = player.maxHp || 100;
+        const hp = (typeof player.hp === 'number') ? player.hp : ((typeof player.currentHp === 'number') ? player.currentHp : maxHp);
+        invActiveHp.textContent = `${hp} / ${maxHp} HP`;
+        invActiveHp.className = (hp > maxHp * 0.4) ? 'text-green font-code' : 'text-red font-code';
+      } else {
+        invActiveHp.textContent = '-- / --';
+      }
+    }
+    if (invActiveTurns) {
+      invActiveTurns.textContent = `${turnsLeft} TURNS`;
+    }
+  }
+
+  function renderInventory() {
+    if (!inventoryItemsContainer) return;
+    updateInventoryStatusBar();
+    inventoryItemsContainer.innerHTML = '';
+
+    const chipsConfig = window.CHIPS || (typeof CHIPS !== 'undefined' ? CHIPS : null);
+    if (!chipsConfig) return;
+
+    const chipKeys = ['low', 'normal', 'advance'];
+    const rarityMap = {
+      low: 'RARE',
+      normal: 'RARER',
+      advance: 'RAREST'
+    };
+
+    chipKeys.forEach((chipId) => {
+      const chip = chipsConfig[chipId];
+      if (!chip) return;
+
+      const getCountFn = window.getChipCount || (typeof getChipCount === 'function' ? getChipCount : null);
+      const count = getCountFn ? getCountFn(chipId) : 0;
+      const isAdvance = chipId === 'advance';
+      const rarityLabel = rarityMap[chipId] || 'RARE';
+
+      const card = document.createElement('div');
+      card.className = `inventory-item-card chip-card-${chipId} ${count <= 0 ? 'empty-item' : ''}`;
+      card.setAttribute('data-chip-id', chipId);
+
+      // 1. Top row: chip pixel icon canvas, chip name + rarity under name, count badge (e.g. x2)
+      const top = document.createElement('div');
+      top.className = 'inv-card-top';
+
+      const info = document.createElement('div');
+      info.className = 'inv-item-info';
+
+      const canvas = document.createElement('canvas');
+      canvas.className = 'inv-chip-canvas';
+      canvas.width = 30;
+      canvas.height = 30;
+      canvas.id = `inv-modal-canvas-${chipId}`;
+
+      const nameGroup = document.createElement('div');
+      nameGroup.className = 'inv-item-name-group';
+
+      const nameEl = document.createElement('strong');
+      nameEl.className = 'inv-item-name font-pixel';
+      nameEl.textContent = chip.name;
+
+      const rarityEl = document.createElement('span');
+      rarityEl.className = `inv-item-rarity font-pixel ${isAdvance ? 'rarity-rarest' : ''}`;
+      rarityEl.textContent = rarityLabel;
+
+      nameGroup.appendChild(nameEl);
+      nameGroup.appendChild(rarityEl);
+
+      info.appendChild(canvas);
+      info.appendChild(nameGroup);
+
+      const countBadge = document.createElement('span');
+      countBadge.className = 'inv-item-count font-pixel';
+      countBadge.id = `inv-modal-count-${chipId}`;
+      countBadge.textContent = `x${count}`;
+
+      top.appendChild(info);
+      top.appendChild(countBadge);
+
+      // 2. Description line: "Restores 5 HP to your active codemon." (using real heal value from config)
+      const desc = document.createElement('p');
+      desc.className = 'inv-item-desc font-code';
+      desc.textContent = `Restores ${chip.heal} HP to your active codemon.`;
+
+      // 3. Bottom row: heal badge ("+5 HP", "+10 HP", "+15 HP") and "USE ITEM" button
+      const btm = document.createElement('div');
+      btm.className = 'inv-card-bottom';
+
+      const healBadge = document.createElement('span');
+      healBadge.className = `inv-item-badge font-pixel badge-chip-${chipId}`;
+      healBadge.textContent = `+${chip.heal} HP`;
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn-use-item font-pixel';
+      btn.id = `btn-modal-use-${chipId}`;
+      btn.textContent = 'USE ITEM ▶';
+      btn.disabled = count <= 0;
+      btn.setAttribute('aria-label', `Use ${chip.name}`);
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const useFn = window.useChip || (typeof useChip === 'function' ? useChip : null);
+        if (useFn) {
+          useFn(chipId);
+          updateInventoryStatusBar();
+          renderInventory();
+        }
+      });
+
+      btm.appendChild(healBadge);
+      btm.appendChild(btn);
+
+      card.appendChild(top);
+      card.appendChild(desc);
+      card.appendChild(btm);
+
+      inventoryItemsContainer.appendChild(card);
+
+      // Draw pixel art icon with scale 3, pixelated, no smoothing
+      if (canvas.getContext) {
+        const ctx = canvas.getContext('2d');
+        const drawFn = window.drawChipIcon || (typeof drawChipIcon === 'function' ? drawChipIcon : null);
+        if (drawFn) {
+          drawFn(ctx, chipId, 0, 0, 3);
+        }
+      }
+    });
+  }
+
+  function openInventory() {
+    if (!inventoryOverlay) return;
+    renderInventory();
+    inventoryOverlay.style.display = 'flex';
+    playSound('select');
+  }
+
+  function closeInventory() {
+    if (!inventoryOverlay) return;
+    inventoryOverlay.style.display = 'none';
+    playSound('select');
+  }
+
+  window.openInventory = openInventory;
+  window.closeInventory = closeInventory;
+  window.renderInventory = renderInventory;
+  window.updateInventoryStatusBar = updateInventoryStatusBar;
+
+  if (btnInventory) {
+    btnInventory.addEventListener('click', () => {
+      openInventory();
+    });
+  }
+
+  if (btnInventoryBattle) {
+    btnInventoryBattle.addEventListener('click', () => {
+      openInventory();
+    });
+  }
+
+  if (btnInventoryClose) {
+    btnInventoryClose.addEventListener('click', () => {
+      closeInventory();
+    });
+  }
+
+  if (btnInventoryCloseBottom) {
+    btnInventoryCloseBottom.addEventListener('click', () => {
+      closeInventory();
+    });
+  }
+
+  if (inventoryOverlay) {
+    inventoryOverlay.addEventListener('click', (e) => {
+      if (e.target === inventoryOverlay) {
+        closeInventory();
+      }
+    });
+  }
+
+  // Chip quickbar slot click / touch handlers (left game panel above dialogue)
+  const slotLow = document.getElementById('chip-slot-low');
+  const slotNormal = document.getElementById('chip-slot-normal');
+  const slotAdvance = document.getElementById('chip-slot-advance');
+
+  if (slotLow) {
+    slotLow.addEventListener('click', () => {
+      if (window.selectChipSlot) window.selectChipSlot('low');
+      if (window.useChip) window.useChip('low');
+    });
+  }
+  if (slotNormal) {
+    slotNormal.addEventListener('click', () => {
+      if (window.selectChipSlot) window.selectChipSlot('normal');
+      if (window.useChip) window.useChip('normal');
+    });
+  }
+  if (slotAdvance) {
+    slotAdvance.addEventListener('click', () => {
+      if (window.selectChipSlot) window.selectChipSlot('advance');
+      if (window.useChip) window.useChip('advance');
     });
   }
 
@@ -1877,6 +2420,48 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (window.updateHud) {
       window.updateHud(currentPoints, turnsLeft);
+    }
+
+    // Roll heal chip drop on full test pass (only if hint was not used)
+    const hintUsed = (window.gameState && window.gameState.hintUsedThisTurn) || hintUsedThisTurn;
+    let droppedChipId = null;
+    if (!hintUsed) {
+      if (activeChallenge && activeChallenge.willReceiveItem) {
+        droppedChipId = activeChallenge.willReceiveItem.id;
+      } else if (activeChallenge && activeChallenge.willReceiveItem === null) {
+        droppedChipId = null;
+      } else {
+        const chipRoller = (typeof rollChipDrop === 'function')
+          ? rollChipDrop
+          : (typeof window !== 'undefined' && typeof window.rollChipDrop === 'function' ? window.rollChipDrop : null);
+        if (chipRoller) {
+          droppedChipId = chipRoller(diff);
+        }
+      }
+      if (droppedChipId) {
+          const chipAdder = (typeof addChip === 'function')
+            ? addChip
+            : (typeof window !== 'undefined' && typeof window.addChip === 'function' ? window.addChip : null);
+          if (chipAdder) {
+            const added = chipAdder(droppedChipId);
+            if (added) {
+              if (window.gameState) {
+                window.gameState.stats = window.gameState.stats || {};
+                window.gameState.stats.chipsFound = (window.gameState.stats.chipsFound || 0) + 1;
+              }
+              const showPopup = window.showRewardPopup || (typeof showRewardPopup === 'function' ? showRewardPopup : null);
+              if (showPopup) {
+                showPopup(droppedChipId);
+              }
+            }
+          }
+        }
+      }
+
+    // Trigger drop pop animation or dim flicker on question card's chip image
+    const dropAnimTrigger = window.triggerCardDropAnimation || (typeof triggerCardDropAnimation === 'function' ? triggerCardDropAnimation : null);
+    if (dropAnimTrigger) {
+      dropAnimTrigger(diff, droppedChipId);
     }
 
     // Call playAttackAnimation("player") and playHitAnimation("enemy")
@@ -1939,6 +2524,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const enemy = window.gameState.enemy;
     if (!player || !enemy || !battleActive) return;
 
+    if (window.gameState) {
+      window.gameState.isEnemyTurn = true;
+      window.gameState.isEnemyAttacking = true;
+    }
+
     // During enemy turn, disable editor and show "ENEMY TURN..." in the code panel
     if (pickerStatusBadge) {
       pickerStatusBadge.textContent = 'ENEMY TURN...';
@@ -1955,9 +2545,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (codeTextarea) codeTextarea.disabled = true;
     if (btnRunTests) btnRunTests.disabled = true;
     if (btnDevPower) btnDevPower.disabled = true;
+    if (btnInventory) btnInventory.disabled = true;
+    if (btnInventoryBattle) btnInventoryBattle.disabled = true;
     if (btnHolyHeal) btnHolyHeal.disabled = true;
     if (btnHint) btnHint.disabled = true;
     if (btnResetCode) btnResetCode.disabled = true;
+    if (pickerCardsContainer) {
+      const cards = pickerCardsContainer.querySelectorAll('.picker-card');
+      cards.forEach((c) => {
+        c.classList.remove('selected');
+        c.classList.add('locked');
+        c.style.pointerEvents = 'none';
+      });
+    }
 
     appendConsoleLine('> ENEMY TURN...', 'console-warn');
 
@@ -1996,8 +2596,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       }, 280);
       playSound('hit');
 
+      const finalEnemyDmg = enemyDmg;
+
       const prevPlayerHp = player.hp || player.maxHp;
-      const newPlayerHp = Math.max(0, prevPlayerHp - enemyDmg);
+      const newPlayerHp = Math.max(0, prevPlayerHp - finalEnemyDmg);
       player.hp = newPlayerHp;
       player.currentHp = newPlayerHp;
 
@@ -2005,7 +2607,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.setHp('player', newPlayerHp, player.maxHp);
       }
 
-      appendConsoleLine(`> ${enemy.name} struck player for ${enemyDmg} DMG!`, 'console-fail');
+      appendConsoleLine(`> ${enemy.name} struck player for ${finalEnemyDmg} DMG!`, 'console-fail');
 
       // End of full round: update turnsLeft
       const minPts = (window.BATTLE_CONFIG && window.BATTLE_CONFIG.minPoints) || 120;
@@ -2244,9 +2846,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
+    // Update chips found and used in end-of-battle stats card
+    const resultChipsFoundVal = document.getElementById('result-chips-found-val');
+    const resultChipsUsedVal = document.getElementById('result-chips-used-val');
+    const chipsFound = (window.gameState && window.gameState.stats && typeof window.gameState.stats.chipsFound === 'number')
+      ? window.gameState.stats.chipsFound
+      : 0;
+    const chipsUsed = (window.gameState && window.gameState.stats && typeof window.gameState.stats.chipsUsed === 'number')
+      ? window.gameState.stats.chipsUsed
+      : 0;
+    if (resultChipsFoundVal) resultChipsFoundVal.textContent = `${chipsFound}`;
+    if (resultChipsUsedVal) resultChipsUsedVal.textContent = `${chipsUsed}`;
+
     if (codeTextarea) codeTextarea.disabled = true;
     if (btnRunTests) btnRunTests.disabled = true;
     if (btnDevPower) btnDevPower.disabled = true;
+    if (btnInventory) btnInventory.disabled = true;
+    if (btnInventoryBattle) btnInventoryBattle.disabled = true;
     if (btnHolyHeal) btnHolyHeal.disabled = true;
     if (btnHint) btnHint.disabled = true;
     if (btnResetCode) btnResetCode.disabled = true;
@@ -2285,7 +2901,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.gameState.isBugmonBattle = false;
     window.gameState.xp = typeof window.gameState.xp === 'number' ? window.gameState.xp : 100;
     window.gameState.bugmonsDefeated = typeof window.gameState.bugmonsDefeated === 'number' ? window.gameState.bugmonsDefeated : 0;
+    window.gameState.stats = {
+      chipsFound: 0,
+      chipsUsed: 0
+    };
+    window.gameState.hintUsedThisTurn = false;
     battleUsedChallenges.clear();
+
+// clearInventory init
 
     if (window.BATTLE_CONFIG) {
       window.BATTLE_CONFIG.turnLimit = 8;
@@ -2348,8 +2971,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.typeText(`A wild ${enemy.name} appeared! Compile code on the right to strike.`, 22);
     }
 
+    if (btnInventory) btnInventory.disabled = false;
+    if (btnInventoryBattle) btnInventoryBattle.disabled = false;
     if (btnHolyHeal) btnHolyHeal.disabled = false;
     if (btnBugMode) btnBugMode.disabled = false;
+    if (window.resetChipsUsedThisTurn) window.resetChipsUsedThisTurn();
+    if (window.updateChipInventoryBar) window.updateChipInventoryBar();
+    if (window.selectChipSlot) window.selectChipSlot(null);
+    renderInventory();
     startPlayerTurn();
   }
 
@@ -2457,6 +3086,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.gameState.battleActive = false;
       }
       stopTurnTimer();
+      if (typeof clearInventory === 'function') {
+        clearInventory();
+      } else if (typeof window !== 'undefined' && typeof window.clearInventory === 'function') {
+        window.clearInventory();
+      }
     });
   }
 
@@ -2466,7 +3100,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 1. Escape key: closes open modals/overlays or toggles pause menu
     if (e.key === 'Escape') {
       e.preventDefault();
-      if (isGamePaused) {
+      if (inventoryOverlay && inventoryOverlay.style.display === 'flex') {
+        closeInventory();
+        return;
+      } else if (isGamePaused) {
         closePauseMenu();
       } else if (howToPlayBox && (howToPlayBox.style.display === 'block' || howToPlayBox.style.display === 'flex')) {
         howToPlayBox.style.display = 'none';
@@ -2491,6 +3128,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (isTypingInEditor) {
+      return;
+    }
+
+    // Keyboard shortcuts: keys 1, 2, 3 use the low, normal, advance chip
+    if (e.key === '1' || e.key === '2' || e.key === '3') {
+      const isInput = document.activeElement && (
+        document.activeElement.tagName === 'INPUT' ||
+        document.activeElement.tagName === 'TEXTAREA' ||
+        document.activeElement.isContentEditable
+      );
+      if (!isInput) {
+        e.preventDefault();
+        const chipMap = { '1': 'low', '2': 'normal', '3': 'advance' };
+        const chipId = chipMap[e.key];
+        if (window.selectChipSlot) window.selectChipSlot(chipId);
+        if (window.useChip) window.useChip(chipId);
+        return;
+      }
+    }
+
+    // Toggle inventory with 'I' hotkey
+    if (e.key === 'i' || e.key === 'I') {
+      if (inventoryOverlay && inventoryOverlay.style.display === 'flex') {
+        closeInventory();
+      } else {
+        openInventory();
+      }
       return;
     }
 
@@ -2631,6 +3295,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnResultAction.addEventListener('click', () => {
       playSound('click');
       if (resultOverlay) resultOverlay.style.display = 'none';
+      if (typeof clearInventory === 'function') {
+        clearInventory();
+      } else if (typeof window !== 'undefined' && typeof window.clearInventory === 'function') {
+        window.clearInventory();
+      }
       initBattle();
     });
   }
@@ -2639,6 +3308,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnResultTitle.addEventListener('click', () => {
       playSound('click');
       if (resultOverlay) resultOverlay.style.display = 'none';
+      if (typeof clearInventory === 'function') {
+        clearInventory();
+      } else if (typeof window !== 'undefined' && typeof window.clearInventory === 'function') {
+        window.clearInventory();
+      }
       showScreen('title');
     });
   }
@@ -2742,19 +3416,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 1. Restore saved layout dimensions from localStorage
     try {
-      const savedColWidth = localStorage.getItem('codemons_panel_width');
-      if (savedColWidth && gamePanel) {
-        gamePanel.style.width = savedColWidth;
-      }
-      const savedPickerHeight = localStorage.getItem('codemons_picker_height');
-      if (savedPickerHeight && questionPickerSec) {
-        questionPickerSec.style.height = savedPickerHeight;
-        questionPickerSec.style.flex = `0 0 ${savedPickerHeight}`;
-      }
-      const savedConsoleHeight = localStorage.getItem('codemons_console_height');
-      if (savedConsoleHeight && outputConsoleSec) {
-        outputConsoleSec.style.height = savedConsoleHeight;
-        outputConsoleSec.style.flex = `0 0 ${savedConsoleHeight}`;
+      if (typeof localStorage !== 'undefined') {
+        const savedColWidth = localStorage.getItem('codemons_panel_width');
+        if (savedColWidth && gamePanel) {
+          gamePanel.style.width = savedColWidth;
+        }
+        const savedPickerHeight = localStorage.getItem('codemons_picker_height');
+        if (savedPickerHeight && questionPickerSec) {
+          questionPickerSec.style.height = savedPickerHeight;
+          questionPickerSec.style.flex = `0 0 ${savedPickerHeight}`;
+        }
+        const savedConsoleHeight = localStorage.getItem('codemons_console_height');
+        if (savedConsoleHeight && outputConsoleSec) {
+          outputConsoleSec.style.height = savedConsoleHeight;
+          outputConsoleSec.style.flex = `0 0 ${savedConsoleHeight}`;
+        }
       }
     } catch (e) {
       console.warn('LocalStorage layout retrieval error:', e);
@@ -3187,4 +3863,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderStarters();
   initResizablePanels();
   initCardVisibilityToggles();
+  if (window.updateChipInventoryBar) {
+    window.updateChipInventoryBar();
+  }
 });
