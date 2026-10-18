@@ -66,8 +66,8 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
         ]
       : [
           { label: 'Dashboard', ariaLabel: 'Go to student dashboard', link: '/student' },
-          { label: 'Learn', ariaLabel: 'Explore learning modules', link: '/student/learn' },
-          { label: 'Play Quiz', ariaLabel: 'Daily quiz and practice mode', link: '/student/play' },
+          { label: 'Learn', ariaLabel: 'Daily quiz, practice mode & concepts', link: '/student/learn' },
+          { label: 'Play', ariaLabel: 'Codemons retro cyber arcade arena', link: '/student/play' },
           { label: 'Compete', ariaLabel: 'League tables and duels', link: '/student/compete' },
           { label: 'Profile', ariaLabel: 'View student profile and settings', link: '/student/profile' },
         ];

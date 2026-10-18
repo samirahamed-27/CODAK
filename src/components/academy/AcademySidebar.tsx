@@ -19,9 +19,9 @@ export function AcademySidebar({ totalXp = 1420 }: AcademySidebarProps) {
 
   const menuItems: StaggeredMenuItem[] = [
     { label: 'Home', ariaLabel: 'Go to student home', link: '/student' },
-    { label: 'Learn', ariaLabel: 'Go to learning hub', link: '/student/learn' },
+    { label: 'Learn', ariaLabel: 'Go to daily quiz and learning hub', link: '/student/learn' },
     { label: 'Rank', ariaLabel: 'Go to compete and leaderboard', link: '/student/compete' },
-    { label: 'Play Quiz', ariaLabel: 'Go to daily quiz and practice', link: '/student/play' },
+    { label: 'Play', ariaLabel: 'Go to Codemons arcade lounge', link: '/student/play' },
     { label: 'Overall', ariaLabel: 'View performance overview', link: '/student/profile' },
   ];
 

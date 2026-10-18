@@ -147,7 +147,7 @@ export default function StudentDashboardPage() {
               </div>
 
               <Link
-                href="/student/play"
+                href="/student/learn"
                 className={`flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
                   streakInfo.isTodayCompleted
                     ? 'bg-white/10 hover:bg-white/15 text-white border border-white/10'
