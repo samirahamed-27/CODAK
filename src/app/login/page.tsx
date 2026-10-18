@@ -4,8 +4,8 @@ import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { SignIn1 } from '@/components/ui/modern-stunning-sign-in';
-import { Preloader, PreloaderVariant } from '@/components/ui/Preloader';
-import { GraduationCap, ArrowRight, AlertCircle, CheckCircle, Sparkles } from 'lucide-react';
+import { Preloader } from '@/components/ui/Preloader';
+import { GraduationCap, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 
 const DEMO_ACCOUNTS = [
@@ -72,7 +72,6 @@ function LoginPageContent() {
   // React Bits Pro Preloader State
   const [isPreloading, setIsPreloading] = useState(false);
   const [preloadRole, setPreloadRole] = useState<'student' | 'faculty' | 'admin'>('student');
-  const [preloaderVariant, setPreloaderVariant] = useState<PreloaderVariant>('stairs');
 
   const handlePreloadComplete = () => {
     router.push(`/${preloadRole}`);
@@ -185,38 +184,15 @@ function LoginPageContent() {
 
   return (
     <div className="relative min-h-screen">
-      {/* React Bits Pro Preloader */}
+      {/* React Bits Pro Preloader (Stairs Style) */}
       <Preloader
         active={isPreloading}
-        variant={preloaderVariant}
+        variant="stairs"
         text={`Welcome to CODAK • Entering ${preloadRole.toUpperCase()} Hub`}
         subtext="Initializing XP ledger, course velocity & battle arena..."
         duration={2000}
         onComplete={handlePreloadComplete}
       />
-
-      {/* 5-Styles Floating Selector */}
-      <div className="fixed top-6 left-6 z-30 hidden md:flex items-center gap-1 p-1 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md shadow-xl">
-        <span className="text-[10px] text-zinc-400 font-semibold px-2 uppercase tracking-wider flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-sky-400" />
-          Preloader Style:
-        </span>
-        {(['stairs', 'percentage', 'circle', 'slide', 'curtain'] as PreloaderVariant[]).map((v) => (
-          <button
-            key={v}
-            type="button"
-            onClick={() => setPreloaderVariant(v)}
-            className={`text-[11px] font-semibold px-2.5 py-1 rounded-xl transition-all capitalize cursor-target ${
-              preloaderVariant === v
-                ? 'bg-sky-400 text-black shadow-md shadow-sky-500/20'
-                : 'text-zinc-400 hover:text-white hover:bg-white/5'
-            }`}
-            data-cursor-label={v}
-          >
-            {v}
-          </button>
-        ))}
-      </div>
 
       {mode === 'signin' ? (
         <div className="relative min-h-screen">
