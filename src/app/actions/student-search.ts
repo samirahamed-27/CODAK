@@ -3,6 +3,8 @@
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 
+import { RankTier } from '@/types/database';
+
 export interface StudentSearchResult {
   id: string;
   rollNo: string;
@@ -10,6 +12,8 @@ export interface StudentSearchResult {
   department: string;
   yearOfStudy: number;
   campusName?: string;
+  level?: number;
+  rankTier?: RankTier;
 }
 
 export interface StudentSearchResponse {
@@ -89,15 +93,41 @@ export async function searchStudentsAction(query: string): Promise<StudentSearch
   }
 
   const { formatCampusDisplayName } = await import('@/lib/campus');
+  const { levelFromXp } = await import('@/lib/levels');
+  const { getRankTiers, getRankForLevel } = await import('@/lib/ranks');
 
-  const students: StudentSearchResult[] = (studentsData || []).slice(0, 10).map((s: any) => ({
-    id: s.id,
-    rollNo: s.roll_no,
-    fullName: s.profiles?.full_name || 'Student',
-    department: s.department,
-    yearOfStudy: s.year_of_study,
-    campusName: formatCampusDisplayName(s.profiles?.campuses, s.profiles?.campus_other_name),
-  }));
+  const tiers = await getRankTiers(adminClient);
+  const studentIds = (studentsData || []).map((s: any) => s.id);
+  const xpMap = new Map<string, number>();
+
+  if (studentIds.length > 0) {
+    const { data: xpRows } = await adminClient
+      .from('xp_events')
+      .select('student_id, xp_amount')
+      .in('student_id', studentIds)
+      .eq('status', 'valid');
+
+    (xpRows || []).forEach((row: any) => {
+      xpMap.set(row.student_id, (xpMap.get(row.student_id) || 0) + row.xp_amount);
+    });
+  }
+
+  const students: StudentSearchResult[] = (studentsData || []).slice(0, 10).map((s: any) => {
+    const totalXp = xpMap.get(s.id) || 0;
+    const { level } = levelFromXp(totalXp);
+    const rankTier = getRankForLevel(level, tiers);
+
+    return {
+      id: s.id,
+      rollNo: s.roll_no,
+      fullName: s.profiles?.full_name || 'Student',
+      department: s.department,
+      yearOfStudy: s.year_of_study,
+      campusName: formatCampusDisplayName(s.profiles?.campuses, s.profiles?.campus_other_name),
+      level,
+      rankTier,
+    };
+  });
 
   return {
     success: true,

@@ -12,6 +12,8 @@ import {
   LeagueStandingMember,
 } from '@/lib/leagues';
 import { getIstWeekDetails } from '@/lib/quests';
+import { levelFromXp } from '@/lib/levels';
+import { getRankForLevel } from '@/lib/ranks';
 
 export type { LeagueStandingMember };
 
@@ -97,6 +99,9 @@ export async function getStudentLeagueAction(customDate?: string): Promise<{
       });
 
       const weeklyXp = weeklyEvents.reduce((sum, e) => sum + e.xp_amount, 0);
+      const totalXp = (events || []).reduce((sum, e) => sum + e.xp_amount, 0);
+      const { level } = levelFromXp(totalXp);
+      const tier = getRankForLevel(level);
 
       const studentProfile = (m.students as any)?.profiles;
       const isAnon = studentProfile?.is_anonymous || false;
@@ -120,6 +125,13 @@ export async function getStudentLeagueAction(customDate?: string): Promise<{
         campusName,
         isAnonymous: isAnon,
         isMe,
+        level,
+        rankTier: {
+          name: tier.name,
+          slug: tier.slug,
+          color: tier.color,
+          min_level: tier.min_level,
+        },
       };
     })
   );

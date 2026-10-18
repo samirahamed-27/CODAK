@@ -1,6 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getIstWeekDetails } from '@/lib/quests';
 import { formatCampusDisplayName } from '@/lib/campus';
+import { levelFromXp } from '@/lib/levels';
+import { getRankForLevel } from '@/lib/ranks';
 
 export interface LeaderboardEntry {
   studentId: string;
@@ -13,6 +15,13 @@ export interface LeaderboardEntry {
   isMe: boolean;
   isAnonymous: boolean;
   campusName?: string;
+  level?: number;
+  rankTier?: {
+    name: string;
+    slug: string;
+    color: string;
+    min_level: number;
+  };
 }
 
 export interface LeaderboardQueryOptions {
@@ -58,6 +67,9 @@ export function formatLeaderboardEntries(
     const canViewRealIdentity =
       requesterRole === 'faculty' || requesterRole === 'admin' || isMe || !item.isAnonymous;
 
+    const { level } = levelFromXp(item.totalXp);
+    const tier = getRankForLevel(level);
+
     return {
       studentId: item.studentId,
       name: canViewRealIdentity ? item.fullName : 'Anonymous',
@@ -69,6 +81,13 @@ export function formatLeaderboardEntries(
       isMe,
       isAnonymous: item.isAnonymous,
       campusName: canViewRealIdentity ? item.campusName : undefined,
+      level,
+      rankTier: {
+        name: tier.name,
+        slug: tier.slug,
+        color: tier.color,
+        min_level: tier.min_level,
+      },
     };
   });
 }

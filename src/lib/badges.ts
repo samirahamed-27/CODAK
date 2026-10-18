@@ -4,9 +4,10 @@ export interface Badge {
   code: string;
   name: string;
   description: string;
-  category: 'MILESTONE' | 'QUEST' | 'IMPROVEMENT';
+  category: 'MILESTONE' | 'QUEST' | 'IMPROVEMENT' | 'RANK';
   criteria: Record<string, unknown>;
   active: boolean;
+  xp_reward?: number;
   earned_at?: string;
 }
 
@@ -17,6 +18,7 @@ export interface BadgeEvaluationContext {
   completedQuestsCount: number;
   recentQuizScores: { score: number; total: number; date: string }[];
   hasBrokenStreakHistory: boolean;
+  studentLevel?: number;
 }
 
 /**
@@ -61,7 +63,22 @@ export function isBadgeCriteriaMet(
       // Current streak at least 2 days after breaking an earlier streak
       return ctx.currentStreak >= 2 && ctx.hasBrokenStreakHistory;
 
+    case 'rank_apprentice':
+    case 'rank_scripter':
+    case 'rank_debugger':
+    case 'rank_architect':
+    case 'rank_strategist':
+    case 'rank_innovator':
+    case 'rank_grandmaster': {
+      const minLevel = Number((criteria as any)?.min_level || 1);
+      return (ctx.studentLevel || 1) >= minLevel;
+    }
+
     default:
+      if ((criteria as any)?.type === 'rank' || badgeCode.toLowerCase().startsWith('rank_')) {
+        const minLevel = Number((criteria as any)?.min_level || 1);
+        return (ctx.studentLevel || 1) >= minLevel;
+      }
       return false;
   }
 }
@@ -158,6 +175,24 @@ export async function evaluateStudentBadges(
     date: q.quiz_date,
   }));
 
+  // 3d. Current student level from valid XP ledger
+  let studentLevel = 1;
+  try {
+    const { data: xpRows } = await adminClient
+      .from('xp_events')
+      .select('xp_amount')
+      .eq('student_id', studentId)
+      .eq('status', 'valid');
+
+    if (xpRows && xpRows.length > 0) {
+      const sum = xpRows.reduce((acc, curr) => acc + curr.xp_amount, 0);
+      const { levelFromXp } = await import('@/lib/levels');
+      studentLevel = levelFromXp(sum).level;
+    }
+  } catch {
+    studentLevel = 1;
+  }
+
   const ctx: BadgeEvaluationContext = {
     completedQuizzesCount: completedQuizzes.length,
     currentStreak,
@@ -165,6 +200,7 @@ export async function evaluateStudentBadges(
     completedQuestsCount,
     recentQuizScores,
     hasBrokenStreakHistory,
+    studentLevel,
   };
 
   const newlyEarned: string[] = [];
@@ -184,17 +220,20 @@ export async function evaluateStudentBadges(
       if (!insertErr) {
         newlyEarned.push(badge.code);
 
-        // Award badge XP if BADGE_EARNED rule is active (reference badge:<code>)
-        try {
-          await adminClient.rpc('award_xp', {
-            p_student_id: studentId,
-            p_action_type: 'BADGE_EARNED',
-            p_reference_id: `badge:${badge.code}`,
-            p_extra_units: 0,
-            p_actor: null,
-          });
-        } catch (xpErr) {
-          console.error(`Error awarding XP for badge ${badge.code}:`, xpErr);
+        // Award badge XP if badge.xp_reward > 0 (Rank badges award 0 XP to prevent loops)
+        const xpReward = badge.xp_reward !== undefined ? badge.xp_reward : 20;
+        if (xpReward > 0) {
+          try {
+            await adminClient.rpc('award_xp', {
+              p_student_id: studentId,
+              p_action_type: 'BADGE_EARNED',
+              p_reference_id: `badge:${badge.code}`,
+              p_extra_units: 0,
+              p_actor: null,
+            });
+          } catch (xpErr) {
+            console.error(`Error awarding XP for badge ${badge.code}:`, xpErr);
+          }
         }
       } else {
         // If conflict or error, already recorded

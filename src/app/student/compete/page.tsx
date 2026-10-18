@@ -43,6 +43,7 @@ import { getMyBattlesAction } from '@/app/actions/battles';
 import { Battle } from '@/lib/battles';
 import { getCampusStandingsAction } from '@/app/actions/leaderboard';
 import { CampusStanding } from '@/lib/campus-standings';
+import { RankChip } from '@/components/ranks/RankChip';
 import Link from 'next/link';
 
 export default function StudentCompetePage() {
@@ -577,6 +578,9 @@ export default function StudentCompetePage() {
                                     <EyeOff className="w-3 h-3 text-slate-500" />
                                   </span>
                                 )}
+                                {member.rankTier && (
+                                  <RankChip rank={member.rankTier} level={member.level} size="xs" />
+                                )}
                               </div>
                               <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-mono mt-0.5">
                                 {member.campusName && (
@@ -778,6 +782,9 @@ export default function StudentCompetePage() {
                                 <span title="Anonymous Student">
                                   <EyeOff className="w-3 h-3 text-slate-500" />
                                 </span>
+                              )}
+                              {student.rankTier && (
+                                <RankChip rank={student.rankTier} level={student.level} size="xs" />
                               )}
                             </div>
                             <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-mono mt-0.5">
@@ -1038,6 +1045,9 @@ export default function StudentCompetePage() {
                                   <span className="font-bold text-slate-200">
                                     vs. {duel.opponentName}
                                   </span>
+                                  {duel.opponentRankTier && (
+                                    <RankChip rank={duel.opponentRankTier} level={duel.opponentLevel} size="xs" />
+                                  )}
                                   {duel.opponentRollNo && (
                                     <span className="text-[10px] font-mono text-slate-500">
                                       ({duel.opponentRollNo})
@@ -1119,6 +1129,9 @@ export default function StudentCompetePage() {
                                   <span className="font-bold text-slate-200">
                                     vs. {duel.opponentName}
                                   </span>
+                                  {duel.opponentRankTier && (
+                                    <RankChip rank={duel.opponentRankTier} level={duel.opponentLevel} size="xs" />
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-3 text-[11px] font-mono text-slate-400">
                                   <span>You: <strong className="text-white">{duel.myScore}/5</strong> ({duel.myTime}s)</span>

@@ -15,6 +15,18 @@ export interface Campus {
   created_at: string;
 }
 
+export interface RankTier {
+  id: string;
+  slug: string;
+  name: string;
+  min_level: number;
+  color: string;
+  icon_key: string;
+  description: string;
+  sort_order: number;
+  created_at?: string;
+}
+
 export interface Profile {
   id: string;
   email: string;

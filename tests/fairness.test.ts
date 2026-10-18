@@ -6,6 +6,8 @@ import {
 } from '@/lib/concept-match';
 import { isBadgeCriteriaMet, BadgeEvaluationContext } from '@/lib/badges';
 import { calculateGroupOutcomes, MemberRankInput, DEFAULT_LEAGUE_CONFIG } from '@/lib/leagues';
+import { levelFromXp } from '@/lib/levels';
+import { getRankForLevel } from '@/lib/ranks';
 
 describe('Phase 3G: Concept Match & Fairness Checkpoint Suite', () => {
   describe('Concept Match Mini-Game Logic', () => {
@@ -190,6 +192,28 @@ describe('Phase 3G: Concept Match & Fairness Checkpoint Suite', () => {
       // Steady low-activity student earned promotion and >= 2 badges!
       expect(kavyaOutcome?.outcome).toBe('promoted');
       expect(earnedBadgeCodes.size).toBeGreaterThanOrEqual(2);
+
+      // Checkpoint 3 (Part 2 Rank Ladder): Steady low-activity student reaches Rank 2 (Scripter) within a week
+      const { level } = levelFromXp(kavyaTotalXp);
+      expect(level).toBe(3); // Level 3 >= 2
+      const rank = getRankForLevel(level);
+      expect(rank.slug).toBe('scripter');
+      expect(rank.name).toBe('Scripter');
+      expect(rank.min_level).toBe(2);
+
+      // Rank badge unlocked
+      if (isBadgeCriteriaMet('rank_scripter', { min_level: 2 }, {
+        completedQuizzesCount: 7,
+        currentStreak: 7,
+        longestStreak: 7,
+        completedQuestsCount: 1,
+        recentQuizScores: [],
+        hasBrokenStreakHistory: false,
+        studentLevel: level,
+      })) {
+        earnedBadgeCodes.add('rank_scripter');
+      }
+      expect(earnedBadgeCodes.has('rank_scripter')).toBe(true);
     });
 
     it('verifies that XP ledger strictly excludes voided events from total', () => {

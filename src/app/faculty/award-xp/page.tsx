@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { awardXpAction, AwardXpResult } from '@/app/actions/xp';
 import { searchStudentsAction, StudentSearchResult } from '@/app/actions/student-search';
+import { RankChip } from '@/components/ranks/RankChip';
 import { createClient } from '@/lib/supabase/client';
 import { XpRule } from '@/types/database';
 import {
@@ -249,6 +250,9 @@ export default function AwardXpPage() {
                   <div>
                     <span className="text-xs font-bold text-white flex items-center gap-2">
                       <span>{selectedStudent.fullName}</span>
+                      {selectedStudent.rankTier && (
+                        <RankChip rank={selectedStudent.rankTier} level={selectedStudent.level} size="xs" />
+                      )}
                       {selectedStudent.campusName && (
                         <span className="text-[10px] font-normal text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
                           {selectedStudent.campusName}
@@ -298,6 +302,9 @@ export default function AwardXpPage() {
                         <div>
                           <div className="text-xs font-semibold text-white flex items-center gap-2">
                             <span>{s.fullName}</span>
+                            {s.rankTier && (
+                              <RankChip rank={s.rankTier} level={s.level} size="xs" />
+                            )}
                             {s.campusName && (
                               <span className="text-[10px] font-normal text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
                                 {s.campusName}

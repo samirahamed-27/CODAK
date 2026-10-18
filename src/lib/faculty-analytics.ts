@@ -1,4 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { levelFromXp } from '@/lib/levels';
+import { getRankForLevel } from '@/lib/ranks';
 
 export interface FacultyAnalyticsFilter {
   campusId?: string;
@@ -26,6 +28,13 @@ export interface QuietStudent {
   campusName?: string;
   lastActiveDate: string | null;
   daysInactive: number;
+  level?: number;
+  rankTier?: {
+    name: string;
+    slug: string;
+    color: string;
+    min_level: number;
+  };
 }
 
 export interface XpTrendDay {
@@ -314,17 +323,19 @@ export async function getFacultyAnalytics(
   // Query latest valid event per student
   const { data: allXpEvents } = await db
     .from('xp_events')
-    .select('student_id, created_at')
+    .select('student_id, xp_amount, created_at')
     .eq('status', 'valid')
     .in('student_id', studentIds)
     .lte('created_at', asOfIso)
     .order('created_at', { ascending: false });
 
   const latestEventMap = new Map<string, Date>();
+  const studentXpMap = new Map<string, number>();
   (allXpEvents || []).forEach((e: any) => {
     if (!latestEventMap.has(e.student_id)) {
       latestEventMap.set(e.student_id, new Date(e.created_at));
     }
+    studentXpMap.set(e.student_id, (studentXpMap.get(e.student_id) || 0) + (e.xp_amount || 0));
   });
 
   const quietStudents: QuietStudent[] = [];
@@ -343,6 +354,10 @@ export async function getFacultyAnalytics(
     }
 
     if (daysInactive >= quietDaysThreshold) {
+      const totalXp = studentXpMap.get(student.id) || 0;
+      const { level } = levelFromXp(totalXp);
+      const tier = getRankForLevel(level);
+
       quietStudents.push({
         id: student.id,
         fullName: student.fullName,
@@ -352,6 +367,13 @@ export async function getFacultyAnalytics(
         campusName: student.campusName,
         lastActiveDate,
         daysInactive,
+        level,
+        rankTier: {
+          name: tier.name,
+          slug: tier.slug,
+          color: tier.color,
+          min_level: tier.min_level,
+        },
       });
     }
   });

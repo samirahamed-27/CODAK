@@ -8,7 +8,7 @@ export interface BadgeTileProps {
   code: string;
   name: string;
   description: string;
-  category: 'MILESTONE' | 'QUEST' | 'IMPROVEMENT';
+  category: 'MILESTONE' | 'QUEST' | 'IMPROVEMENT' | 'RANK';
   isEarned: boolean;
   earnedAt?: string;
   howToEarn?: string;
@@ -29,6 +29,11 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
     bg: 'bg-emerald-500/10',
     text: 'text-emerald-400',
     border: 'border-emerald-500/30',
+  },
+  RANK: {
+    bg: 'bg-purple-500/10',
+    text: 'text-purple-400',
+    border: 'border-purple-500/30',
   },
 };
 

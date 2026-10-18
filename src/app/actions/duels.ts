@@ -15,6 +15,8 @@ import {
 import { levelFromXp } from '@/lib/levels';
 import { checkRateLimit } from '@/lib/rate-limits';
 
+import { RankTier } from '@/types/database';
+
 export interface DuelSubmissionInput {
   duelId: string;
   answers: {
@@ -30,6 +32,8 @@ export interface DuelSummary {
   status: 'open' | 'active' | 'completed' | 'expired' | 'declined';
   opponentName: string;
   opponentRollNo?: string;
+  opponentLevel?: number;
+  opponentRankTier?: RankTier;
   isChallenger: boolean;
   myScore?: number | null;
   myTime?: number | null;
@@ -583,7 +587,46 @@ export async function getMyDuelsAction(): Promise<{
     }
   }
 
-  const summaries: DuelSummary[] = formatDuelSummaries(duels, studentId, requesterRole);
+  const { getRankTiers, getRankForLevel } = await import('@/lib/ranks');
+  const tiers = await getRankTiers(adminClient);
+
+  // Extract distinct opponent IDs
+  const opponentIds = Array.from(
+    new Set(
+      duels
+        .map((d: any) => (d.challenger_id === studentId ? d.challenged_id : d.challenger_id))
+        .filter(Boolean)
+    )
+  );
+
+  const xpMap = new Map<string, number>();
+  if (opponentIds.length > 0) {
+    const { data: xpRows } = await adminClient
+      .from('xp_events')
+      .select('student_id, xp_amount')
+      .in('student_id', opponentIds)
+      .eq('status', 'valid');
+
+    (xpRows || []).forEach((row: any) => {
+      xpMap.set(row.student_id, (xpMap.get(row.student_id) || 0) + row.xp_amount);
+    });
+  }
+
+  const summaries: DuelSummary[] = formatDuelSummaries(duels, studentId, requesterRole).map((summary, idx) => {
+    const raw = duels[idx];
+    const oppId = raw.challenger_id === studentId ? raw.challenged_id : raw.challenger_id;
+    if (oppId) {
+      const oppTotalXp = xpMap.get(oppId) || 0;
+      const { level } = levelFromXp(oppTotalXp);
+      const rankTier = getRankForLevel(level, tiers);
+      return {
+        ...summary,
+        opponentLevel: level,
+        opponentRankTier: rankTier,
+      };
+    }
+    return summary;
+  });
 
   return { success: true, duels: summaries };
 }

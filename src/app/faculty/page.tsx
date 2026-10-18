@@ -22,6 +22,7 @@ import {
   ShieldAlert,
   Building2,
 } from 'lucide-react';
+import { RankChip } from '@/components/ranks/RankChip';
 
 export default function FacultyDashboardPage() {
   const [selectedBatch, setSelectedBatch] = useState<string>('');
@@ -409,6 +410,9 @@ export default function FacultyDashboardPage() {
                                 <span className="text-[10px] font-sans font-medium text-purple-300 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800/40">
                                   {qs.campusName}
                                 </span>
+                              )}
+                              {qs.rankTier && (
+                                <RankChip rank={qs.rankTier} level={qs.level} size="xs" />
                               )}
                             </div>
                             <div className="text-[11px] text-slate-400">

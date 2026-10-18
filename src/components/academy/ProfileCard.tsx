@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Trash2, Shield, AlertTriangle, Sparkles } from 'lucide-react';
 import { StudentProfile } from '@/data/studentDashboardData';
 import Shuffle from '@/components/Shuffle';
+import { RankChip } from '@/components/ranks/RankChip';
 
 interface ProfileCardProps {
   profile: StudentProfile;
@@ -144,8 +145,11 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
           accentColor="#7DD3FC"
           style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
         />
-        <div className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-mono text-zinc-300">
-          <span>🏆 {profile.rank}</span>
+        <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+          <RankChip level={profile.level} size="sm" showLevel />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-mono text-zinc-300">
+            🏆 {profile.rank}
+          </span>
         </div>
       </div>
 

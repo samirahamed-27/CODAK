@@ -1,5 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getIstWeekDetails } from '@/lib/quests';
+import { levelFromXp } from '@/lib/levels';
+import { getRankForLevel } from '@/lib/ranks';
+import { RankTier } from '@/types/database';
 
 export interface LeagueTier {
   id: string;
@@ -23,6 +26,13 @@ export interface MemberRankInput {
   campusName?: string;
   isAnonymous?: boolean;
   isMe?: boolean;
+  level?: number;
+  rankTier?: {
+    name: string;
+    slug: string;
+    color: string;
+    min_level: number;
+  };
 }
 
 export interface MemberOutcomeResult extends MemberRankInput {
@@ -59,7 +69,8 @@ export const TIER_BY_ORDER: { [order: number]: string } = {
 export function calculateGroupOutcomes(
   members: MemberRankInput[],
   config: LeagueConfig = DEFAULT_LEAGUE_CONFIG,
-  currentTierId: string = 'bronze'
+  currentTierId: string = 'bronze',
+  rankTiers?: RankTier[]
 ): MemberOutcomeResult[] {
   if (members.length === 0) return [];
 
@@ -107,8 +118,13 @@ export function calculateGroupOutcomes(
       outcome = 'retained';
     }
 
+    const resolvedLevel = member.level !== undefined ? member.level : levelFromXp(member.weeklyXp).level;
+    const resolvedRankTier = member.rankTier || getRankForLevel(resolvedLevel, rankTiers);
+
     return {
       ...member,
+      level: resolvedLevel,
+      rankTier: resolvedRankTier,
       rank,
       outcome,
       newTierId: TIER_BY_ORDER[newTierOrder] || currentTierId,
@@ -126,6 +142,13 @@ export interface LeagueStandingMember {
   isMe: boolean;
   isAnonymous: boolean;
   zone: 'promotion' | 'relegation' | 'safe';
+  level?: number;
+  rankTier?: {
+    name: string;
+    slug: string;
+    color: string;
+    min_level: number;
+  };
 }
 
 /**
@@ -177,6 +200,8 @@ export function formatLeagueStandingMembers(
       isMe,
       isAnonymous: o.isAnonymous || false,
       zone,
+      level: o.level,
+      rankTier: o.rankTier,
     };
   });
 }

@@ -12,6 +12,11 @@ import { BadgeTile } from '@/components/ui/game-elements';
 import { getStudentBadgesAction, StudentBadgeDisplay } from '@/app/actions/badges';
 import { updateAnonymousPreferenceAction } from '@/app/actions/leaderboard';
 import { formatCampusDisplayName } from '@/lib/campus';
+import { RankChip } from '@/components/ranks/RankChip';
+import { RankProgressSection } from '@/components/ranks/RankProgressSection';
+import { getMyRankProgressAction, getRankTiersAction } from '@/app/actions/ranks';
+import { RankTier } from '@/types/database';
+import { RankProgress } from '@/lib/ranks';
 
 export default function StudentProfilePage() {
   const supabase = createClient();
@@ -25,6 +30,8 @@ export default function StudentProfilePage() {
 
   const [totalXp, setTotalXp] = useState(0);
   const [levelInfo, setLevelInfo] = useState<LevelProgress>(levelFromXp(0));
+  const [rankProgress, setRankProgress] = useState<RankProgress | null>(null);
+  const [allTiers, setAllTiers] = useState<RankTier[]>([]);
   const [events, setEvents] = useState<XpEvent[]>([]);
   const [badges, setBadges] = useState<StudentBadgeDisplay[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,6 +121,22 @@ export default function StudentProfilePage() {
         } catch (e) {
           console.error('Error fetching badges in profile:', e);
         }
+
+        // Fetch rank progress and tiers
+        try {
+          const [rankRes, tiersRes] = await Promise.all([
+            getMyRankProgressAction(studentId),
+            getRankTiersAction(),
+          ]);
+          if (rankRes.success && rankRes.progress) {
+            setRankProgress(rankRes.progress);
+          }
+          if (tiersRes.success && tiersRes.tiers) {
+            setAllTiers(tiersRes.tiers);
+          }
+        } catch (e) {
+          console.error('Error fetching rank progress in profile:', e);
+        }
       }
 
       setLoading(false);
@@ -172,6 +195,9 @@ export default function StudentProfilePage() {
             👨‍🎓
           </div>
           <h1 className="text-xl font-bold text-white mb-1">{studentName}</h1>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <RankChip rank={rankProgress?.currentRank} level={levelInfo.level} size="sm" showLevel />
+          </div>
           <p className="text-xs text-indigo-400 font-semibold mb-4">
             {rollNo} • Year {yearOfStudy}
           </p>
@@ -201,51 +227,10 @@ export default function StudentProfilePage() {
           </a>
         </section>
 
-        {/* Level & XP Progress Card */}
-        <section
-          aria-label="Level progress"
-          className="p-6 rounded-3xl bg-gradient-to-br from-indigo-950/40 via-slate-900 to-slate-900 border border-indigo-500/30 shadow-xl"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-400 block mb-0.5">
-                Current Standing
-              </span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-white">Level {levelInfo.level}</span>
-                <span className="text-xs font-semibold text-slate-400">Scholar</span>
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block mb-0.5">
-                Total Ledger XP
-              </span>
-              <span className="text-xl font-black text-indigo-300 flex items-center gap-1 justify-end">
-                <Sparkles className="w-4 h-4 text-indigo-400" />
-                {totalXp} XP
-              </span>
-            </div>
-          </div>
+        {/* Rank Progression Section (Lifetime Rank Ladder & Max Rank Progress) */}
+        <RankProgressSection progress={rankProgress} allTiers={allTiers} />
 
-          {/* Progress Bar */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-[11px] font-medium text-slate-400">
-              <span>{levelInfo.xpIntoLevel} / {levelInfo.xpForNextLevel} XP</span>
-              <span className="text-indigo-400 font-bold">{levelInfo.progressPercent}%</span>
-            </div>
-            <div className="w-full h-3 rounded-full bg-slate-950 border border-slate-800 p-0.5 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500"
-                style={{ width: `${levelInfo.progressPercent}%` }}
-              />
-            </div>
-            <p className="text-[10px] text-slate-500 text-right">
-              {levelInfo.xpForNextLevel - levelInfo.xpIntoLevel} XP to Level {levelInfo.level + 1}
-            </p>
-          </div>
-        </section>
-
-        {/* Badges Showcase (Earned and Locked Badges) */}
+        {/* Badges Showcase (Earned and Locked Badges Grouped by Rank & Milestones) */}
         <section
           aria-label="Student Badges"
           className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl"
@@ -263,19 +248,63 @@ export default function StudentProfilePage() {
           {badges.length === 0 ? (
             <p className="text-xs text-slate-500 py-3">Loading badge milestones...</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {badges.map((badge) => (
-                <BadgeTile
-                  key={badge.code}
-                  code={badge.code}
-                  name={badge.name}
-                  description={badge.description}
-                  category={badge.category}
-                  isEarned={badge.isEarned}
-                  earnedAt={badge.earnedAt}
-                  howToEarn={badge.howToEarn}
-                />
-              ))}
+            <div className="space-y-6">
+              {/* Group 1: Academic Rank Badges */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                    <span>Academic Rank Badges</span>
+                  </h3>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {badges.filter((b) => b.category === 'RANK' && b.isEarned).length} / {badges.filter((b) => b.category === 'RANK').length} Unlocked
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {badges
+                    .filter((b) => b.category === 'RANK')
+                    .sort((a, b) => ((a.criteria as any)?.min_level || 0) - ((b.criteria as any)?.min_level || 0))
+                    .map((badge) => (
+                      <BadgeTile
+                        key={badge.code}
+                        code={badge.code}
+                        name={badge.name}
+                        description={badge.description}
+                        category={badge.category}
+                        isEarned={badge.isEarned}
+                        earnedAt={badge.earnedAt}
+                        howToEarn={badge.howToEarn}
+                      />
+                    ))}
+                </div>
+              </div>
+
+              {/* Group 2: Learning Milestones & Achievements */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                    <span>Learning Milestones & Quests</span>
+                  </h3>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {badges.filter((b) => b.category !== 'RANK' && b.isEarned).length} / {badges.filter((b) => b.category !== 'RANK').length} Unlocked
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {badges
+                    .filter((b) => b.category !== 'RANK')
+                    .map((badge) => (
+                      <BadgeTile
+                        key={badge.code}
+                        code={badge.code}
+                        name={badge.name}
+                        description={badge.description}
+                        category={badge.category}
+                        isEarned={badge.isEarned}
+                        earnedAt={badge.earnedAt}
+                        howToEarn={badge.howToEarn}
+                      />
+                    ))}
+                </div>
+              </div>
             </div>
           )}
         </section>

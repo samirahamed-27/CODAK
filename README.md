@@ -98,6 +98,14 @@ graph TD
   - Students cannot switch campuses to exploit standings or jump between competitive leagues.
   - Only authorized administrators can reassign campuses; every modification writes an immutable audit record to `audit_logs` (`action = 'CAMPUS_CHANGE'`).
 
+### 5. 🎖️ Academic Rank Ladder & Badges
+- **7-Tier Lifetime Progression**: Apprentice (L1), Scripter (L2), Debugger (L4), Architect (L8), Strategist (L12), Innovator (L15), Grandmaster (L18).
+- **Admin-Editable Database Schema**: Ranks live in `public.rank_tiers` table rather than hardcoded logic.
+- **Fairness-Driven Level Banding**: Low-activity steady students (~20 XP/day) unlock Rank 2 in 5 days; average activity students (~40 XP/day) reach Architect in 6 weeks, and reach Grandmaster in a full academic semester (~4.3 months).
+- **Zero-XP Rank Badges**: Each rank-up awards an idempotent rank badge with `xp_reward = 0`, eliminating XP loops and anti-gaming flag spikes.
+- **Contextual Everywhere Chips**: Universal `<RankChip />` renders seamlessly across student profile, home dashboard, leaderboards, leagues, duels, and faculty roster without N+1 query overhead.
+- **Anonymous Mode Preserved**: Anonymous student rows display rank and level standing without disclosing any student identity, name, or roll number.
+
 ---
 
 ## 💻 Tech Stack
