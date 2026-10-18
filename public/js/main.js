@@ -2908,7 +2908,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.gameState.hintUsedThisTurn = false;
     battleUsedChallenges.clear();
 
-// clearInventory init
+    // Reset items so item count always starts from zero on a new game or play again
+    if (typeof clearInventory === 'function') {
+      clearInventory();
+    } else if (typeof window !== 'undefined' && typeof window.clearInventory === 'function') {
+      window.clearInventory();
+    } else if (window.gameState) {
+      window.gameState.inventory = { low: 0, normal: 0, advance: 0 };
+    }
 
     if (window.BATTLE_CONFIG) {
       window.BATTLE_CONFIG.turnLimit = 8;
@@ -3002,6 +3009,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (btnStartGame) {
     btnStartGame.addEventListener('click', () => {
+      if (typeof clearInventory === 'function') {
+        clearInventory();
+      } else if (typeof window !== 'undefined' && typeof window.clearInventory === 'function') {
+        window.clearInventory();
+      }
       showScreen('select');
     });
   }
