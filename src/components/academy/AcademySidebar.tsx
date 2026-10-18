@@ -22,7 +22,7 @@ export function AcademySidebar({ totalXp = 1420 }: AcademySidebarProps) {
     { label: 'Learn', ariaLabel: 'Go to daily quiz and learning hub', link: '/student/learn' },
     { label: 'Rank', ariaLabel: 'Go to compete and leaderboard', link: '/student/compete' },
     { label: 'Play', ariaLabel: 'Go to Codemons arcade lounge', link: '/student/play' },
-    { label: 'Overall', ariaLabel: 'View performance overview', link: '/student/profile' },
+    { label: 'Profile', ariaLabel: 'View student profile and settings', link: '/student/profile' },
   ];
 
   const accountLinks = [
