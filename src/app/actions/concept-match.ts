@@ -9,8 +9,11 @@ import {
   createSignedRoundToken,
   verifySignedRoundToken,
   ConceptMatchRound,
+  ConceptMatchReviewItem,
+  CONCEPT_PAIRS_BANK,
 } from '@/lib/concept-match';
 import { checkRateLimit } from '@/lib/rate-limits';
+import { ensureStudentRecord } from '@/lib/auth/ensure-student';
 
 function getSigningSecret(): string {
   return (
@@ -45,6 +48,7 @@ export async function getConceptMatchRoundAction(): Promise<{
         studentId: studentId || 'anonymous',
         termIds: round.terms.map((t) => t.id),
         mapping: round.mapping,
+        explanations: round.explanations,
         issuedAt: Date.now(),
       },
       getSigningSecret()
@@ -71,6 +75,7 @@ export async function submitConceptMatchAction(
   totalCount: number;
   isPerfect: boolean;
   xpAwarded?: number;
+  review?: ConceptMatchReviewItem[];
   error?: string;
 }> {
   const supabaseServer = await createServerClient();
@@ -136,6 +141,7 @@ export async function submitConceptMatchAction(
   }
 
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
+  await ensureStudentRecord(adminClient, user);
 
   if (!studentId) {
     return { success: false, correctCount: 0, totalCount: 0, isPerfect: false, xpAwarded: 0, error: 'Unauthorized: Student session required' };
@@ -174,9 +180,50 @@ export async function submitConceptMatchAction(
   // 4. Verify match correctness on server against signed server-side mapping (Option B)
   const outcome = verifyConceptMatches(matches, payload.mapping);
 
+  // 5. Build review items with correct answers and explanations for client
+  const review: ConceptMatchReviewItem[] = [];
+  const matchesMap = new Map(matches.map((m) => [m.termId, m.definitionId]));
+
+  // Build definition ID -> text map
+  const defIdToText: Record<string, string> = {};
+  if (payload.explanations) {
+    for (const [tId, dId] of Object.entries(payload.mapping)) {
+      if (payload.explanations[tId]) {
+        defIdToText[dId] = payload.explanations[tId].definition;
+      }
+    }
+  }
+
+  for (const termId of payload.termIds) {
+    const expectedDefId = payload.mapping[termId];
+    const userChosenDefId = matchesMap.get(termId);
+    const isCorrect = Boolean(userChosenDefId && userChosenDefId === expectedDefId);
+
+    const explanationDetail = payload.explanations?.[termId];
+    const fallbackBankPair = !explanationDetail ? CONCEPT_PAIRS_BANK.find((p) => p.term === termId) : undefined;
+
+    const termName = explanationDetail?.term || fallbackBankPair?.term || termId;
+    const correctDefText = explanationDetail?.definition || fallbackBankPair?.definition || '';
+    const userDefText = userChosenDefId ? defIdToText[userChosenDefId] || 'Selected definition' : 'Unmatched';
+    const explanationText = explanationDetail?.explanation || fallbackBankPair?.explanation || `Connects "${termName}" with its core computer science definition.`;
+    const topic = explanationDetail?.topic || fallbackBankPair?.topic || 'Computer Science';
+
+    review.push({
+      termId,
+      term: termName,
+      correctDefinitionId: expectedDefId,
+      correctDefinition: correctDefText,
+      userDefinitionId: userChosenDefId,
+      userDefinition: userDefText,
+      isCorrect,
+      explanation: explanationText,
+      topic,
+    });
+  }
+
   let xpAwarded = 0;
 
-  // 5. Award XP if perfect match (all 4 correct) with unique round reference
+  // 6. Award XP if perfect match (all 4 correct) with unique round reference
   if (outcome.isPerfect) {
     const referenceId = `concept_match:${payload.roundId}`;
 
@@ -202,5 +249,6 @@ export async function submitConceptMatchAction(
     totalCount: outcome.totalCount,
     isPerfect: outcome.isPerfect,
     xpAwarded,
+    review,
   };
 }

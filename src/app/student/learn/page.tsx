@@ -17,7 +17,7 @@ import {
   getConceptMatchRoundAction,
   submitConceptMatchAction,
 } from '@/app/actions/concept-match';
-import { ConceptMatchRound } from '@/lib/concept-match';
+import { ConceptMatchRound, ConceptMatchReviewItem } from '@/lib/concept-match';
 import {
   Flame,
   Award,
@@ -87,6 +87,7 @@ export default function StudentLearnPage() {
     totalCount: number;
     isPerfect: boolean;
     xpAwarded?: number;
+    review?: ConceptMatchReviewItem[];
   } | null>(null);
 
   // Load Daily Quiz on mount
@@ -173,6 +174,7 @@ export default function StudentLearnPage() {
         totalCount: res.totalCount,
         isPerfect: res.isPerfect,
         xpAwarded: res.xpAwarded,
+        review: res.review,
       });
       // Check celebration after concept match result
       triggerCelebrationCheck();
@@ -805,7 +807,7 @@ export default function StudentLearnPage() {
               </div>
             ) : matchResult ? (
               /* Round Result Screen */
-              <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl flex flex-col items-center text-center gap-4">
+              <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl flex flex-col items-center text-center gap-5">
                 <div className="w-14 h-14 rounded-full bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
                   {matchResult.isPerfect ? (
                     <Sparkles className="w-8 h-8 text-amber-400" />
@@ -815,7 +817,7 @@ export default function StudentLearnPage() {
                 </div>
 
                 <div>
-                  <h2 className="text-lg font-bold text-white">
+                  <h2 className="text-xl font-extrabold text-white">
                     {matchResult.isPerfect ? '🎉 Perfect Match!' : 'Round Completed'}
                   </h2>
                   <p className="text-xs text-slate-400 mt-1">
@@ -838,16 +840,106 @@ export default function StudentLearnPage() {
                   </p>
                 ) : (
                   <p className="text-xs text-slate-500">
-                    Review definitions and try another round to achieve a perfect 4/4!
+                    Review the correct answers and conceptual explanations below to master these concepts!
                   </p>
                 )}
 
-                <button
-                  onClick={loadConceptMatch}
-                  className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all shadow-md shadow-sky-600/20"
-                >
-                  Play Another Round
-                </button>
+                {/* Explanations and Answer Keys Section */}
+                {matchResult.review && matchResult.review.length > 0 && (
+                  <div className="w-full text-left space-y-3.5 mt-2">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                      <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Answers & Explanations</span>
+                      </h3>
+                      <span className="text-[11px] font-mono font-semibold text-slate-400">
+                        {matchResult.correctCount}/{matchResult.totalCount} Correct
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {matchResult.review.map((item, idx) => (
+                        <div
+                          key={item.termId || idx}
+                          className={clsx(
+                            'p-4 rounded-2xl border transition-all text-xs flex flex-col gap-2.5',
+                            item.isCorrect
+                              ? 'bg-emerald-500/[0.04] border-emerald-500/25'
+                              : 'bg-rose-500/[0.04] border-rose-500/25'
+                          )}
+                        >
+                          {/* Term Title & Status */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-sm text-white font-mono">{item.term}</span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/10 border border-sky-500/20 text-sky-300">
+                                {item.topic}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 text-[11px] font-bold shrink-0">
+                              {item.isCorrect ? (
+                                <span className="flex items-center gap-1 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>Matched</span>
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
+                                  <XCircle className="w-3.5 h-3.5" />
+                                  <span>Missed</span>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* If Incorrect: show user's choice */}
+                          {!item.isCorrect && (
+                            <div className="p-2.5 rounded-xl bg-slate-950/70 border border-rose-500/20 text-[11px] space-y-1">
+                              <div className="flex items-center gap-1.5 text-rose-400 font-semibold">
+                                <XCircle className="w-3.5 h-3.5 shrink-0" />
+                                <span>Your Selected Definition:</span>
+                              </div>
+                              <p className="text-slate-400 pl-5 italic">{item.userDefinition || 'Unmatched'}</p>
+                            </div>
+                          )}
+
+                          {/* Correct Definition */}
+                          <div className="p-2.5 rounded-xl bg-slate-950/70 border border-emerald-500/20 text-[11px] space-y-1">
+                            <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                              <span>Correct Definition:</span>
+                            </div>
+                            <p className="text-slate-200 pl-5">{item.correctDefinition}</p>
+                          </div>
+
+                          {/* Conceptual Explanation */}
+                          <div className="p-3 rounded-xl bg-sky-950/30 border border-sky-500/20 text-[11px] text-sky-200/90 leading-relaxed">
+                            <div className="flex items-center gap-1.5 font-bold text-sky-300 mb-1 text-[11px]">
+                              <Sparkles className="w-3 h-3 text-sky-400" />
+                              <span>Concept Explanation:</span>
+                            </div>
+                            <p className="pl-4">{item.explanation}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full mt-2">
+                  <button
+                    onClick={loadConceptMatch}
+                    className="w-full sm:flex-1 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition-all shadow-md shadow-sky-600/20 flex items-center justify-center gap-2"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Play Another Round</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('daily')}
+                    className="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
+                  >
+                    Daily Quiz
+                  </button>
+                </div>
               </div>
             ) : matchRound ? (
               <div className="space-y-4">

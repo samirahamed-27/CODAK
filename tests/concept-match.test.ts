@@ -255,5 +255,52 @@ describe('H7 & Option B: Concept Match Server-Verification & Anti-Tamper Suite',
       expect(res.xpAwarded).toBe(0);
       expect(res.error).toMatch(/expired/i);
     });
+
+    it('returns correct answers and conceptual explanations for every term after round completion', async () => {
+      const roundRes = await getConceptMatchRoundAction();
+      expect(roundRes.success).toBe(true);
+      expect(roundRes.roundToken).toBeDefined();
+
+      const tokenCheck = verifySignedRoundToken(
+        roundRes.roundToken!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.CRON_SECRET || 'concept-match-local-secret'
+      );
+      expect(tokenCheck.valid).toBe(true);
+      const serverMapping = tokenCheck.payload!.mapping;
+
+      // Submit intentionally imperfect matches (first 2 correct, last 2 swapped)
+      const tIds = roundRes.round!.terms.map((t) => t.id);
+      const testMatches = [
+        { termId: tIds[0], definitionId: serverMapping[tIds[0]] },
+        { termId: tIds[1], definitionId: serverMapping[tIds[1]] },
+        { termId: tIds[2], definitionId: serverMapping[tIds[3]] }, // swapped
+        { termId: tIds[3], definitionId: serverMapping[tIds[2]] }, // swapped
+      ];
+
+      const res = await submitConceptMatchAction(testMatches, roundRes.roundToken);
+      expect(res.success).toBe(true);
+      expect(res.correctCount).toBe(2);
+      expect(res.totalCount).toBe(4);
+      expect(res.isPerfect).toBe(false);
+
+      // Verify review array
+      expect(res.review).toBeDefined();
+      expect(res.review).toHaveLength(4);
+
+      for (const item of res.review!) {
+        expect(item.term).toBeTruthy();
+        expect(item.correctDefinition).toBeTruthy();
+        expect(item.userDefinition).toBeTruthy();
+        expect(item.explanation).toBeTruthy();
+        expect(typeof item.isCorrect).toBe('boolean');
+        expect(item.topic).toBeTruthy();
+      }
+
+      // Check specific correctness flags
+      expect(res.review![0].isCorrect).toBe(true);
+      expect(res.review![1].isCorrect).toBe(true);
+      expect(res.review![2].isCorrect).toBe(false);
+      expect(res.review![3].isCorrect).toBe(false);
+    });
   });
 });
