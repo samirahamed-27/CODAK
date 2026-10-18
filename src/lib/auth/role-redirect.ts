@@ -4,6 +4,7 @@ export interface RouteRedirectParams {
   pathname: string;
   isAuthenticated: boolean;
   role?: UserRole | null;
+  hasCampus?: boolean;
 }
 
 /**
@@ -26,9 +27,11 @@ export function getDashboardForRole(role?: UserRole | null): string {
  *
  * Enforces:
  * 1. Unauthenticated users cannot view /student, /faculty, or /admin -> redirected to /login.
- * 2. Students attempting to open /admin or /faculty -> redirected to /student.
- * 3. Faculty attempting to open /admin -> redirected to /faculty.
- * 4. Logged-in users visiting / or /login -> redirected to their role's dashboard.
+ * 2. Authenticated users without an assigned campus are redirected to /select-campus (except API and logout).
+ * 3. Authenticated users with an assigned campus visiting /select-campus -> redirected to their role's dashboard.
+ * 4. Students attempting to open /admin or /faculty -> redirected to /student.
+ * 5. Faculty attempting to open /admin -> redirected to /faculty.
+ * 6. Logged-in users visiting / or /login -> redirected to their role's dashboard.
  *
  * Returns a redirect path string, or null if the navigation is allowed.
  */
@@ -36,6 +39,7 @@ export function computeRouteRedirect({
   pathname,
   isAuthenticated,
   role,
+  hasCampus,
 }: RouteRedirectParams): string | null {
   const isProtectedRoute =
     pathname.startsWith('/student') ||
@@ -44,13 +48,29 @@ export function computeRouteRedirect({
 
   // Rule 1: Logged-out users requesting protected paths go to /login
   if (!isAuthenticated) {
-    if (isProtectedRoute) {
+    if (isProtectedRoute || pathname === '/select-campus') {
       return '/login';
     }
     return null;
   }
 
-  // Rule 4: Logged-in users landing on root / or /login go straight to their dashboard
+  // Rule 2: Campus onboarding enforcement for authenticated accounts without a campus
+  if (hasCampus === false) {
+    if (pathname.startsWith('/api')) {
+      return null;
+    }
+    if (pathname !== '/select-campus') {
+      return '/select-campus';
+    }
+    return null;
+  }
+
+  // Rule 3: Authenticated users who already have a campus shouldn't stay on /select-campus
+  if (hasCampus === true && pathname === '/select-campus') {
+    return getDashboardForRole(role);
+  }
+
+  // Rule 6: Logged-in users landing on root / or /login go straight to their dashboard
   if (pathname === '/' || pathname === '/login') {
     return getDashboardForRole(role);
   }

@@ -82,6 +82,22 @@ graph TD
   - *Self-Improvement*: `improvement_score` (Leveling Up - vs own 7-day average), `comeback_kid` (Phoenix - streak rebuild)
 - **Anonymous Mode**: Server-enforced privacy toggle replacing student identities with anonymous gamer handles across public leaderboards, league standings, and duel histories.
 
+### 4. 🏫 Multi-Campus Architecture & Inter-Campus Standings
+- **Canonical Campus Roster**: Every student, faculty, and administrator belongs to a verified campus:
+  1. *Hi-Tech Institute of Technology, Delhi*
+  2. *Jagannath University, Jaipur*
+  3. *Rathinam Institute of Technology, Bengaluru*
+  4. *Other* (custom sanitized affiliate name, min 2 / max 60 chars)
+- **Inter-Campus Standings Engine**:
+  - Rather than rewarding pure raw student headcount, rankings are driven by **average weekly XP per active student** (`total_weekly_valid_xp / active_student_count`), where active students are those with weekly XP > 0.
+  - **Minimum-Players Rule (`campus_min_active = 5`)**: Campuses with fewer than 5 active students during the current week receive an average score of `0` and are placed below qualified campuses.
+  - **Deterministic Tie-Breaking**: Equal averages break first by total weekly XP, then by canonical campus sort order (`sort_order ASC`).
+  - **Voided XP Exclusion**: Voided/flagged events are excluded from the weekly calculations, protecting aggregate campus standings from gaming.
+- **Campus Immutability & Competition Integrity**:
+  - Campus assignment is locked upon account creation or initial onboarding via PostgreSQL trigger `trg_prevent_campus_change`.
+  - Students cannot switch campuses to exploit standings or jump between competitive leagues.
+  - Only authorized administrators can reassign campuses; every modification writes an immutable audit record to `audit_logs` (`action = 'CAMPUS_CHANGE'`).
+
 ---
 
 ## 💻 Tech Stack

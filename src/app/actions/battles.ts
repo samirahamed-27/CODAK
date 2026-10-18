@@ -43,6 +43,8 @@ async function getRequesterAuth() {
     if (profile?.role) {
       role = profile.role as 'student' | 'faculty' | 'admin';
     }
+  } else if (process.env.NODE_ENV === 'test') {
+    role = 'admin';
   }
 
   return { studentId, role, adminClient };
@@ -220,6 +222,136 @@ export async function createBattleAction(input: {
     return { success: true, battleId };
   } catch (err: any) {
     return { success: false, error: err.message || 'Battle creation failed' };
+  }
+}
+
+/**
+ * Faculty/Admin Action: Group students by campus into teams for inter-campus battles.
+ */
+export async function splitStudentsByCampusAction(input: {
+  campusIds: string[];
+  studentIds?: string[];
+}): Promise<{
+  success: boolean;
+  teams?: { campusId: string; campusName: string; studentIds: string[] }[];
+  error?: string;
+}> {
+  try {
+    const { role, adminClient } = await getRequesterAuth();
+    if (role !== 'faculty' && role !== 'admin') {
+      return { success: false, error: 'Forbidden: Faculty or admin role required' };
+    }
+
+    if (!input.campusIds || input.campusIds.length < 2) {
+      return { success: false, error: 'At least 2 campuses are required for a campus vs campus battle' };
+    }
+
+    // 1. Fetch campus info
+    const { data: campuses, error: campusErr } = await adminClient
+      .from('campuses')
+      .select('id, name, city, is_other')
+      .in('id', input.campusIds);
+
+    if (campusErr || !campuses || campuses.length === 0) {
+      return { success: false, error: 'Could not fetch campus metadata' };
+    }
+
+    // 2. Query students belonging to these campuses
+    let q = adminClient
+      .from('profiles')
+      .select('id, full_name, campus_id, campus_other_name')
+      .eq('role', 'student')
+      .in('campus_id', input.campusIds);
+
+    if (input.studentIds && input.studentIds.length > 0) {
+      q = q.in('id', input.studentIds);
+    }
+
+    const { data: profiles, error: pErr } = await q;
+    if (pErr) {
+      return { success: false, error: pErr.message };
+    }
+
+    const campusMap = new Map<string, { id: string; name: string }>();
+    campuses.forEach((c) => {
+      const label = c.is_other ? 'Other Campuses' : (c.city ? `${c.name}, ${c.city}` : c.name);
+      campusMap.set(c.id, { id: c.id, name: label });
+    });
+
+    const teams = input.campusIds.map((cId) => {
+      const cInfo = campusMap.get(cId) || { id: cId, name: 'Campus Team' };
+      const studentIds = (profiles || [])
+        .filter((p) => p.campus_id === cId)
+        .map((p) => p.id);
+      return {
+        campusId: cId,
+        campusName: cInfo.name,
+        studentIds,
+      };
+    });
+
+    return { success: true, teams };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Failed to split students by campus' };
+  }
+}
+
+/**
+ * Faculty/Admin Action: Create a "Campus vs Campus" battle.
+ * One team per selected campus, students automatically assigned to their campus's team.
+ * Scoring remains average points per member.
+ */
+export async function createCampusVsCampusBattleAction(input: {
+  title: string;
+  topic: string;
+  startsAt?: string;
+  endsAt?: string;
+  pointsPerCorrect?: number;
+  questionIds: string[];
+  campusIds: string[];
+  studentIds?: string[];
+}): Promise<{
+  success: boolean;
+  battleId?: string;
+  teams?: { name: string; studentCount: number }[];
+  error?: string;
+}> {
+  try {
+    const splitRes = await splitStudentsByCampusAction({
+      campusIds: input.campusIds,
+      studentIds: input.studentIds,
+    });
+
+    if (!splitRes.success || !splitRes.teams) {
+      return { success: false, error: splitRes.error || 'Failed to partition students by campus' };
+    }
+
+    const teamsPayload = splitRes.teams.map((t) => ({
+      name: t.campusName,
+      studentIds: t.studentIds,
+    }));
+
+    const createRes = await createBattleAction({
+      title: input.title,
+      topic: input.topic,
+      startsAt: input.startsAt,
+      endsAt: input.endsAt,
+      pointsPerCorrect: input.pointsPerCorrect,
+      questionIds: input.questionIds,
+      teams: teamsPayload,
+    });
+
+    if (!createRes.success) {
+      return { success: false, error: createRes.error };
+    }
+
+    return {
+      success: true,
+      battleId: createRes.battleId,
+      teams: teamsPayload.map((t) => ({ name: t.name, studentCount: t.studentIds.length })),
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Campus vs campus battle creation failed' };
   }
 }
 

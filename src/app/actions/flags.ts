@@ -11,9 +11,11 @@ export interface FlagItem {
   studentId: string;
   studentName?: string;
   studentRoll?: string;
+  studentCampus?: string;
   secondStudentId?: string | null;
   secondStudentName?: string | null;
   secondStudentRoll?: string | null;
+  secondStudentCampus?: string | null;
   windowStart: string;
   windowEnd: string;
   evidence: Record<string, any>;
@@ -95,17 +97,20 @@ export async function getFlagsAction(filters?: FlagFilters): Promise<{
     if (f.second_student_id) studentIds.add(f.second_student_id);
   }
 
-  const studentMap = new Map<string, { rollNo: string; fullName: string }>();
+  const { formatCampusDisplayName } = await import('@/lib/campus');
+  const studentMap = new Map<string, { rollNo: string; fullName: string; campusName?: string }>();
   if (studentIds.size > 0) {
     const { data: studentRows } = await adminClient
       .from('students')
-      .select('id, roll_no, profiles(full_name)')
+      .select('id, roll_no, profiles(full_name, campus_other_name, campuses(name, city, is_other))')
       .in('id', Array.from(studentIds));
 
     for (const s of studentRows || []) {
+      const prof = s.profiles as any;
       studentMap.set(s.id, {
         rollNo: s.roll_no || 'N/A',
-        fullName: (s.profiles as any)?.full_name || 'Student',
+        fullName: prof?.full_name || 'Student',
+        campusName: formatCampusDisplayName(prof?.campuses, prof?.campus_other_name),
       });
     }
   }
@@ -121,9 +126,11 @@ export async function getFlagsAction(filters?: FlagFilters): Promise<{
       studentId: f.student_id,
       studentName: s1Info?.fullName || 'Student',
       studentRoll: s1Info?.rollNo || 'N/A',
+      studentCampus: s1Info?.campusName,
       secondStudentId: f.second_student_id,
       secondStudentName: s2Info?.fullName || null,
       secondStudentRoll: s2Info?.rollNo || null,
+      secondStudentCampus: s2Info?.campusName || null,
       windowStart: f.window_start,
       windowEnd: f.window_end,
       evidence: f.evidence || {},

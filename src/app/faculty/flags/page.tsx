@@ -406,6 +406,11 @@ export default function FacultyFlagsPage() {
 
                       <div className="flex items-center gap-2 text-xs">
                         <span className="font-bold text-white">{flag.studentName}</span>
+                        {flag.studentCampus && (
+                          <span className="text-[10px] font-normal text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                            {flag.studentCampus}
+                          </span>
+                        )}
                         <span className="text-[10px] font-mono text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
                           {flag.studentRoll}
                         </span>
@@ -414,6 +419,11 @@ export default function FacultyFlagsPage() {
                           <>
                             <span className="text-slate-500 font-semibold text-[10px]">COLLUDING WITH</span>
                             <span className="font-bold text-white">{flag.secondStudentName || 'Student B'}</span>
+                            {flag.secondStudentCampus && (
+                              <span className="text-[10px] font-normal text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                                {flag.secondStudentCampus}
+                              </span>
+                            )}
                             <span className="text-[10px] font-mono text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
                               {flag.secondStudentRoll || 'N/A'}
                             </span>

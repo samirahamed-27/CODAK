@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { SignIn1 } from '@/components/ui/modern-stunning-sign-in';
 import { usePreloader } from '@/components/ui/PreloaderContext';
 import { GraduationCap, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { getCampusesAction } from '@/app/actions/campus';
+import { formatCampusDisplayName } from '@/lib/campus';
 
 const DEMO_ACCOUNTS = [
   {
@@ -64,6 +66,20 @@ function LoginPageContent() {
   const [fullName, setFullName] = useState('');
   const [rollNo, setRollNo] = useState('');
   const [department, setDepartment] = useState('Computer Science');
+  const [campuses, setCampuses] = useState<{ id: string; name: string; city: string; is_other: boolean }[]>([]);
+  const [selectedCampusId, setSelectedCampusId] = useState('');
+  const [campusOtherName, setCampusOtherName] = useState('');
+
+  useEffect(() => {
+    async function loadCampuses() {
+      const res = await getCampusesAction();
+      if (res.success && res.campuses.length > 0) {
+        setCampuses(res.campuses);
+        setSelectedCampusId(res.campuses[0].id);
+      }
+    }
+    loadCampuses();
+  }, []);
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -156,6 +172,19 @@ function LoginPageContent() {
     setSuccessMessage(null);
 
     try {
+      if (!selectedCampusId) {
+        setErrorMessage('Please select your campus.');
+        setLoading(false);
+        return;
+      }
+
+      const selectedCampus = campuses.find((c) => c.id === selectedCampusId);
+      if (selectedCampus?.is_other && (!campusOtherName.trim() || campusOtherName.trim().length < 2)) {
+        setErrorMessage('Please enter your campus name (between 2 and 60 characters).');
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -164,6 +193,8 @@ function LoginPageContent() {
             full_name: fullName,
             roll_no: rollNo,
             department: department,
+            campus_id: selectedCampusId,
+            campus_other_name: selectedCampus?.is_other ? campusOtherName.trim() : undefined,
           },
         },
       });
@@ -319,6 +350,37 @@ function LoginPageContent() {
               </select>
             </div>
           </div>
+
+          <div>
+            <label className="block text-xs font-medium text-zinc-300 mb-1">Campus</label>
+            <select
+              value={selectedCampusId}
+              onChange={(e) => setSelectedCampusId(e.target.value)}
+              required
+              className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white text-xs focus:outline-none focus:border-sky-400"
+            >
+              {campuses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {formatCampusDisplayName(c)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {campuses.find((c) => c.id === selectedCampusId)?.is_other && (
+            <div>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Your Campus Name</label>
+              <input
+                type="text"
+                required
+                maxLength={60}
+                placeholder="Enter your college or institution name"
+                value={campusOtherName}
+                onChange={(e) => setCampusOtherName(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/10 text-white text-xs placeholder:text-zinc-500 focus:outline-none focus:border-sky-400"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-medium text-zinc-300 mb-1">Email Address</label>

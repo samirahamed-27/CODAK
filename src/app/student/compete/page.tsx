@@ -27,6 +27,7 @@ import {
   AlertCircle,
   Timer,
   Zap,
+  Building2,
 } from 'lucide-react';
 import clsx from 'clsx';
 import Aurora from '@/components/Aurora';
@@ -40,18 +41,27 @@ import {
 import { SafeDuelQuestion } from '@/lib/duels';
 import { getMyBattlesAction } from '@/app/actions/battles';
 import { Battle } from '@/lib/battles';
+import { getCampusStandingsAction } from '@/app/actions/leaderboard';
+import { CampusStanding } from '@/lib/campus-standings';
 import Link from 'next/link';
 
 export default function StudentCompetePage() {
-  const [activeTab, setActiveTab] = useState<'league' | 'leaderboard' | 'duels' | 'battles'>('league');
+  const [activeTab, setActiveTab] = useState<'league' | 'leaderboard' | 'standings' | 'duels' | 'battles'>('league');
   const [leagueData, setLeagueData] = useState<StudentLeagueData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const [lbScope, setLbScope] = useState<'campus' | 'batch'>('campus');
+  const [lbScope, setLbScope] = useState<'my_campus' | 'all_campuses' | 'batch'>('my_campus');
   const [lbTimeframe, setLbTimeframe] = useState<'weekly' | 'all-time'>('weekly');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [lbLoading, setLbLoading] = useState(false);
+
+  // Campus Standings state
+  const [campusStandings, setCampusStandings] = useState<CampusStanding[]>([]);
+  const [standingsLoading, setStandingsLoading] = useState(false);
+  const [standingsMinActive, setStandingsMinActive] = useState(5);
+  const [standingsWeekStart, setStandingsWeekStart] = useState('');
+  const [standingsWeekEnd, setStandingsWeekEnd] = useState('');
 
   // Duels state
   const [duels, setDuels] = useState<DuelSummary[]>([]);
@@ -146,6 +156,23 @@ export default function StudentCompetePage() {
     }
   };
 
+  const fetchStandings = async () => {
+    setStandingsLoading(true);
+    try {
+      const res = await getCampusStandingsAction();
+      if (res.success) {
+        setCampusStandings(res.standings);
+        setStandingsMinActive(res.minActiveRequired);
+        setStandingsWeekStart(res.weekStart);
+        setStandingsWeekEnd(res.weekEnd);
+      }
+    } catch (e) {
+      console.error('Error fetching campus standings:', e);
+    } finally {
+      setStandingsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchLeague();
   }, []);
@@ -153,6 +180,8 @@ export default function StudentCompetePage() {
   useEffect(() => {
     if (activeTab === 'leaderboard') {
       fetchLeaderboard(lbScope, lbTimeframe);
+    } else if (activeTab === 'standings') {
+      fetchStandings();
     } else if (activeTab === 'duels') {
       fetchDuels();
     } else if (activeTab === 'battles') {
@@ -166,6 +195,8 @@ export default function StudentCompetePage() {
       fetchLeague();
     } else if (activeTab === 'leaderboard') {
       fetchLeaderboard(lbScope, lbTimeframe);
+    } else if (activeTab === 'standings') {
+      fetchStandings().finally(() => setRefreshing(false));
     } else if (activeTab === 'duels') {
       fetchDuels().finally(() => setRefreshing(false));
     } else if (activeTab === 'battles') {
@@ -353,7 +384,7 @@ export default function StudentCompetePage() {
             <button
               onClick={() => setActiveTab('leaderboard')}
               className={clsx(
-                'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5',
+                'flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1',
                 activeTab === 'leaderboard'
                   ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-md'
                   : 'text-slate-400 hover:text-white'
@@ -364,9 +395,22 @@ export default function StudentCompetePage() {
             </button>
 
             <button
+              onClick={() => setActiveTab('standings')}
+              className={clsx(
+                'flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1',
+                activeTab === 'standings'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              )}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>Standings</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('duels')}
               className={clsx(
-                'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5',
+                'flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1',
                 activeTab === 'duels'
                   ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-md'
                   : 'text-slate-400 hover:text-white'
@@ -534,11 +578,16 @@ export default function StudentCompetePage() {
                                   </span>
                                 )}
                               </div>
-                              {member.rollNo && (
-                                <span className="text-[10px] text-slate-500 block font-mono">
-                                  {member.rollNo}
-                                </span>
-                              )}
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-mono mt-0.5">
+                                {member.campusName && (
+                                  <span className="text-[9px] font-sans font-medium text-indigo-300 bg-indigo-950/60 px-1.5 py-0.2 rounded border border-indigo-800/40">
+                                    {member.campusName}
+                                  </span>
+                                )}
+                                {member.rollNo && (
+                                  <span>{member.rollNo}</span>
+                                )}
+                              </div>
                             </div>
                           </div>
 
@@ -584,15 +633,27 @@ export default function StudentCompetePage() {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => setLbScope('campus')}
+                      onClick={() => setLbScope('my_campus')}
                       className={clsx(
                         'flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all',
-                        lbScope === 'campus'
+                        lbScope === 'my_campus'
                           ? 'bg-indigo-600 text-white shadow-md'
                           : 'bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-white'
                       )}
                     >
-                      Campus Wide
+                      My Campus
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLbScope('all_campuses')}
+                      className={clsx(
+                        'flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all',
+                        lbScope === 'all_campuses'
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-white'
+                      )}
+                    >
+                      All Campuses
                     </button>
                     <button
                       type="button"
@@ -604,7 +665,7 @@ export default function StudentCompetePage() {
                           : 'bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-white'
                       )}
                     >
-                      My Batch / Department
+                      My Batch
                     </button>
                   </div>
                 </div>
@@ -649,8 +710,12 @@ export default function StudentCompetePage() {
                   <div className="flex items-center gap-2">
                     <Trophy className="w-4 h-4 text-amber-400" />
                     <h2 className="text-sm font-bold text-white">
-                      {lbScope === 'campus' ? 'Campus Standing' : 'Batch Standing'} •{' '}
-                      {lbTimeframe === 'weekly' ? 'Weekly' : 'All-Time'}
+                      {lbScope === 'my_campus'
+                        ? 'My Campus Standing'
+                        : lbScope === 'all_campuses'
+                        ? 'All Campuses Standing'
+                        : 'Batch Standing'}{' '}
+                      • {lbTimeframe === 'weekly' ? 'Weekly' : 'All-Time'}
                     </h2>
                   </div>
 
@@ -715,7 +780,12 @@ export default function StudentCompetePage() {
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono mt-0.5">
+                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-mono mt-0.5">
+                              {student.campusName && (
+                                <span className="text-[9px] font-sans font-medium text-indigo-300 bg-indigo-950/60 px-1.5 py-0.2 rounded border border-indigo-800/40">
+                                  {student.campusName}
+                                </span>
+                              )}
                               {student.rollNo && <span>{student.rollNo}</span>}
                               {student.department && <span>• {student.department}</span>}
                             </div>
@@ -733,6 +803,158 @@ export default function StudentCompetePage() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
+
+          {/* TAB: CAMPUS STANDINGS (Average weekly XP per active student) */}
+          {activeTab === 'standings' && (
+            <div className="flex flex-col gap-4">
+              {/* Header Info Card */}
+              <div className="p-5 rounded-3xl bg-gradient-to-br from-amber-950/40 via-orange-950/20 to-slate-900/60 border border-amber-500/30 shadow-xl backdrop-blur-xl space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2.5 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                        Inter-Campus Weekly Standings
+                      </h2>
+                      <p className="text-xs text-slate-400">
+                        Ranked by <strong className="text-amber-300">average weekly XP per active student</strong> so large campuses cannot win by size alone.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span>
+                    Minimum active players required:{' '}
+                    <strong className="text-white font-mono">{standingsMinActive}</strong>
+                  </span>
+                  <span className="text-emerald-400 font-mono text-[10px]">
+                    Voided XP Excluded • Ledger Verified
+                  </span>
+                </div>
+              </div>
+
+              {/* Standings List */}
+              <section className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl backdrop-blur-xl space-y-2">
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-amber-400" />
+                    <h2 className="text-sm font-bold text-white">Campus Leaderboard</h2>
+                  </div>
+
+                  <button
+                    onClick={handleRefresh}
+                    disabled={refreshing || standingsLoading}
+                    className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+                  >
+                    <RefreshCw className={clsx('w-3.5 h-3.5', (refreshing || standingsLoading) && 'animate-spin')} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+
+                {standingsLoading ? (
+                  <p className="text-xs text-slate-500 text-center py-6">Aggregating campus XP averages...</p>
+                ) : campusStandings.length === 0 ? (
+                  <p className="text-xs text-slate-500 text-center py-6">No campus records found.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {campusStandings.map((campus) => {
+                      const isRanked = campus.ranked && campus.rank !== null;
+                      return (
+                        <div
+                          key={campus.campusId}
+                          className={clsx(
+                            'p-3.5 rounded-2xl border transition-all duration-200 flex items-center justify-between gap-3 text-xs',
+                            isRanked && campus.rank === 1
+                              ? 'bg-amber-950/20 border-amber-500/40 shadow-lg shadow-amber-500/10'
+                              : isRanked && campus.rank === 2
+                              ? 'bg-slate-900/60 border-slate-700/60 text-slate-200'
+                              : isRanked && campus.rank === 3
+                              ? 'bg-amber-950/10 border-amber-800/40 text-slate-300'
+                              : 'bg-slate-950/40 border-slate-800/60 text-slate-400'
+                          )}
+                        >
+                          {/* Rank & Campus Info */}
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={clsx(
+                                'w-7 text-center font-mono font-bold text-xs',
+                                isRanked && campus.rank === 1
+                                  ? 'text-amber-400 font-black'
+                                  : isRanked && campus.rank === 2
+                                  ? 'text-slate-300 font-bold'
+                                  : isRanked && campus.rank === 3
+                                  ? 'text-amber-600 font-bold'
+                                  : 'text-slate-600'
+                              )}
+                            >
+                              {isRanked
+                                ? campus.rank === 1
+                                  ? '🥇'
+                                  : campus.rank === 2
+                                  ? '🥈'
+                                  : campus.rank === 3
+                                  ? '🥉'
+                                  : `#${campus.rank}`
+                                : '—'}
+                            </span>
+
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-white text-sm">
+                                  {campus.displayName}
+                                </span>
+                                {campus.isOther && (
+                                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">
+                                    Aggregate
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                                <span className="flex items-center gap-1">
+                                  <Users className="w-3 h-3 text-indigo-400" />
+                                  <strong className="text-slate-200">{campus.activeStudentCount}</strong> active{' '}
+                                  {campus.activeStudentCount === 1 ? 'student' : 'students'}
+                                </span>
+                                <span>•</span>
+                                <span>{campus.totalWeeklyXp.toLocaleString()} total weekly XP</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Average XP or Threshold Warning */}
+                          <div className="shrink-0 text-right">
+                            {isRanked ? (
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="text-sm font-black font-mono text-amber-300">
+                                  {campus.averageWeeklyXp.toFixed(1)}{' '}
+                                  <span className="text-[10px] font-sans font-normal text-slate-400">avg XP</span>
+                                </span>
+                                <span className="text-[9px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-1.5 py-0.5 rounded">
+                                  Ranked
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="text-[10px] font-bold text-amber-400/90 bg-amber-950/40 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                                  Not enough players yet
+                                </span>
+                                <span className="text-[9px] text-slate-500 font-mono">
+                                  Need {standingsMinActive}+ active
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </section>

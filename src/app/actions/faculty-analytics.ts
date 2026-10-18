@@ -32,7 +32,7 @@ export async function getFacultyAnalyticsAction(
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, campus_id')
     .eq('id', user.id)
     .single();
 
@@ -44,11 +44,31 @@ export async function getFacultyAnalyticsAction(
     };
   }
 
+  // Determine effective campus filter:
+  // Faculty default to their own campus with an "All campuses" option; admin defaults to all.
+  let targetCampusId = filter.campusId;
+  if (targetCampusId === undefined) {
+    if (profile.role === 'faculty') {
+      targetCampusId = profile.campus_id || 'all';
+    } else {
+      targetCampusId = 'all';
+    }
+  }
+
+  const effectiveFilter: FacultyAnalyticsFilter = {
+    ...filter,
+    campusId: targetCampusId,
+  };
+
   try {
-    const data = await getFacultyAnalytics(filter);
+    const data = await getFacultyAnalytics(effectiveFilter);
     return {
       success: true,
-      data,
+      data: {
+        ...data,
+        callerCampusId: profile.campus_id,
+        selectedCampusId: targetCampusId,
+      },
     };
   } catch (err: any) {
     return {

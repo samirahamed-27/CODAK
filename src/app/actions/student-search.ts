@@ -9,6 +9,7 @@ export interface StudentSearchResult {
   fullName: string;
   department: string;
   yearOfStudy: number;
+  campusName?: string;
 }
 
 export interface StudentSearchResponse {
@@ -73,7 +74,7 @@ export async function searchStudentsAction(query: string): Promise<StudentSearch
   // PostgREST syntax for searching joined table: profiles.full_name.ilike
   const { data: studentsData, error } = await adminClient
     .from('students')
-    .select('id, roll_no, department, year_of_study, profiles!inner(full_name)')
+    .select('id, roll_no, department, year_of_study, profiles!inner(full_name, campus_other_name, campuses(name, city, is_other))')
     .or(`roll_no.ilike.%${trimmed}%,profiles.full_name.ilike.%${trimmed}%`)
     .limit(10);
 
@@ -87,12 +88,15 @@ export async function searchStudentsAction(query: string): Promise<StudentSearch
     };
   }
 
+  const { formatCampusDisplayName } = await import('@/lib/campus');
+
   const students: StudentSearchResult[] = (studentsData || []).slice(0, 10).map((s: any) => ({
     id: s.id,
     rollNo: s.roll_no,
     fullName: s.profiles?.full_name || 'Student',
     department: s.department,
     yearOfStudy: s.year_of_study,
+    campusName: formatCampusDisplayName(s.profiles?.campuses, s.profiles?.campus_other_name),
   }));
 
   return {

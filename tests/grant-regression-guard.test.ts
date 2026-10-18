@@ -40,6 +40,8 @@ describe('Security Definer Grant Regression Guard (Automated DB Audit)', () => {
   //    - Reason: DDL event trigger ensuring new tables automatically have RLS enabled.
   // 7. prevent_xp_events_tamper:
   //    - Reason: Immutability trigger rejecting any direct UPDATE or DELETE on xp_events ledger.
+  // 8. prevent_campus_change:
+  //    - Reason: Integrity trigger preventing users from changing their own campus once assigned.
   const ALLOWLIST_CALLABLE = new Set<string>([
     'get_my_role',
     'get_student_xp',
@@ -48,6 +50,7 @@ describe('Security Definer Grant Regression Guard (Automated DB Audit)', () => {
     'prevent_role_change',
     'rls_auto_enable',
     'prevent_xp_events_tamper',
+    'prevent_campus_change',
   ]);
 
   it('guarantees that sensitive SECURITY DEFINER functions in public schema are NOT executable by anon, authenticated, or PUBLIC', async () => {

@@ -62,7 +62,7 @@ export async function getStudentLeagueAction(customDate?: string): Promise<{
   // 2. Fetch all members in this group
   const { data: groupMembers, error: membersErr } = await adminClient
     .from('league_members')
-    .select('student_id, initial_tier_id, students(roll_no, profiles(full_name, is_anonymous))')
+    .select('student_id, initial_tier_id, students(roll_no, profiles(full_name, is_anonymous, campus_other_name, campuses(name, city, is_other)))')
     .eq('group_id', assignment.groupId);
 
   if (membersErr || !groupMembers) {
@@ -77,6 +77,8 @@ export async function getStudentLeagueAction(customDate?: string): Promise<{
     .single();
 
   const config: LeagueConfig = configRow || DEFAULT_LEAGUE_CONFIG;
+
+  const { formatCampusDisplayName } = await import('@/lib/campus');
 
   // 4. Calculate weekly XP from ledger for each member
   const memberInputs = await Promise.all(
@@ -103,6 +105,7 @@ export async function getStudentLeagueAction(customDate?: string): Promise<{
       // Server-enforced anonymization: peer students never see name or roll no if is_anonymous
       let displayName = studentProfile?.full_name || 'Student';
       let displayRoll = (m.students as any)?.roll_no || '';
+      const campusName = formatCampusDisplayName(studentProfile?.campuses, studentProfile?.campus_other_name);
 
       if (isAnon && !isMe) {
         displayName = 'Anonymous';
@@ -114,6 +117,7 @@ export async function getStudentLeagueAction(customDate?: string): Promise<{
         weeklyXp,
         studentName: displayName,
         rollNo: isMe ? displayRoll : undefined,
+        campusName,
         isAnonymous: isAnon,
         isMe,
       };

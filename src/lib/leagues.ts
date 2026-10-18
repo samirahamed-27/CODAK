@@ -20,6 +20,7 @@ export interface MemberRankInput {
   weeklyXp: number;
   studentName?: string;
   rollNo?: string;
+  campusName?: string;
   isAnonymous?: boolean;
   isMe?: boolean;
 }
@@ -119,6 +120,7 @@ export interface LeagueStandingMember {
   studentId: string;
   name: string;
   rollNo?: string;
+  campusName?: string;
   weeklyXp: number;
   rank: number;
   isMe: boolean;
@@ -128,7 +130,7 @@ export interface LeagueStandingMember {
 
 /**
  * Server-side scrubbing of league standings.
- * Peers see "Anonymous" with no roll number for anonymous peers.
+ * Peers see "Anonymous" with no roll number or campus for anonymous peers.
  * The student sees themselves (name and roll number).
  * Faculty and admin see real identities for all members.
  */
@@ -157,16 +159,19 @@ export function formatLeagueStandingMembers(
     const isMe = o.studentId === requesterStudentId;
     let displayName = o.studentName || 'Student';
     let displayRoll: string | undefined = o.rollNo;
+    let displayCampus: string | undefined = o.campusName;
 
     if (o.isAnonymous && !isMe && !isPrivileged) {
       displayName = 'Anonymous';
       displayRoll = undefined;
+      displayCampus = undefined;
     }
 
     return {
       studentId: o.studentId,
       name: displayName,
       rollNo: displayRoll,
+      campusName: displayCampus,
       weeklyXp: o.weeklyXp,
       rank: o.rank,
       isMe,

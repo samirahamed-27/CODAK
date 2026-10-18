@@ -4,6 +4,17 @@
 
 export type UserRole = 'student' | 'faculty' | 'admin';
 
+export interface Campus {
+  id: string;
+  slug: string;
+  name: string;
+  city: string;
+  sort_order: number;
+  is_active: boolean;
+  is_other: boolean;
+  created_at: string;
+}
+
 export interface Profile {
   id: string;
   email: string;
@@ -11,6 +22,9 @@ export interface Profile {
   role: UserRole;
   is_anonymous: boolean;
   avatar_url?: string | null;
+  campus_id?: string | null;
+  campus_other_name?: string | null;
+  campuses?: Campus | null;
   created_at: string;
 }
 

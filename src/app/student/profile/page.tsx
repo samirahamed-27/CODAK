@@ -11,6 +11,7 @@ import Aurora from '@/components/Aurora';
 import { BadgeTile } from '@/components/ui/game-elements';
 import { getStudentBadgesAction, StudentBadgeDisplay } from '@/app/actions/badges';
 import { updateAnonymousPreferenceAction } from '@/app/actions/leaderboard';
+import { formatCampusDisplayName } from '@/lib/campus';
 
 export default function StudentProfilePage() {
   const supabase = createClient();
@@ -19,6 +20,7 @@ export default function StudentProfilePage() {
   const [rollNo, setRollNo] = useState('CS-2026-042');
   const [department, setDepartment] = useState('Computer Science');
   const [yearOfStudy, setYearOfStudy] = useState(1);
+  const [campusName, setCampusName] = useState('Unassigned');
   const [isAnonymous, setIsAnonymous] = useState(false);
 
   const [totalXp, setTotalXp] = useState(0);
@@ -39,16 +41,17 @@ export default function StudentProfilePage() {
       let studentId = user?.id;
 
       if (user) {
-        // Fetch profile
+        // Fetch profile with campus relation
         const { data: profile } = await supabase
           .from('profiles')
-          .select('*')
+          .select('*, campuses(*)')
           .eq('id', user.id)
           .single();
 
         if (profile) {
           setStudentName(profile.full_name);
           setIsAnonymous(profile.is_anonymous);
+          setCampusName(formatCampusDisplayName(profile.campuses as any, profile.campus_other_name));
         }
 
         // Fetch student record
@@ -174,6 +177,10 @@ export default function StudentProfilePage() {
           </p>
 
           <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-800 text-left mb-4">
+            <div className="col-span-2">
+              <span className="text-[10px] text-slate-500 uppercase block font-medium">Campus</span>
+              <span className="text-xs text-white font-semibold truncate block" title={campusName}>{campusName}</span>
+            </div>
             <div>
               <span className="text-[10px] text-slate-500 uppercase block font-medium">Department</span>
               <span className="text-xs text-slate-300 font-semibold">{department}</span>

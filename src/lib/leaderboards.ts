@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getIstWeekDetails } from '@/lib/quests';
+import { formatCampusDisplayName } from '@/lib/campus';
 
 export interface LeaderboardEntry {
   studentId: string;
@@ -11,11 +12,13 @@ export interface LeaderboardEntry {
   rank: number;
   isMe: boolean;
   isAnonymous: boolean;
+  campusName?: string;
 }
 
 export interface LeaderboardQueryOptions {
-  scope: 'campus' | 'batch';
+  scope: 'my_campus' | 'all_campuses' | 'batch' | 'campus';
   timeframe: 'weekly' | 'all-time';
+  campusId?: string;
   department?: string;
   yearOfStudy?: number;
   requesterId?: string;
@@ -25,7 +28,7 @@ export interface LeaderboardQueryOptions {
 
 /**
  * Pure function: Formats and anonymizes leaderboard entries based on requester role and identity.
- * Strictly guarantees that peer students never receive real name or roll number of an anonymous student in the payload.
+ * Strictly guarantees that peer students never receive real name, roll number, or campus of an anonymous student.
  */
 export function formatLeaderboardEntries(
   rawList: {
@@ -36,6 +39,7 @@ export function formatLeaderboardEntries(
     yearOfStudy: number;
     totalXp: number;
     isAnonymous: boolean;
+    campusName?: string;
   }[],
   requesterId?: string,
   requesterRole: 'student' | 'faculty' | 'admin' = 'student'
@@ -64,30 +68,56 @@ export function formatLeaderboardEntries(
       rank: index + 1,
       isMe,
       isAnonymous: item.isAnonymous,
+      campusName: canViewRealIdentity ? item.campusName : undefined,
     };
   });
 }
 
 /**
- * Fetches and builds campus or batch leaderboard from the immutable xp_events ledger.
+ * Fetches and builds campus, all-campuses, or batch leaderboard from the immutable xp_events ledger.
  * Excludes voided events. Supports fake dates for testing.
  */
 export async function getLeaderboardData(
   adminClient: SupabaseClient,
   options: LeaderboardQueryOptions
 ): Promise<LeaderboardEntry[]> {
-  const { scope, timeframe, department, yearOfStudy, requesterId, requesterRole = 'student', customDate } = options;
+  const {
+    scope,
+    timeframe,
+    campusId,
+    department,
+    yearOfStudy,
+    requesterId,
+    requesterRole = 'student',
+    customDate,
+  } = options;
   const { weekStart, weekEnd } = getIstWeekDetails(customDate);
 
-  // 1. Query students with their profiles
+  // If scope is my_campus (or legacy 'campus'), resolve requester's campus_id if not explicitly provided
+  let targetCampusId = campusId;
+  if ((scope === 'my_campus' || scope === 'campus') && !targetCampusId && requesterId) {
+    const { data: requesterProf } = await adminClient
+      .from('profiles')
+      .select('campus_id')
+      .eq('id', requesterId)
+      .single();
+    if (requesterProf?.campus_id) {
+      targetCampusId = requesterProf.campus_id;
+    }
+  }
+
+  // 1. Query students with their profiles and campus relations
   let query = adminClient
     .from('students')
-    .select('id, roll_no, department, year_of_study, profiles(full_name, is_anonymous)');
+    .select('id, roll_no, department, year_of_study, profiles!inner(full_name, is_anonymous, campus_id, campus_other_name, campuses(name, city, is_other))');
 
   if (scope === 'batch') {
     if (department) query = query.eq('department', department);
     if (yearOfStudy) query = query.eq('year_of_study', yearOfStudy);
+  } else if ((scope === 'my_campus' || scope === 'campus') && targetCampusId) {
+    query = query.eq('profiles.campus_id', targetCampusId);
   }
+  // 'all_campuses' doesn't filter by campus or batch
 
   const { data: students, error: studentsErr } = await query;
   if (studentsErr || !students) {
@@ -131,6 +161,7 @@ export async function getLeaderboardData(
       yearOfStudy: s.year_of_study,
       totalXp: xpMap.get(s.id) || 0,
       isAnonymous: profile.is_anonymous || false,
+      campusName: formatCampusDisplayName(profile.campuses, profile.campus_other_name),
     };
   });
 

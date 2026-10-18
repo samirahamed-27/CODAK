@@ -40,16 +40,18 @@ export async function middleware(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     let role: UserRole | null = null;
+    let hasCampus: boolean | undefined = undefined;
 
     if (user) {
-      // Query role from profiles table
+      // Query role and campus from profiles table
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, campus_id')
         .eq('id', user.id)
         .single();
 
       role = (profile?.role as UserRole) || 'student';
+      hasCampus = !!profile?.campus_id;
     }
 
     // Allow auth routes like /api/auth/signout to pass through directly
@@ -61,6 +63,7 @@ export async function middleware(request: NextRequest) {
       pathname: request.nextUrl.pathname,
       isAuthenticated: !!user,
       role,
+      hasCampus,
     });
 
     if (redirectPath && redirectPath !== request.nextUrl.pathname) {

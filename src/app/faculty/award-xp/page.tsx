@@ -247,8 +247,13 @@ export default function AwardXpPage() {
                     <UserCheck className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-white block">
-                      {selectedStudent.fullName}
+                    <span className="text-xs font-bold text-white flex items-center gap-2">
+                      <span>{selectedStudent.fullName}</span>
+                      {selectedStudent.campusName && (
+                        <span className="text-[10px] font-normal text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                          {selectedStudent.campusName}
+                        </span>
+                      )}
                     </span>
                     <span className="text-[11px] text-indigo-300 font-mono">
                       {selectedStudent.rollNo} • {selectedStudent.department} (Year {selectedStudent.yearOfStudy})
@@ -291,7 +296,14 @@ export default function AwardXpPage() {
                         className="w-full text-left px-4 py-2.5 hover:bg-slate-900 flex items-center justify-between border-b border-slate-900/50 last:border-0 transition-colors"
                       >
                         <div>
-                          <div className="text-xs font-semibold text-white">{s.fullName}</div>
+                          <div className="text-xs font-semibold text-white flex items-center gap-2">
+                            <span>{s.fullName}</span>
+                            {s.campusName && (
+                              <span className="text-[10px] font-normal text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                                {s.campusName}
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[10px] text-slate-400 font-mono">
                             {s.rollNo} • {s.department}
                           </div>

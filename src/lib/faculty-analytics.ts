@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 export interface FacultyAnalyticsFilter {
+  campusId?: string;
   department?: string;
   yearOfStudy?: number;
   batch?: string;
@@ -22,6 +23,7 @@ export interface QuietStudent {
   rollNo: string;
   department: string;
   yearOfStudy: number;
+  campusName?: string;
   lastActiveDate: string | null;
   daysInactive: number;
 }
@@ -30,6 +32,13 @@ export interface XpTrendDay {
   date: string; // YYYY-MM-DD
   totalXp: number;
   eventCount: number;
+}
+
+export interface FacultyCampusOption {
+  id: string;
+  name: string;
+  city: string;
+  displayName: string;
 }
 
 export interface FacultyAnalyticsData {
@@ -43,6 +52,9 @@ export interface FacultyAnalyticsData {
   topWeakTopics: TopicPerformance[];
   quietStudents: QuietStudent[];
   availableBatches: { department: string; yearOfStudy: number; label: string }[];
+  availableCampuses: FacultyCampusOption[];
+  callerCampusId?: string | null;
+  selectedCampusId?: string;
 }
 
 function getAdminClient(): SupabaseClient {
@@ -99,10 +111,29 @@ export async function getFacultyAnalytics(
   minTopicAnswers = minTopicAnswers ?? 20;
   quietDaysThreshold = quietDaysThreshold ?? 5;
 
+  // Fetch active campuses for the filter dropdown
+  const { data: campusesRaw } = await db
+    .from('campuses')
+    .select('id, name, city, is_other, sort_order')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+
+  const availableCampuses: FacultyCampusOption[] = (campusesRaw || []).map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    city: c.city,
+    displayName: c.is_other ? 'Other campuses' : (c.city ? `${c.name}, ${c.city}` : c.name),
+  }));
+
   // 2. Fetch Students and Cohorts
   let studentQuery = db
     .from('students')
-    .select('id, roll_no, department, year_of_study, created_at, profiles(full_name, is_anonymous)');
+    .select('id, roll_no, department, year_of_study, created_at, profiles!inner(full_name, is_anonymous, campus_id, campus_other_name, campuses(id, name, city, is_other))');
+
+  // Apply campus filter if specified
+  if (filter.campusId && filter.campusId !== 'all') {
+    studentQuery = studentQuery.eq('profiles.campus_id', filter.campusId);
+  }
 
   // Apply batch filter if specified
   if (filter.batch) {
@@ -124,14 +155,24 @@ export async function getFacultyAnalytics(
     throw new Error(studentErr.message);
   }
 
-  const students = (studentsRaw || []).map((s: any) => ({
-    id: s.id,
-    rollNo: s.roll_no,
-    department: s.department,
-    yearOfStudy: s.year_of_study,
-    fullName: s.profiles?.full_name || 'Student',
-    createdAt: s.created_at,
-  }));
+  const students = (studentsRaw || []).map((s: any) => {
+    const prof = s.profiles;
+    let campusName: string | undefined;
+    if (prof?.campuses) {
+      campusName = prof.campuses.is_other
+        ? (prof.campus_other_name || 'Other')
+        : (prof.campuses.city ? `${prof.campuses.name}, ${prof.campuses.city}` : prof.campuses.name);
+    }
+    return {
+      id: s.id,
+      rollNo: s.roll_no,
+      department: s.department,
+      yearOfStudy: s.year_of_study,
+      fullName: prof?.full_name || 'Student',
+      campusName,
+      createdAt: s.created_at,
+    };
+  });
 
   const studentIds = students.map((s) => s.id);
   const totalStudents = students.length;
@@ -166,6 +207,7 @@ export async function getFacultyAnalytics(
       topWeakTopics: [],
       quietStudents: [],
       availableBatches,
+      availableCampuses,
     };
   }
 
@@ -307,6 +349,7 @@ export async function getFacultyAnalytics(
         rollNo: student.rollNo,
         department: student.department,
         yearOfStudy: student.yearOfStudy,
+        campusName: student.campusName,
         lastActiveDate,
         daysInactive,
       });
@@ -327,5 +370,6 @@ export async function getFacultyAnalytics(
     topWeakTopics,
     quietStudents,
     availableBatches,
+    availableCampuses,
   };
 }
