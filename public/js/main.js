@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnBugMode = document.getElementById('btn-bug-mode');
   const startersContainer = document.getElementById('starters-list');
   const soundToggleBtn = document.getElementById('sound-toggle-btn');
+  const musicToggleBtn = document.getElementById('music-toggle-btn');
   const effectsToggleBtn = document.getElementById('effects-toggle-btn');
 
   // Pause Menu & HUD Pause DOM Elements
@@ -57,6 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const pauseMenuOverlay = document.getElementById('pause-menu-overlay');
   const btnPauseResume = document.getElementById('btn-pause-resume');
   const btnPauseMute = document.getElementById('btn-pause-mute');
+  const btnPauseMusic = document.getElementById('btn-pause-music');
   const btnPauseEffects = document.getElementById('btn-pause-effects');
   const btnPauseQuit = document.getElementById('btn-pause-quit');
 
@@ -142,6 +144,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       btnPauseMute.textContent = soundEnabled ? '🔊 MUTE SOUND' : '🔇 UNMUTE SOUND';
       btnPauseMute.setAttribute('aria-pressed', soundEnabled ? 'false' : 'true');
     }
+    if (window.MusicEngine && window.MusicEngine.updateMusicUI) {
+      window.MusicEngine.updateMusicUI();
+    }
   }
 
   function toggleSound() {
@@ -152,6 +157,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateSoundUI();
     if (soundEnabled) {
       playSound('click');
+    }
+  }
+
+  function toggleMusic() {
+    if (window.toggleBgm) {
+      window.toggleBgm();
+    } else if (window.MusicEngine && window.MusicEngine.toggleBgm) {
+      window.MusicEngine.toggleBgm();
     }
   }
 
@@ -539,6 +552,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (targetScreen === 'select') {
       renderStarters();
+    }
+
+    // Play appropriate retro BGM based on active screen
+    if (targetScreen === 'title' || targetScreen === 'select') {
+      if (window.playBgm) {
+        window.playBgm('title');
+      }
+    } else if (targetScreen === 'battle') {
+      if (window.playBgm) {
+        window.playBgm('battle');
+      }
     }
 
     // Swap active screen inside #game-panel
@@ -2722,6 +2746,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (outcome === 'victory') {
+      if (window.pauseBgm) {
+        window.pauseBgm();
+      }
       playSound('victory');
       if (isBugmon) {
         // Defeating a Bugmon gives double XP and sets gameState.bugmonsDefeated += 1
@@ -2809,6 +2836,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         resultOverlay.style.display = 'flex';
       }
     } else {
+      if (window.pauseBgm) {
+        window.pauseBgm();
+      }
       playSound('defeat');
       const reason = player.hp <= 0 ? `${player.name.toUpperCase()} fainted!` : 'Turn limit reached!';
       if (window.typeText) {
@@ -3085,6 +3115,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  if (btnPauseMusic) {
+    btnPauseMusic.addEventListener('click', () => {
+      toggleMusic();
+    });
+  }
+
   if (btnPauseEffects) {
     btnPauseEffects.addEventListener('click', () => {
       toggleEffects();
@@ -3172,7 +3208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. Navigation when pause menu is open
     if (isGamePaused) {
-      const pauseButtons = [btnPauseResume, btnPauseMute, btnPauseEffects, btnPauseQuit].filter(Boolean);
+      const pauseButtons = [btnPauseResume, btnPauseMute, btnPauseMusic, btnPauseEffects, btnPauseQuit].filter(Boolean);
       const activeIdx = pauseButtons.indexOf(document.activeElement);
       if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
         e.preventDefault();
@@ -3211,7 +3247,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const cols = (window.innerWidth && window.innerWidth <= 640) ? 1 : 3;
         moveSelection(cols);
       } else if (e.key === 'Enter' || e.key === ' ') {
-        if (document.activeElement && (document.activeElement.id === 'btn-back-to-title' || document.activeElement.id === 'sound-toggle-btn' || document.activeElement.id === 'effects-toggle-btn')) {
+        if (document.activeElement && (document.activeElement.id === 'btn-back-to-title' || document.activeElement.id === 'sound-toggle-btn' || document.activeElement.id === 'music-toggle-btn' || document.activeElement.id === 'effects-toggle-btn')) {
           return;
         }
         e.preventDefault();
@@ -3289,6 +3325,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (soundToggleBtn) {
     soundToggleBtn.addEventListener('click', () => {
       toggleSound();
+    });
+  }
+
+  if (musicToggleBtn) {
+    musicToggleBtn.addEventListener('click', () => {
+      toggleMusic();
     });
   }
 

@@ -2729,6 +2729,10 @@ async function triggerBugmonTransformation() {
     window.appendConsoleLine('> Background arena tinted dark red. Challenge matrix locked to Medium & Hard.', 'console-warn');
   }
 
+  if (window.playBgm) {
+    window.playBgm('bugmon');
+  }
+
   // 5. Add a menu after the transformation: "FIGHT" or "RUN"
   if (window.showBugmonDecisionModal) {
     window.showBugmonDecisionModal(variant);
