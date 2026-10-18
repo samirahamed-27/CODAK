@@ -4,7 +4,8 @@ import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { SignIn1 } from '@/components/ui/modern-stunning-sign-in';
-import { GraduationCap, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
+import { Preloader, PreloaderVariant } from '@/components/ui/Preloader';
+import { GraduationCap, ArrowRight, AlertCircle, CheckCircle, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 const DEMO_ACCOUNTS = [
@@ -68,6 +69,16 @@ function LoginPageContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // React Bits Pro Preloader State
+  const [isPreloading, setIsPreloading] = useState(false);
+  const [preloadRole, setPreloadRole] = useState<'student' | 'faculty' | 'admin'>('student');
+  const [preloaderVariant, setPreloaderVariant] = useState<PreloaderVariant>('stairs');
+
+  const handlePreloadComplete = () => {
+    router.push(`/${preloadRole}`);
+    router.refresh();
+  };
+
   const handleAuthSubmit = async (inputEmail: string, inputPassword?: string) => {
     setLoading(true);
     setErrorMessage(null);
@@ -97,11 +108,9 @@ function LoginPageContent() {
         // Fallback for demo accounts or offline/placeholder Supabase
         if (demo || isPlaceholderSupabase) {
           const targetRole = demo ? demo.role : 'student';
-          setSuccessMessage(`Demo access granted for ${targetEmail}! Redirecting...`);
-          setTimeout(() => {
-            router.push(`/${targetRole}`);
-            router.refresh();
-          }, 450);
+          setSuccessMessage(`Demo access verified for ${targetEmail}!`);
+          setPreloadRole(targetRole);
+          setIsPreloading(true);
           return;
         }
 
@@ -117,18 +126,17 @@ function LoginPageContent() {
           .eq('id', data.user.id)
           .single();
 
-        const role = profile?.role || 'student';
-        router.push(`/${role}`);
-        router.refresh();
+        const role = (profile?.role as 'student' | 'faculty' | 'admin') || 'student';
+        setSuccessMessage('Credentials verified!');
+        setPreloadRole(role);
+        setIsPreloading(true);
       }
     } catch (err: any) {
       if (demo || isPlaceholderSupabase) {
         const targetRole = demo ? demo.role : 'student';
-        setSuccessMessage(`Demo access granted for ${targetEmail}! Redirecting...`);
-        setTimeout(() => {
-          router.push(`/${targetRole}`);
-          router.refresh();
-        }, 450);
+        setSuccessMessage(`Demo access verified for ${targetEmail}!`);
+        setPreloadRole(targetRole);
+        setIsPreloading(true);
         return;
       }
       setErrorMessage(err.message || 'An unexpected error occurred.');
@@ -162,11 +170,9 @@ function LoginPageContent() {
       }
 
       if (data.session) {
-        setSuccessMessage('Account created successfully! Redirecting...');
-        setTimeout(() => {
-          router.push('/student');
-          router.refresh();
-        }, 1200);
+        setSuccessMessage('Account created successfully!');
+        setPreloadRole('student');
+        setIsPreloading(true);
       } else {
         setSuccessMessage('Account created! Please check your email to verify your account.');
         setLoading(false);
@@ -177,45 +183,77 @@ function LoginPageContent() {
     }
   };
 
-  if (mode === 'signin') {
-    return (
-      <div className="relative min-h-screen">
-        {/* Mode Toggle Bar */}
-        <div className="absolute top-6 right-6 z-20 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setMode('signup');
-              setErrorMessage(null);
-              setSuccessMessage(null);
-            }}
-            className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white text-xs font-medium transition-all"
-          >
-            Create Account
-          </button>
-        </div>
-
-        {/* Success toast if redirecting */}
-        {successMessage && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 p-3 px-4 rounded-xl bg-emerald-500 text-black font-semibold text-xs shadow-2xl flex items-center gap-2 animate-in fade-in">
-            <CheckCircle className="w-4 h-4" />
-            <span>{successMessage}</span>
-          </div>
-        )}
-
-        {/* Modern Stunning Sign-In Component */}
-        <SignIn1
-          onSignInSuccess={handleAuthSubmit}
-          isLoading={loading}
-          externalError={errorMessage}
-          demoAccounts={DEMO_ACCOUNTS}
-          onQuickDemoSelect={handleAuthSubmit}
-        />
-      </div>
-    );
-  }
-
   return (
+    <div className="relative min-h-screen">
+      {/* React Bits Pro Preloader */}
+      <Preloader
+        active={isPreloading}
+        variant={preloaderVariant}
+        text={`Welcome to CODAK • Entering ${preloadRole.toUpperCase()} Hub`}
+        subtext="Initializing XP ledger, course velocity & battle arena..."
+        duration={2000}
+        onComplete={handlePreloadComplete}
+      />
+
+      {/* 5-Styles Floating Selector */}
+      <div className="fixed top-6 left-6 z-30 hidden md:flex items-center gap-1 p-1 rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-md shadow-xl">
+        <span className="text-[10px] text-zinc-400 font-semibold px-2 uppercase tracking-wider flex items-center gap-1">
+          <Sparkles className="w-3 h-3 text-sky-400" />
+          Preloader Style:
+        </span>
+        {(['stairs', 'percentage', 'circle', 'slide', 'curtain'] as PreloaderVariant[]).map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => setPreloaderVariant(v)}
+            className={`text-[11px] font-semibold px-2.5 py-1 rounded-xl transition-all capitalize cursor-target ${
+              preloaderVariant === v
+                ? 'bg-sky-400 text-black shadow-md shadow-sky-500/20'
+                : 'text-zinc-400 hover:text-white hover:bg-white/5'
+            }`}
+            data-cursor-label={v}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+
+      {mode === 'signin' ? (
+        <div className="relative min-h-screen">
+          {/* Mode Toggle Bar */}
+          <div className="absolute top-6 right-6 z-20 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signup');
+                setErrorMessage(null);
+                setSuccessMessage(null);
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white text-xs font-medium transition-all cursor-target"
+              data-cursor-label="Register"
+            >
+              Create Account
+            </button>
+          </div>
+
+          {/* Success toast if redirecting */}
+          {successMessage && (
+            <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 p-3 px-4 rounded-xl bg-emerald-500 text-black font-semibold text-xs shadow-2xl flex items-center gap-2 animate-in fade-in">
+              <CheckCircle className="w-4 h-4" />
+              <span>{successMessage}</span>
+            </div>
+          )}
+
+          {/* Modern Stunning Sign-In Component */}
+          <SignIn1
+            onSignInSuccess={handleAuthSubmit}
+            isLoading={loading}
+            externalError={errorMessage}
+            demoAccounts={DEMO_ACCOUNTS}
+            onQuickDemoSelect={handleAuthSubmit}
+          />
+        </div>
+      ) : (
     <div className="min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 bg-[#07080B] relative">
       <div className="w-full max-w-md bg-gradient-to-r from-[#ffffff10] to-[#121212] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md">
         {/* Brand Header */}
@@ -335,6 +373,8 @@ function LoginPageContent() {
           </button>
         </form>
       </div>
+    </div>
+      )}
     </div>
   );
 }
