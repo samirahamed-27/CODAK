@@ -45,7 +45,7 @@ const playElements: ComponentItem[] = [
   {
     id: 3,
     url: {
-      src: 'https://images.unsplash.com/photo-1516116211227-bbc042971c08?auto=format&fit=crop&w=800&q=80',
+      src: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80',
     },
     title: 'Curated Practice Problem Directory',
     subtitle: 'PRACTICE DRILLS • 15 PROBLEMS',
@@ -78,7 +78,7 @@ export default function StudentPlayPage() {
             style={{ fontSize: '1.5rem', letterSpacing: '0.05em' }}
           />
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
-            Codemons retro cyber arena, algorithmic bug battles, starter monsters, weekly quests, and curated competitive practice arenas. Click any card to view detailed lore and launch the game.
+            Codemons retro cyber arena, algorithmic bug battles, starter monsters, weekly quests, and curated competitive practice arenas.
           </p>
         </div>
 
@@ -90,7 +90,7 @@ export default function StudentPlayPage() {
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <h2 className="text-xs font-mono font-bold tracking-wider text-slate-300 uppercase">
-                Interactive Play Arenas (Click to Expand)
+                Interactive Play Arenas
               </h2>
             </div>
             <span className="text-[11px] font-mono text-emerald-400/80">3 Experiences Available</span>
