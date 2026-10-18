@@ -422,8 +422,13 @@
               <button type="button" class="btn-section-toggle font-pixel" data-section="question-picker" title="Maximize / Restore Question Picker" aria-label="Maximize / Restore Question Picker">⤢</button>
             </div>
           </div>
-          <div class="section-body picker-body" id="picker-body">
-            <!-- 3 Challenge Cards: Easy, Medium, Hard -->
+          <div class="section-body picker-body tabbed-view" id="picker-body">
+            <!-- Question Difficulty Bar with Chip Previews (Reference: Image 2) -->
+            <div id="picker-difficulty-bar" class="picker-difficulty-bar font-pixel" role="tablist" aria-label="Question Difficulty Bar">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- 3 Challenge Cards: Easy, Medium, Hard (Active opened card matching Image 2) -->
             <div class="picker-cards-grid" id="picker-cards-container">
               <!-- Rendered via JS -->
             </div>
