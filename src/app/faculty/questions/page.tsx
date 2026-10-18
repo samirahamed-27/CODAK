@@ -242,14 +242,14 @@ export default function FacultyQuestionsPage() {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mb-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 border border-white/20 text-white mb-2">
                 <BookOpen className="w-3.5 h-3.5" />
                 Question Bank & Review Queue
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 CS101 Question Review & Curation
               </h1>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1">
+              <p className="text-xs sm:text-sm text-zinc-400 mt-1">
                 Review pending imported questions, author new concept questions, and audit explanations.
               </p>
             </div>
@@ -257,14 +257,14 @@ export default function FacultyQuestionsPage() {
             <div className="flex items-center gap-2.5">
               <button
                 onClick={() => setShowCsvModal(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white text-xs font-semibold transition-all shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-white text-xs font-semibold transition-all shadow-sm"
               >
-                <Upload className="w-4 h-4 text-purple-400" />
+                <Upload className="w-4 h-4 text-white" />
                 <span>Import CSV</span>
               </button>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold transition-all shadow-lg shadow-indigo-600/20"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-all shadow-lg shadow-white/10"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Question</span>
@@ -274,8 +274,8 @@ export default function FacultyQuestionsPage() {
         </div>
 
         {actionError && (
-          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-start gap-3">
-            <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+          <div className="p-4 rounded-2xl bg-white/10 border border-white/20 text-zinc-200 text-xs flex items-start gap-3">
+            <ShieldAlert className="w-5 h-5 text-white shrink-0 mt-0.5" />
             <div>
               <strong className="font-bold block text-sm mb-0.5">Notice</strong>
               <span>{actionError}</span>
@@ -284,14 +284,14 @@ export default function FacultyQuestionsPage() {
         )}
 
         {/* Filter Bar with Status Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-[#0c0c0e] border border-white/15">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
             <button
               onClick={() => setStatusFilter('pending')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 statusFilter === 'pending'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  ? 'bg-white text-black shadow-sm font-bold'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
@@ -301,8 +301,8 @@ export default function FacultyQuestionsPage() {
               onClick={() => setStatusFilter('approved')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 statusFilter === 'approved'
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  ? 'bg-white text-black shadow-sm font-bold'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
               }`}
             >
               <CheckCircle className="w-3.5 h-3.5" />
@@ -312,8 +312,8 @@ export default function FacultyQuestionsPage() {
               onClick={() => setStatusFilter('rejected')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 statusFilter === 'rejected'
-                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  ? 'bg-white text-black shadow-sm font-bold'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
               }`}
             >
               <XCircle className="w-3.5 h-3.5" />
@@ -323,8 +323,8 @@ export default function FacultyQuestionsPage() {
               onClick={() => setStatusFilter('all')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 statusFilter === 'all'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  ? 'bg-white text-black shadow-sm font-bold'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
               }`}
             >
               All ({questions.length})
@@ -373,16 +373,16 @@ export default function FacultyQuestionsPage() {
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/10 border border-indigo-500/20 text-indigo-300">
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/10 border border-white/20 text-white">
                       {q.topic}
                     </span>
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
                         q.status === 'approved'
-                          ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                          ? 'bg-white/10 border-white/20 text-white'
                           : q.status === 'pending'
-                          ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                          : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                          ? 'bg-zinc-800 border-white/10 text-zinc-300'
+                          : 'bg-zinc-900 border-white/10 text-zinc-400'
                       }`}
                     >
                       {q.status === 'approved' && <CheckCircle className="w-3 h-3" />}
@@ -392,7 +392,7 @@ export default function FacultyQuestionsPage() {
                     </span>
 
                     {q.approved_at && (
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[10px] text-zinc-400">
                         Approved: {new Date(q.approved_at).toLocaleDateString()}
                       </span>
                     )}
@@ -403,7 +403,7 @@ export default function FacultyQuestionsPage() {
                     {q.status !== 'approved' && (
                       <button
                         onClick={() => handleApprove(q.id)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-semibold transition-colors"
                       >
                         <Check className="w-3.5 h-3.5" />
                         Approve
@@ -412,7 +412,7 @@ export default function FacultyQuestionsPage() {
 
                     <button
                       onClick={() => openEditModal(q)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-white text-xs font-semibold transition-colors"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                       Edit
@@ -424,7 +424,7 @@ export default function FacultyQuestionsPage() {
                           setRejectingQuestion(q);
                           setRejectionReason('');
                         }}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 text-rose-300 text-xs font-medium transition-colors"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-zinc-300 hover:text-white text-xs font-medium transition-colors"
                       >
                         <X className="w-3.5 h-3.5" />
                         Reject
@@ -530,13 +530,13 @@ export default function FacultyQuestionsPage() {
                 <button
                   type="button"
                   onClick={() => setRejectingQuestion(null)}
-                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-300"
+                  className="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-xs text-zinc-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white"
+                  className="px-4 py-2 rounded-xl bg-white hover:bg-zinc-200 text-xs font-bold text-black"
                 >
                   Confirm Rejection
                 </button>
@@ -668,14 +668,14 @@ export default function FacultyQuestionsPage() {
                 <button
                   type="button"
                   onClick={() => setEditingQuestion(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-300"
+                  className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-xs text-zinc-300"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={editSubmitting}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-md disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-white hover:bg-zinc-200 text-xs font-bold text-black shadow-md disabled:opacity-50"
                 >
                   {editSubmitting ? 'Saving Changes...' : 'Save & Move to Pending'}
                 </button>
@@ -810,7 +810,7 @@ export default function FacultyQuestionsPage() {
               <button
                 type="submit"
                 disabled={manualSubmitting}
-                className="w-full mt-2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/25 disabled:opacity-50"
+                className="w-full mt-2 py-3 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-all shadow-md shadow-white/10 disabled:opacity-50"
               >
                 {manualSubmitting ? 'Validating & Publishing...' : 'Publish Approved Question'}
               </button>
@@ -821,12 +821,12 @@ export default function FacultyQuestionsPage() {
 
       {/* CSV Import Modal */}
       {showCsvModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-xl w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-xl w-full bg-[#0c0c0e] border border-white/15 rounded-3xl p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-white">Import Questions via CSV</h2>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-zinc-400 mt-0.5">
                   Imported questions are placed in the Review Queue as Pending.
                 </p>
               </div>
@@ -835,7 +835,7 @@ export default function FacultyQuestionsPage() {
                   setShowCsvModal(false);
                   setCsvResult(null);
                 }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -845,8 +845,8 @@ export default function FacultyQuestionsPage() {
               <div
                 className={`p-4 rounded-xl text-xs flex flex-col gap-2 ${
                   csvResult.success
-                    ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
-                    : 'bg-rose-500/10 border border-rose-500/20 text-rose-400'
+                    ? 'bg-white/10 border border-white/20 text-white'
+                    : 'bg-white/5 border border-white/15 text-zinc-300'
                 }`}
               >
                 <div className="font-semibold">
@@ -858,7 +858,7 @@ export default function FacultyQuestionsPage() {
             )}
 
             <div className="flex flex-col gap-3">
-              <label className="block text-xs font-medium text-slate-300">
+              <label className="block text-xs font-medium text-zinc-300">
                 Paste CSV Content with Header:
               </label>
               <textarea
@@ -866,20 +866,20 @@ export default function FacultyQuestionsPage() {
                 placeholder="topic,question_text,option_a,option_b,option_c,option_d,correct_option,explanation..."
                 value={csvText}
                 onChange={(e) => setCsvText(e.target.value)}
-                className="w-full p-3 font-mono text-[11px] rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-indigo-500"
+                className="w-full p-3 font-mono text-[11px] rounded-xl bg-black border border-white/15 text-white focus:outline-none focus:border-white"
               />
 
               <div className="flex items-center justify-between gap-3 pt-2">
                 <button
                   onClick={() => setShowCsvModal(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                  className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-semibold border border-white/10"
                 >
                   Close
                 </button>
                 <button
                   onClick={handleCsvUpload}
                   disabled={csvSubmitting || !csvText.trim()}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-purple-600/20 disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold shadow-md shadow-white/10 disabled:opacity-50"
                 >
                   {csvSubmitting ? 'Validating CSV...' : 'Validate & Import to Queue'}
                 </button>

@@ -8,7 +8,7 @@ const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffec
 
 export const StaggeredMenu = ({
   position = 'right',
-  colors = ['#10131E', '#1D2233', '#162846'],
+  colors = ['#18181b', '#121214', '#09090b'],
   items = [],
   socialItems = [],
   displaySocials = true,
@@ -17,9 +17,9 @@ export const StaggeredMenu = ({
   logoUrl = '',
   headerTitle = '',
   children,
-  menuButtonColor = '#E2E8F0',
-  openMenuButtonColor = '#7DD3FC',
-  accentColor = '#7DD3FC',
+  menuButtonColor = '#FFFFFF',
+  openMenuButtonColor = '#FFFFFF',
+  accentColor = '#FFFFFF',
   changeMenuColorOnOpen = true,
   isFixed = false,
   closeOnClickAway = true,
@@ -420,7 +420,7 @@ export const StaggeredMenu = ({
               <span className="font-pixel text-xl font-bold text-white tracking-wider">
                 {headerTitle}
               </span>
-              <div className="h-[2px] w-full bg-gradient-to-r from-sky-400 via-white to-transparent rounded-full mt-1.5 shadow-[0_0_8px_rgba(125,211,252,0.3)]" />
+              <div className="h-[2px] w-full bg-gradient-to-r from-zinc-400 via-white to-transparent rounded-full mt-1.5 shadow-[0_0_8px_rgba(255,255,255,0.4)]" />
             </div>
           )}
           <ul className="sm-panel-list" role="list" data-numbering={displayItemNumbering || undefined}>

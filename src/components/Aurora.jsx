@@ -218,7 +218,7 @@ const link = gl => {
 };
 
 const Aurora = ({
-  colorStops = ['#5227FF', '#7cff67', '#5227FF'],
+  colorStops = ['#ffffff', '#27272a', '#09090b'],
   amplitude = 1,
   blend = 0.5,
   speed = 1,

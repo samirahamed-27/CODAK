@@ -329,24 +329,24 @@ export default function StudentCompetePage() {
     switch (tierId) {
       case 'diamond':
         return {
-          bg: 'from-cyan-500/20 to-blue-600/20 border-cyan-500/40 text-cyan-300',
-          badge: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
+          bg: 'from-white/20 to-zinc-400/20 border-white/40 text-white',
+          badge: 'bg-white/20 text-white border-white/40',
         };
       case 'gold':
         return {
-          bg: 'from-amber-500/20 to-yellow-600/20 border-amber-500/40 text-amber-300',
-          badge: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+          bg: 'from-zinc-400/20 to-zinc-600/20 border-white/25 text-zinc-200',
+          badge: 'bg-white/10 text-white border-white/20',
         };
       case 'silver':
         return {
-          bg: 'from-slate-400/20 to-zinc-500/20 border-slate-400/40 text-slate-200',
-          badge: 'bg-slate-400/20 text-slate-200 border-slate-400/30',
+          bg: 'from-zinc-500/20 to-zinc-700/20 border-white/15 text-zinc-300',
+          badge: 'bg-white/10 text-zinc-300 border-white/15',
         };
       case 'bronze':
       default:
         return {
-          bg: 'from-orange-700/20 to-amber-900/20 border-amber-700/40 text-amber-400',
-          badge: 'bg-amber-700/20 text-amber-400 border-amber-700/30',
+          bg: 'from-zinc-700/20 to-zinc-900/20 border-white/10 text-zinc-400',
+          badge: 'bg-white/5 text-zinc-400 border-white/10',
         };
     }
   };
@@ -354,11 +354,11 @@ export default function StudentCompetePage() {
   const tierColors = leagueData ? getTierColor(leagueData.tierId) : getTierColor('bronze');
 
   return (
-    <div className="min-h-screen flex flex-col relative pb-24 overflow-x-hidden bg-[#07080B]">
+    <div className="min-h-screen flex flex-col relative pb-24 overflow-x-hidden bg-black text-zinc-100">
       {/* Background */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-[#07080b]/85">
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-black/85">
         <Aurora
-          colorStops={['#1e1b4b', '#0f172a', '#1e293b']}
+          colorStops={['#ffffff', '#27272a', '#09090b']}
           amplitude={1.0}
           blend={0.5}
           height={0.5}
@@ -376,14 +376,14 @@ export default function StudentCompetePage() {
 
         <main className="flex-1 max-w-lg w-full mx-auto px-4 py-6 flex flex-col gap-5">
           {/* Top navigation tabs */}
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-900/90 border border-slate-800 backdrop-blur-xl">
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#0c0c0e] border border-white/15 backdrop-blur-xl">
             <button
               onClick={() => setActiveTab('league')}
               className={clsx(
                 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5',
                 activeTab === 'league'
-                  ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-black font-bold shadow-md'
+                  : 'text-zinc-400 hover:text-white'
               )}
             >
               <Shield className="w-3.5 h-3.5" />
@@ -395,8 +395,8 @@ export default function StudentCompetePage() {
               className={clsx(
                 'flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1',
                 activeTab === 'leaderboard'
-                  ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-black font-bold shadow-md'
+                  : 'text-zinc-400 hover:text-white'
               )}
             >
               <Trophy className="w-3.5 h-3.5" />
@@ -408,8 +408,8 @@ export default function StudentCompetePage() {
               className={clsx(
                 'flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1',
                 activeTab === 'standings'
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-black font-bold shadow-md'
+                  : 'text-zinc-400 hover:text-white'
               )}
             >
               <Building2 className="w-3.5 h-3.5" />
@@ -421,8 +421,8 @@ export default function StudentCompetePage() {
               className={clsx(
                 'flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1',
                 activeTab === 'duels'
-                  ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-black font-bold shadow-md'
+                  : 'text-zinc-400 hover:text-white'
               )}
             >
               <Swords className="w-3.5 h-3.5" />
@@ -434,8 +434,8 @@ export default function StudentCompetePage() {
               className={clsx(
                 'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5',
                 activeTab === 'battles'
-                  ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-black font-bold shadow-md'
+                  : 'text-zinc-400 hover:text-white'
               )}
             >
               <Zap className="w-3.5 h-3.5" />
@@ -694,8 +694,8 @@ export default function StudentCompetePage() {
                       className={clsx(
                         'flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all',
                         lbTimeframe === 'weekly'
-                          ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md'
-                          : 'bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-white'
+                          ? 'bg-white text-black font-bold shadow-md'
+                          : 'bg-black/60 border border-white/10 text-zinc-400 hover:text-white'
                       )}
                     >
                       This Week (IST)
@@ -706,8 +706,8 @@ export default function StudentCompetePage() {
                       className={clsx(
                         'flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all',
                         lbTimeframe === 'all-time'
-                          ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md'
-                          : 'bg-slate-950/60 border border-slate-800 text-slate-400 hover:text-white'
+                          ? 'bg-white text-black font-bold shadow-md'
+                          : 'bg-black/60 border border-white/10 text-zinc-400 hover:text-white'
                       )}
                     >
                       All-Time Ledger
@@ -828,18 +828,18 @@ export default function StudentCompetePage() {
           {activeTab === 'standings' && (
             <div className="flex flex-col gap-4">
               {/* Header Info Card */}
-              <div className="p-5 rounded-3xl bg-gradient-to-br from-amber-950/40 via-orange-950/20 to-slate-900/60 border border-amber-500/30 shadow-xl backdrop-blur-xl space-y-3">
+              <div className="p-5 rounded-3xl bg-[#0c0c0e] border border-white/15 shadow-xl backdrop-blur-xl space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-2.5 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400">
+                    <div className="p-2.5 rounded-2xl bg-white/10 border border-white/20 text-white">
                       <Building2 className="w-5 h-5" />
                     </div>
                     <div>
                       <h2 className="text-sm font-bold text-white flex items-center gap-2">
                         Inter-Campus Weekly Standings
                       </h2>
-                      <p className="text-xs text-slate-400">
-                        Ranked by <strong className="text-amber-300">average weekly XP per active student</strong> so large campuses cannot win by size alone.
+                      <p className="text-xs text-zinc-400">
+                        Ranked by <strong className="text-white font-semibold">average weekly XP per active student</strong> so large campuses cannot win by size alone.
                       </p>
                     </div>
                   </div>
@@ -980,20 +980,20 @@ export default function StudentCompetePage() {
           {activeTab === 'duels' && (
             <div className="space-y-6">
               {/* Quick Match Action Card */}
-              <div className="p-5 rounded-3xl bg-gradient-to-br from-indigo-950/40 via-purple-950/30 to-slate-900/40 border border-indigo-500/30 shadow-xl space-y-4">
+              <div className="p-5 rounded-3xl bg-[#0c0c0e] border border-white/15 shadow-xl space-y-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-2.5 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-400">
+                    <div className="p-2.5 rounded-2xl bg-white/10 border border-white/20 text-white">
                       <Swords className="w-5 h-5" />
                     </div>
                     <div>
                       <h2 className="text-sm font-bold text-white flex items-center gap-2">
                         Async Quiz Duels
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-white">
                           +25 XP Win
                         </span>
                       </h2>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-zinc-400">
                         Identical 5 approved questions • 24h timer • Speed tie-breaker • No XP deducted on loss
                       </p>
                     </div>
@@ -1330,20 +1330,20 @@ export default function StudentCompetePage() {
           {activeTab === 'battles' && (
             <div className="space-y-6">
               {/* Battles Header Card */}
-              <div className="p-5 rounded-3xl bg-gradient-to-br from-purple-950/40 via-indigo-950/30 to-slate-900/40 border border-purple-500/30 shadow-xl space-y-3">
+              <div className="p-5 rounded-3xl bg-[#0c0c0e] border border-white/15 shadow-xl space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-2.5 rounded-2xl bg-purple-500/20 border border-purple-500/30 text-purple-400">
-                      <Zap className="w-5 h-5 text-amber-300" />
+                    <div className="p-2.5 rounded-2xl bg-white/10 border border-white/20 text-white">
+                      <Zap className="w-5 h-5 text-white" />
                     </div>
                     <div>
                       <h2 className="text-sm font-bold text-white flex items-center gap-2">
                         Live Faculty Battles
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-300">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-white">
                           Realtime Team Arena
                         </span>
                       </h2>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-zinc-400">
                         Balanced snake teams • Average points per member fairness • Live broadcast scoreboard
                       </p>
                     </div>

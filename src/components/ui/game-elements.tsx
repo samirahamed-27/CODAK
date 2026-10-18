@@ -16,24 +16,24 @@ export interface BadgeTileProps {
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   MILESTONE: {
-    bg: 'bg-amber-500/10',
-    text: 'text-amber-400',
-    border: 'border-amber-500/30',
+    bg: 'bg-white/10',
+    text: 'text-white',
+    border: 'border-white/20',
   },
   QUEST: {
-    bg: 'bg-indigo-500/10',
-    text: 'text-indigo-400',
-    border: 'border-indigo-500/30',
+    bg: 'bg-white/10',
+    text: 'text-white',
+    border: 'border-white/20',
   },
   IMPROVEMENT: {
-    bg: 'bg-emerald-500/10',
-    text: 'text-emerald-400',
-    border: 'border-emerald-500/30',
+    bg: 'bg-white/10',
+    text: 'text-white',
+    border: 'border-white/20',
   },
   RANK: {
-    bg: 'bg-purple-500/10',
-    text: 'text-purple-400',
-    border: 'border-purple-500/30',
+    bg: 'bg-white/10',
+    text: 'text-white',
+    border: 'border-white/20',
   },
 };
 
@@ -52,8 +52,8 @@ export const BadgeTile: React.FC<BadgeTileProps> = ({
       className={clsx(
         'relative p-4 rounded-2xl border transition-all duration-300 flex flex-col justify-between',
         isEarned
-          ? 'bg-slate-900/80 border-slate-700/80 shadow-lg hover:border-indigo-500/50 hover:shadow-indigo-500/10'
-          : 'bg-slate-950/60 border-slate-800/50 opacity-70 hover:opacity-90'
+          ? 'bg-[#0c0c0e] border-white/15 shadow-lg hover:border-white/30'
+          : 'bg-black/60 border-white/10 opacity-70 hover:opacity-90'
       )}
     >
       <div className="flex items-start justify-between gap-3 mb-2">
@@ -63,13 +63,13 @@ export const BadgeTile: React.FC<BadgeTileProps> = ({
               'w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-transform',
               isEarned
                 ? `${colors.bg} ${colors.text} border ${colors.border} shadow-inner`
-                : 'bg-slate-900 border border-slate-800 text-slate-600'
+                : 'bg-zinc-900 border border-white/10 text-zinc-500'
             )}
           >
-            {isEarned ? <Award className="w-5 h-5" /> : <Lock className="w-4 h-4 text-slate-500" />}
+            {isEarned ? <Award className="w-5 h-5 text-white" /> : <Lock className="w-4 h-4 text-zinc-500" />}
           </div>
           <div>
-            <h4 className={clsx('text-xs font-bold leading-tight', isEarned ? 'text-white' : 'text-slate-400')}>
+            <h4 className={clsx('text-xs font-bold leading-tight', isEarned ? 'text-white' : 'text-zinc-400')}>
               {name}
             </h4>
             <span
@@ -86,21 +86,21 @@ export const BadgeTile: React.FC<BadgeTileProps> = ({
         </div>
 
         {isEarned && (
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+          <CheckCircle2 className="w-4 h-4 text-white shrink-0 mt-0.5" />
         )}
       </div>
 
-      <p className="text-[11px] text-slate-400 leading-relaxed mb-2">
+      <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">
         {description}
       </p>
 
-      <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between text-[10px]">
+      <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10px]">
         {isEarned ? (
-          <span className="text-emerald-400 font-medium">
+          <span className="text-white font-medium">
             Unlocked {earnedAt ? new Date(earnedAt).toLocaleDateString() : 'Earned'}
           </span>
         ) : (
-          <span className="text-slate-500 italic">
+          <span className="text-zinc-500 italic">
             Unlock: {howToEarn || description}
           </span>
         )}
@@ -123,9 +123,9 @@ export const XpChip: React.FC<XpChipProps> = ({
   variant = 'indigo',
 }) => {
   const variantStyles = {
-    indigo: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30',
-    emerald: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
-    amber: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
+    indigo: 'bg-white/10 text-white border-white/20',
+    emerald: 'bg-white/15 text-white border-white/25',
+    amber: 'bg-white/10 text-zinc-300 border-white/20',
   }[variant];
 
   const sizeStyles = {
@@ -159,8 +159,8 @@ export const GameCard: React.FC<GameCardProps> = ({ children, className, glow = 
   return (
     <div
       className={clsx(
-        'p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 shadow-xl backdrop-blur-xl transition-all duration-300',
-        glow && 'hover:border-indigo-500/40 hover:shadow-indigo-500/10',
+        'p-6 rounded-3xl bg-[#0c0c0e] border border-white/15 shadow-xl backdrop-blur-xl transition-all duration-300',
+        glow && 'hover:border-white/30 hover:shadow-white/5',
         className
       )}
     >

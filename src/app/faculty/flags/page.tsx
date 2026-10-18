@@ -152,30 +152,30 @@ export default function FacultyFlagsPage() {
   const collusionCount = flags.filter((f) => f.kind === 'answer_sharing' || f.kind === 'win_trading').length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 pb-20 text-slate-100">
+    <div className="min-h-screen flex flex-col bg-black pb-20 text-zinc-100">
       <Navbar role="faculty" userName="Faculty Staff" />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 flex flex-col gap-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800 pb-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Link
                 href="/faculty"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Faculty Dashboard
               </Link>
             </div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 border border-amber-500/20 text-amber-400 mb-2">
-              <ShieldAlert className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-zinc-900 border border-zinc-800 text-zinc-300 mb-2">
+              <ShieldAlert className="w-3.5 h-3.5 text-white" />
               Academic Integrity System (Phase 5)
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
               Anti-Gaming & Integrity Flags
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            <p className="text-xs sm:text-sm text-zinc-400 mt-1">
               Autonomous statistical detection flags for faculty review. XP is never auto-voided. Faculty review with written reason is required.
             </p>
           </div>
@@ -184,7 +184,7 @@ export default function FacultyFlagsPage() {
             <button
               onClick={() => fetchFlags()}
               disabled={loading}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-200 hover:text-white transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold text-zinc-200 hover:text-white transition-all disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
               Refresh
@@ -194,52 +194,52 @@ export default function FacultyFlagsPage() {
 
         {/* Metric Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col gap-1">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+          <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 flex flex-col gap-1">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
               Open Flags
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-amber-400">{openCount}</span>
-              <span className="text-xs text-slate-500">pending review</span>
+              <span className="text-2xl font-black text-white">{openCount}</span>
+              <span className="text-xs text-zinc-500">pending review</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col gap-1">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+          <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 flex flex-col gap-1">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
               High / Critical
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-rose-400">{highSevCount}</span>
-              <span className="text-xs text-slate-500">require attention</span>
+              <span className="text-2xl font-black text-white">{highSevCount}</span>
+              <span className="text-xs text-zinc-500">require attention</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col gap-1">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+          <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 flex flex-col gap-1">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
               XP Spikes
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-purple-400">{spikeCount}</span>
-              <span className="text-xs text-slate-500">&gt; 3x baseline</span>
+              <span className="text-2xl font-black text-white">{spikeCount}</span>
+              <span className="text-xs text-zinc-500">&gt; 3x baseline</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col gap-1">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+          <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 flex flex-col gap-1">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
               Collusion Flags
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-indigo-400">{collusionCount}</span>
-              <span className="text-xs text-slate-500">sharing & win-trading</span>
+              <span className="text-2xl font-black text-white">{collusionCount}</span>
+              <span className="text-xs text-zinc-500">sharing & win-trading</span>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
+        <div className="p-4 rounded-xl bg-zinc-900/40 border border-zinc-800 flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
-              <Filter className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-zinc-400">
+              <Filter className="w-3.5 h-3.5 text-zinc-300" />
               <span>Filters:</span>
             </div>
 
@@ -247,7 +247,7 @@ export default function FacultyFlagsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 focus:outline-none focus:border-white"
             >
               <option value="all">Status: All</option>
               <option value="open">Open (Unreviewed)</option>
@@ -260,7 +260,7 @@ export default function FacultyFlagsPage() {
             <select
               value={kindFilter}
               onChange={(e) => setKindFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 focus:outline-none focus:border-white"
             >
               <option value="all">Detection Type: All</option>
               <option value="spike">XP Spikes</option>
@@ -273,7 +273,7 @@ export default function FacultyFlagsPage() {
             <select
               value={severityFilter}
               onChange={(e) => setSeverityFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 focus:outline-none focus:border-white"
             >
               <option value="all">Severity: All</option>
               <option value="critical">Critical</option>
@@ -283,31 +283,31 @@ export default function FacultyFlagsPage() {
             </select>
           </div>
 
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-zinc-400">
             Showing <strong className="text-white">{filteredFlags.length}</strong> flags
           </div>
         </div>
 
         {/* Flags List / Table */}
         {error && (
-          <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300 text-xs flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+          <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-white" />
             <span>{error}</span>
           </div>
         )}
 
         {loading ? (
           <div className="p-12 text-center flex flex-col items-center justify-center gap-3">
-            <RefreshCw className="w-6 h-6 text-indigo-400 animate-spin" />
-            <p className="text-xs text-slate-400">Loading anti-gaming flags...</p>
+            <RefreshCw className="w-6 h-6 text-white animate-spin" />
+            <p className="text-xs text-zinc-400">Loading anti-gaming flags...</p>
           </div>
         ) : filteredFlags.length === 0 ? (
-          <div className="p-12 rounded-2xl bg-slate-900/20 border border-slate-800/60 text-center flex flex-col items-center justify-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+          <div className="p-12 rounded-2xl bg-zinc-900/20 border border-zinc-800 text-center flex flex-col items-center justify-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-white">
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <h3 className="text-sm font-bold text-white">No Matching Flags Found</h3>
-            <p className="text-xs text-slate-400 max-w-sm">
+            <p className="text-xs text-zinc-400 max-w-sm">
               All academic telemetry is clean or no detections match the selected filter criteria.
             </p>
           </div>
@@ -319,15 +319,15 @@ export default function FacultyFlagsPage() {
               const getKindIcon = () => {
                 switch (flag.kind) {
                   case 'spike':
-                    return <Zap className="w-3.5 h-3.5 text-purple-400" />;
+                    return <Zap className="w-3.5 h-3.5 text-white" />;
                   case 'answer_sharing':
-                    return <Users className="w-3.5 h-3.5 text-indigo-400" />;
+                    return <Users className="w-3.5 h-3.5 text-zinc-300" />;
                   case 'win_trading':
-                    return <Swords className="w-3.5 h-3.5 text-amber-400" />;
+                    return <Swords className="w-3.5 h-3.5 text-zinc-300" />;
                   case 'rate_limit':
-                    return <Timer className="w-3.5 h-3.5 text-rose-400" />;
+                    return <Timer className="w-3.5 h-3.5 text-white" />;
                   default:
-                    return <AlertTriangle className="w-3.5 h-3.5 text-slate-400" />;
+                    return <AlertTriangle className="w-3.5 h-3.5 text-zinc-400" />;
                 }
               };
 
@@ -335,25 +335,25 @@ export default function FacultyFlagsPage() {
                 switch (flag.severity) {
                   case 'critical':
                     return (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-white text-black border border-white">
                         Critical
                       </span>
                     );
                   case 'high':
                     return (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-500/20 text-orange-300 border border-orange-500/40">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-zinc-200 text-black border border-zinc-300">
                         High
                       </span>
                     );
                   case 'medium':
                     return (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-zinc-800 text-zinc-200 border border-zinc-700">
                         Medium
                       </span>
                     );
                   default:
                     return (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-500/20 text-slate-300 border border-slate-500/40">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-zinc-900 text-zinc-400 border border-zinc-800">
                         Low
                       </span>
                     );
@@ -364,25 +364,25 @@ export default function FacultyFlagsPage() {
                 switch (flag.status) {
                   case 'open':
                     return (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-zinc-800 text-white border border-zinc-700">
                         Open
                       </span>
                     );
                   case 'reviewed':
                     return (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/30">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-zinc-900 text-zinc-300 border border-zinc-700">
                         Reviewed
                       </span>
                     );
                   case 'confirmed':
                     return (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/30">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-zinc-800 text-zinc-200 border border-zinc-600">
                         Confirmed (Voided)
                       </span>
                     );
                   case 'dismissed':
                     return (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-500/10 text-slate-400 border border-slate-500/30">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-zinc-950 text-zinc-500 border border-zinc-800">
                         Dismissed
                       </span>
                     );
@@ -392,12 +392,12 @@ export default function FacultyFlagsPage() {
               return (
                 <div
                   key={flag.id}
-                  className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 transition-all flex flex-col gap-3"
+                  className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 hover:border-zinc-700 transition-all flex flex-col gap-3"
                 >
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                     {/* Left: Badges, Kind, Student */}
                     <div className="flex flex-wrap items-center gap-3">
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs font-semibold text-slate-200">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black border border-zinc-800 text-xs font-semibold text-zinc-200">
                         {getKindIcon()}
                         <span className="capitalize">{flag.kind.replace('_', ' ')}</span>
                       </div>
@@ -407,24 +407,24 @@ export default function FacultyFlagsPage() {
                       <div className="flex items-center gap-2 text-xs">
                         <span className="font-bold text-white">{flag.studentName}</span>
                         {flag.studentCampus && (
-                          <span className="text-[10px] font-normal text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                          <span className="text-[10px] font-normal text-zinc-300 bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">
                             {flag.studentCampus}
                           </span>
                         )}
-                        <span className="text-[10px] font-mono text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
+                        <span className="text-[10px] font-mono text-zinc-400 bg-black px-1.5 py-0.5 rounded border border-zinc-800">
                           {flag.studentRoll}
                         </span>
 
                         {flag.secondStudentId && (
                           <>
-                            <span className="text-slate-500 font-semibold text-[10px]">COLLUDING WITH</span>
+                            <span className="text-zinc-500 font-semibold text-[10px]">COLLUDING WITH</span>
                             <span className="font-bold text-white">{flag.secondStudentName || 'Student B'}</span>
                             {flag.secondStudentCampus && (
-                              <span className="text-[10px] font-normal text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                              <span className="text-[10px] font-normal text-zinc-300 bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">
                                 {flag.secondStudentCampus}
                               </span>
                             )}
-                            <span className="text-[10px] font-mono text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
+                            <span className="text-[10px] font-mono text-zinc-400 bg-black px-1.5 py-0.5 rounded border border-zinc-800">
                               {flag.secondStudentRoll || 'N/A'}
                             </span>
                           </>
@@ -436,7 +436,7 @@ export default function FacultyFlagsPage() {
                     <div className="flex items-center gap-2 self-end md:self-auto">
                       <button
                         onClick={() => toggleExpand(flag.id)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold text-zinc-300 transition-colors"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>Evidence</span>
@@ -451,7 +451,7 @@ export default function FacultyFlagsPage() {
                               setReviewStatus('reviewed');
                               setReviewNote('');
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 text-xs font-semibold transition-all"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-all"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>Review</span>
@@ -463,9 +463,9 @@ export default function FacultyFlagsPage() {
                               setReviewStatus('dismissed');
                               setReviewNote('False positive / legitimate collaboration');
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold transition-all"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs font-semibold transition-all"
                           >
-                            <XCircle className="w-3.5 h-3.5 text-slate-400" />
+                            <XCircle className="w-3.5 h-3.5 text-zinc-400" />
                             <span>Dismiss</span>
                           </button>
 
@@ -475,7 +475,7 @@ export default function FacultyFlagsPage() {
                               setVoidReason('');
                               setVoidMessage(null);
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/20 transition-all"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-600 text-xs font-bold transition-all"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                             <span>Void XP</span>

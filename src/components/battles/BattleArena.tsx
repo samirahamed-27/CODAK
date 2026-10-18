@@ -152,8 +152,8 @@ export default function BattleArena({ battleId, onExit }: BattleArenaProps) {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-slate-400">
-        <RotateCcw className="w-8 h-8 animate-spin mb-3 text-purple-400" />
+      <div className="flex flex-col items-center justify-center p-12 text-zinc-400">
+        <RotateCcw className="w-8 h-8 animate-spin mb-3 text-white" />
         <p className="text-sm">Connecting to battle arena...</p>
       </div>
     );
@@ -161,12 +161,12 @@ export default function BattleArena({ battleId, onExit }: BattleArenaProps) {
 
   if (!battle) {
     return (
-      <div className="p-8 text-center text-slate-300">
+      <div className="p-8 text-center text-zinc-300">
         <p>Battle not found or has been archived.</p>
         {onExit && (
           <button
             onClick={onExit}
-            className="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold"
+            className="mt-4 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-xs font-bold text-white"
           >
             Back to Compete
           </button>
@@ -179,32 +179,32 @@ export default function BattleArena({ battleId, onExit }: BattleArenaProps) {
   if (battleFinished || battle.status === 'finished') {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="p-6 rounded-3xl bg-gradient-to-b from-purple-900/40 via-slate-900/80 to-slate-950 border border-purple-500/30 text-center relative overflow-hidden">
-          <div className="w-16 h-16 rounded-2xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center mx-auto mb-4">
-            <Trophy className="w-8 h-8 text-amber-300" />
+        <div className="p-6 rounded-3xl bg-[#0c0c0e] border border-white/15 text-center relative overflow-hidden">
+          <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-4">
+            <Trophy className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Battle Completed!
           </h2>
-          <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-md mx-auto">
+          <p className="text-xs sm:text-sm text-zinc-300 mt-1 max-w-md mx-auto">
             All team scores and averages have been calculated. XP rewards have been deposited into the ledger!
           </p>
 
           <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto mt-6">
-            <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[11px] text-slate-400 block">Participation XP</span>
-              <span className="text-lg font-black text-emerald-400">+15 XP</span>
+            <div className="p-3 rounded-2xl bg-black/60 border border-white/10">
+              <span className="text-[11px] text-zinc-400 block">Participation XP</span>
+              <span className="text-lg font-black text-white">+15 XP</span>
             </div>
-            <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800">
-              <span className="text-[11px] text-slate-400 block">Winning Team Bonus</span>
-              <span className="text-lg font-black text-amber-400">+35 XP</span>
+            <div className="p-3 rounded-2xl bg-black/60 border border-white/10">
+              <span className="text-[11px] text-zinc-400 block">Winning Team Bonus</span>
+              <span className="text-lg font-black text-white">+35 XP</span>
             </div>
           </div>
 
           {onExit && (
             <button
               onClick={onExit}
-              className="mt-6 px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-lg shadow-purple-600/30"
+              className="mt-6 px-6 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black font-bold text-xs transition-all shadow-lg shadow-white/10"
             >
               Return to Competitions
             </button>
@@ -221,38 +221,38 @@ export default function BattleArena({ battleId, onExit }: BattleArenaProps) {
   if (battle.status === 'scheduled' || battle.status === 'draft') {
     return (
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold mb-3">
+        <div className="p-6 rounded-3xl bg-[#0c0c0e] border border-white/15 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white text-xs font-bold mb-3">
             <Clock className="w-3.5 h-3.5" />
             <span>Scheduled Battle</span>
           </div>
 
           <h2 className="text-2xl font-black text-white">{battle.title}</h2>
-          <p className="text-xs text-slate-400 mt-1">{battle.topic}</p>
+          <p className="text-xs text-zinc-400 mt-1">{battle.topic}</p>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-md mx-auto mt-6 text-left">
-            <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800">
-              <span className="text-[10px] text-slate-400 block uppercase font-bold">Teams</span>
+            <div className="p-3 rounded-xl bg-black/60 border border-white/10">
+              <span className="text-[10px] text-zinc-400 block uppercase font-bold">Teams</span>
               <span className="text-sm font-bold text-white">{teams.length} Teams</span>
             </div>
-            <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800">
-              <span className="text-[10px] text-slate-400 block uppercase font-bold">Questions</span>
+            <div className="p-3 rounded-xl bg-black/60 border border-white/10">
+              <span className="text-[10px] text-zinc-400 block uppercase font-bold">Questions</span>
               <span className="text-sm font-bold text-white">{questions.length} Questions</span>
             </div>
-            <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 col-span-2 sm:col-span-1">
-              <span className="text-[10px] text-slate-400 block uppercase font-bold">Scoring</span>
+            <div className="p-3 rounded-xl bg-black/60 border border-white/10 col-span-2 sm:col-span-1">
+              <span className="text-[10px] text-zinc-400 block uppercase font-bold">Scoring</span>
               <span className="text-sm font-bold text-white">Avg pts / member</span>
             </div>
           </div>
 
-          <p className="text-xs text-slate-400 mt-6">
+          <p className="text-xs text-zinc-400 mt-6">
             Waiting for faculty to trigger live start. Page will update automatically.
           </p>
 
           {onExit && (
             <button
               onClick={onExit}
-              className="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-200"
+              className="mt-4 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-xs font-bold text-white"
             >
               Back to Compete
             </button>
@@ -270,9 +270,9 @@ export default function BattleArena({ battleId, onExit }: BattleArenaProps) {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Top Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900/90 border border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#0c0c0e] border border-white/15">
         <div>
-          <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 block">
+          <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 block">
             Live Battle • {battle.topic}
           </span>
           <h1 className="text-lg font-black text-white">{battle.title}</h1>
@@ -318,10 +318,10 @@ export default function BattleArena({ battleId, onExit }: BattleArenaProps) {
                   className={clsx(
                     'w-8 h-8 rounded-lg font-mono text-xs font-bold flex items-center justify-center transition-all shrink-0',
                     isCurrent
-                      ? 'bg-purple-600 text-white ring-2 ring-purple-400/50'
+                      ? 'bg-white text-black ring-2 ring-white/50'
                       : answered
-                      ? 'bg-emerald-950/60 border border-emerald-800 text-emerald-400'
-                      : 'bg-slate-900 border border-slate-800 text-slate-400 hover:border-slate-700'
+                      ? 'bg-white/10 border border-white/20 text-white'
+                      : 'bg-black/60 border border-white/10 text-zinc-400 hover:border-white/20'
                   )}
                 >
                   {idx + 1}
@@ -331,8 +331,8 @@ export default function BattleArena({ battleId, onExit }: BattleArenaProps) {
           </div>
 
           {currentQ && (
-            <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl relative overflow-hidden">
-              <div className="text-[11px] font-bold text-slate-400 mb-2">
+            <div className="p-6 rounded-3xl bg-[#0c0c0e] border border-white/15 shadow-xl relative overflow-hidden">
+              <div className="text-[11px] font-bold text-zinc-400 mb-2">
                 Question {currentQIndex + 1} of {questions.length}
               </div>
 
@@ -354,18 +354,18 @@ export default function BattleArena({ battleId, onExit }: BattleArenaProps) {
                       className={clsx(
                         'w-full text-left p-4 rounded-2xl border transition-all flex items-start gap-3',
                         isAnswered
-                          ? 'opacity-80 cursor-not-allowed bg-slate-950/60 border-slate-800 text-slate-300'
+                          ? 'opacity-80 cursor-not-allowed bg-black/60 border-white/10 text-zinc-400'
                           : isSelected
-                          ? 'bg-purple-950/50 border-purple-500 text-white ring-1 ring-purple-500'
-                          : 'bg-slate-950/40 border-slate-800 hover:border-slate-700 text-slate-200'
+                          ? 'bg-white/15 border-white text-white ring-1 ring-white/40'
+                          : 'bg-black/40 border-white/10 hover:border-white/30 text-zinc-200'
                       )}
                     >
                       <span
                         className={clsx(
                           'w-6 h-6 rounded-lg uppercase flex items-center justify-center font-bold text-xs shrink-0',
                           isSelected
-                            ? 'bg-purple-500 text-white'
-                            : 'bg-slate-800 text-slate-400'
+                            ? 'bg-white text-black'
+                            : 'bg-zinc-800 text-zinc-400'
                         )}
                       >
                         {opt}
@@ -414,8 +414,8 @@ export default function BattleArena({ battleId, onExit }: BattleArenaProps) {
                     className={clsx(
                       'px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all',
                       !selectedChoice || submitting
-                        ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                        : 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/30'
+                        ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                        : 'bg-white hover:bg-zinc-200 text-black shadow-lg shadow-white/10'
                     )}
                   >
                     {submitting ? 'Evaluating...' : 'Submit Answer'}

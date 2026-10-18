@@ -49,7 +49,7 @@ export default function AdminRulesPage() {
     }
 
     // 2. Fetch history
-    const { data: historyData, error: histError } = await supabase
+    const { data: historyData } = await supabase
       .from('xp_rules_history')
       .select('*')
       .order('changed_at', { ascending: false })
@@ -96,14 +96,14 @@ export default function AdminRulesPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 pb-16">
+    <div className="min-h-screen flex flex-col bg-black pb-16 text-zinc-100">
       <Navbar role="admin" userName="Vikram Singh (Admin)" />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8">
         <div className="flex items-center gap-2 mb-6">
           <Link
             href="/admin"
-            className="text-xs text-slate-400 hover:text-white flex items-center gap-1 py-1 px-2.5 rounded-lg bg-slate-900 border border-slate-800 transition-colors"
+            className="text-xs text-zinc-400 hover:text-white flex items-center gap-1 py-1 px-2.5 rounded-lg bg-zinc-900 border border-white/15 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back to Admin Hub
@@ -111,43 +111,43 @@ export default function AdminRulesPage() {
         </div>
 
         <div className="mb-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-400 mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 border border-white/20 text-white mb-2">
             <Sliders className="w-3.5 h-3.5" />
             Rule Engine Management
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             XP Rules & Point Values
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
             Edit reward rates and daily caps. Changes immediately take effect without code updates.
           </p>
         </div>
 
         {errorMessage && (
-          <div className="mb-4 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
+          <div className="mb-4 p-4 rounded-2xl bg-white/10 border border-white/20 text-zinc-200 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-white" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="mb-4 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center gap-2">
-            <Check className="w-4 h-4 shrink-0 text-emerald-400" />
+          <div className="mb-4 p-4 rounded-2xl bg-white/10 border border-white/20 text-zinc-200 text-xs flex items-center gap-2">
+            <Check className="w-4 h-4 shrink-0 text-white" />
             <span>{successMessage}</span>
           </div>
         )}
 
         {/* Edit Rule Modal / Card */}
         {editingRule && (
-          <div className="mb-8 p-6 rounded-3xl bg-slate-900 border border-indigo-500/40 shadow-2xl">
+          <div className="mb-8 p-6 rounded-3xl bg-[#0c0c0e] border border-white/20 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Edit2 className="w-4 h-4 text-indigo-400" />
-                Editing Rule: <span className="font-mono text-indigo-300">{editingRule.action_type}</span>
+                <Edit2 className="w-4 h-4 text-white" />
+                Editing Rule: <span className="font-mono text-zinc-300">{editingRule.action_type}</span>
               </h2>
               <button
                 onClick={() => setEditingRule(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -155,41 +155,41 @@ export default function AdminRulesPage() {
 
             <form onSubmit={handleSaveRule} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
-                <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Display Name</label>
+                <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">Display Name</label>
                 <input
                   type="text"
                   required
                   value={editingRule.display_name}
                   onChange={(e) => setEditingRule({ ...editingRule, display_name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/15 text-white text-xs focus:outline-none focus:border-white"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Base XP</label>
+                <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">Base XP</label>
                 <input
                   type="number"
                   required
                   min="0"
                   value={editingRule.base_xp}
                   onChange={(e) => setEditingRule({ ...editingRule, base_xp: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/15 text-white text-xs focus:outline-none focus:border-white"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Extra XP / Unit</label>
+                <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">Extra XP / Unit</label>
                 <input
                   type="number"
                   min="0"
                   value={editingRule.extra_xp}
                   onChange={(e) => setEditingRule({ ...editingRule, extra_xp: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/15 text-white text-xs focus:outline-none focus:border-white"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Daily Limit</label>
+                <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">Daily Limit</label>
                 <input
                   type="number"
                   min="1"
@@ -201,21 +201,21 @@ export default function AdminRulesPage() {
                       daily_limit: e.target.value ? parseInt(e.target.value) : null,
                     })
                   }
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 rounded-xl bg-black border border-white/15 text-white text-xs focus:outline-none focus:border-white"
                 />
               </div>
 
               <div className="flex flex-col justify-end">
-                <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Active Status</label>
+                <label className="block text-[11px] font-bold text-zinc-400 uppercase mb-1">Active Status</label>
                 <div className="flex items-center gap-2 h-9">
                   <input
                     type="checkbox"
                     id="ruleActive"
                     checked={editingRule.active}
                     onChange={(e) => setEditingRule({ ...editingRule, active: e.target.checked })}
-                    className="w-4 h-4 rounded text-indigo-600 focus:ring-0 bg-slate-950 border-slate-800"
+                    className="w-4 h-4 rounded text-white focus:ring-0 bg-black border-white/20"
                   />
-                  <label htmlFor="ruleActive" className="text-xs text-slate-300">
+                  <label htmlFor="ruleActive" className="text-xs text-zinc-300">
                     {editingRule.active ? 'Active' : 'Disabled'}
                   </label>
                 </div>
@@ -225,14 +225,14 @@ export default function AdminRulesPage() {
                 <button
                   type="button"
                   onClick={() => setEditingRule(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold"
+                  className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-semibold border border-white/10"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/20"
+                  className="px-5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold shadow-lg shadow-white/10 transition-all"
                 >
                   {saving ? 'Saving...' : 'Save Rule Changes'}
                 </button>
@@ -242,15 +242,15 @@ export default function AdminRulesPage() {
         )}
 
         {/* Live Rules Table */}
-        <section aria-label="XP Rules Table" className="mb-10 p-6 rounded-3xl bg-slate-900/80 border border-slate-800">
+        <section aria-label="XP Rules Table" className="mb-10 p-6 rounded-3xl bg-[#0c0c0e] border border-white/15">
           <h2 className="text-sm font-bold text-white mb-4">Configured Rules (`xp_rules` Database State)</h2>
 
           {loading ? (
-            <div className="text-xs text-slate-500 py-4">Loading rules from database...</div>
+            <div className="text-xs text-zinc-500 py-4">Loading rules from database...</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="text-[11px] uppercase bg-slate-950/80 text-slate-400 border-b border-slate-800">
+              <table className="w-full text-left text-xs text-zinc-300">
+                <thead className="text-[11px] uppercase bg-black/80 text-zinc-400 border-b border-white/10">
                   <tr>
                     <th className="py-3 px-3">Action Type</th>
                     <th className="py-3 px-3">Display Name</th>
@@ -261,21 +261,21 @@ export default function AdminRulesPage() {
                     <th className="py-3 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-white/5">
                   {rules.map((rule) => (
-                    <tr key={rule.id} className="hover:bg-slate-950/40">
-                      <td className="py-3 px-3 font-mono text-indigo-300 font-semibold">{rule.action_type}</td>
+                    <tr key={rule.id} className="hover:bg-white/[0.02]">
+                      <td className="py-3 px-3 font-mono text-white font-semibold">{rule.action_type}</td>
                       <td className="py-3 px-3 text-white font-medium">{rule.display_name}</td>
-                      <td className="py-3 px-3 font-bold text-slate-200">{rule.base_xp}</td>
-                      <td className="py-3 px-3 text-slate-400">+{rule.extra_xp}</td>
-                      <td className="py-3 px-3 text-slate-400">{rule.daily_limit ? `${rule.daily_limit}/day` : 'None'}</td>
+                      <td className="py-3 px-3 font-bold text-white">{rule.base_xp}</td>
+                      <td className="py-3 px-3 text-zinc-400">+{rule.extra_xp}</td>
+                      <td className="py-3 px-3 text-zinc-400">{rule.daily_limit ? `${rule.daily_limit}/day` : 'None'}</td>
                       <td className="py-3 px-3">
                         {rule.active ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/10 text-white border border-white/20">
                             Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-400">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-zinc-900 text-zinc-500 border border-white/5">
                             Disabled
                           </span>
                         )}
@@ -283,7 +283,7 @@ export default function AdminRulesPage() {
                       <td className="py-3 px-3 text-right">
                         <button
                           onClick={() => setEditingRule(rule)}
-                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold transition-colors"
+                          className="px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-white/15 text-[11px] font-semibold transition-colors"
                         >
                           Edit
                         </button>
@@ -297,18 +297,18 @@ export default function AdminRulesPage() {
         </section>
 
         {/* Change History Audit Log */}
-        <section aria-label="Rule Change History" className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800">
+        <section aria-label="Rule Change History" className="p-6 rounded-3xl bg-[#0c0c0e] border border-white/15">
           <div className="flex items-center gap-2 mb-4">
-            <History className="w-4 h-4 text-amber-400" />
+            <History className="w-4 h-4 text-white" />
             <h2 className="text-sm font-bold text-white">Rule Audit Log (`xp_rules_history`)</h2>
           </div>
 
           {history.length === 0 ? (
-            <p className="text-xs text-slate-500 py-3">No rule modifications recorded yet. Any edit above will log an immutable history row.</p>
+            <p className="text-xs text-zinc-500 py-3">No rule modifications recorded yet. Any edit above will log an immutable history row.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="text-[11px] uppercase bg-slate-950/80 text-slate-400 border-b border-slate-800">
+              <table className="w-full text-left text-xs text-zinc-300">
+                <thead className="text-[11px] uppercase bg-black/80 text-zinc-400 border-b border-white/10">
                   <tr>
                     <th className="py-2.5 px-3">Action</th>
                     <th className="py-2.5 px-3">Base XP</th>
@@ -318,27 +318,27 @@ export default function AdminRulesPage() {
                     <th className="py-2.5 px-3">Timestamp (IST)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 font-mono text-[11px]">
+                <tbody className="divide-y divide-white/5 font-mono text-[11px]">
                   {history.map((row) => (
                     <tr key={row.id}>
-                      <td className="py-2 px-3 text-indigo-300 font-sans font-semibold">{row.action_type}</td>
+                      <td className="py-2 px-3 text-white font-sans font-semibold">{row.action_type}</td>
                       <td className="py-2 px-3">
-                        <span className="text-slate-500 line-through mr-1">{row.old_base_xp}</span>
-                        <span className="text-emerald-400 font-bold">{row.new_base_xp}</span>
+                        <span className="text-zinc-500 line-through mr-1">{row.old_base_xp}</span>
+                        <span className="text-white font-bold">{row.new_base_xp}</span>
                       </td>
                       <td className="py-2 px-3">
-                        <span className="text-slate-500 line-through mr-1">{row.old_extra_xp}</span>
-                        <span className="text-emerald-400 font-bold">{row.new_extra_xp}</span>
+                        <span className="text-zinc-500 line-through mr-1">{row.old_extra_xp}</span>
+                        <span className="text-white font-bold">{row.new_extra_xp}</span>
                       </td>
                       <td className="py-2 px-3">
-                        <span className="text-slate-500 line-through mr-1">{row.old_daily_limit ?? 'null'}</span>
-                        <span className="text-emerald-400 font-bold">{row.new_daily_limit ?? 'null'}</span>
+                        <span className="text-zinc-500 line-through mr-1">{row.old_daily_limit ?? 'null'}</span>
+                        <span className="text-white font-bold">{row.new_daily_limit ?? 'null'}</span>
                       </td>
                       <td className="py-2 px-3">
-                        <span className="text-slate-500 mr-1">{row.old_active ? 'true' : 'false'} →</span>
+                        <span className="text-zinc-500 mr-1">{row.old_active ? 'true' : 'false'} →</span>
                         <span className="text-white">{row.new_active ? 'true' : 'false'}</span>
                       </td>
-                      <td className="py-2 px-3 text-slate-400 font-sans">
+                      <td className="py-2 px-3 text-zinc-400 font-sans">
                         {new Date(row.changed_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
                       </td>
                     </tr>

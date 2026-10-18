@@ -18,11 +18,11 @@ export default function StudentBattlePage({ params }: { params: Promise<{ id: st
   const router = useRouter();
 
   return (
-    <div className="min-h-screen flex flex-col relative pb-24 overflow-x-hidden bg-[#07080B]">
+    <div className="min-h-screen flex flex-col relative pb-24 overflow-x-hidden bg-black text-white">
       {/* Background */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-[#07080b]/85">
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-black/85">
         <Aurora
-          colorStops={['#1e1b4b', '#0f172a', '#1e293b']}
+          colorStops={['#ffffff', '#27272a', '#09090b']}
           amplitude={1.0}
           blend={0.5}
           height={0.5}
@@ -39,14 +39,14 @@ export default function StudentBattlePage({ params }: { params: Promise<{ id: st
           <div className="flex items-center gap-2">
             <button
               onClick={() => router.push('/student/compete')}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors"
+              className="px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 hover:text-white flex items-center gap-1.5 transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Compete</span>
             </button>
           </div>
 
-          <Suspense fallback={<div className="p-8 text-center text-slate-400 text-xs">Loading battle arena...</div>}>
+          <Suspense fallback={<div className="p-8 text-center text-zinc-400 text-xs">Loading battle arena...</div>}>
             <BattleContent params={params} />
           </Suspense>
         </main>

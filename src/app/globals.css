@@ -353,3 +353,27 @@ picture,
   color: #000000 !important;
 }
 
+/* Fallback mappings for lingering slate and colored gradients */
+.bg-slate-950 {
+  background-color: #000000 !important;
+}
+
+.bg-slate-900 {
+  background-color: #0c0c0e !important;
+}
+
+.border-slate-800 {
+  border-color: #27272a !important;
+}
+
+/* Image natural color preservation */
+img,
+video,
+picture,
+canvas,
+[data-image-container],
+[style*="background-image"] {
+  filter: none !important;
+  -webkit-filter: none !important;
+}
+

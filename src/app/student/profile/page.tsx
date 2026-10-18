@@ -167,9 +167,9 @@ export default function StudentProfilePage() {
   return (
     <div className="min-h-screen flex flex-col relative pb-24 overflow-x-hidden bg-transparent">
       {/* Ambient WebGL Aurora Background for Profile Page */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-[#07080b]/75">
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-black/80">
         <Aurora
-          colorStops={['#2c0fa1', '#104572', '#2284c1']}
+          colorStops={['#ffffff', '#27272a', '#09090b']}
           amplitude={1.1}
           blend={0.5}
           height={0.55}
@@ -189,279 +189,297 @@ export default function StudentProfilePage() {
 
         <Navbar role="student" userName={studentName} />
 
-        <main className="flex-1 max-w-md w-full mx-auto px-4 py-6 flex flex-col gap-6">
-          {/* Profile Card */}
+        <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+          {/* Wide & Clean Profile Overview Card */}
           <section
-            aria-label="Student profile card"
-            className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 text-center shadow-xl backdrop-blur-xl relative"
+            aria-label="Student profile overview"
+            className="p-6 sm:p-8 rounded-3xl bg-zinc-900/60 border border-zinc-800 shadow-2xl backdrop-blur-xl relative overflow-hidden"
           >
-          <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-500 to-violet-600 mx-auto flex items-center justify-center text-3xl shadow-xl shadow-indigo-500/25 mb-4">
-            👨‍🎓
-          </div>
-          <h1 className="text-xl font-bold text-white mb-1">{studentName}</h1>
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <RankChip rank={rankProgress?.currentRank} level={levelInfo.level} size="sm" showLevel />
-          </div>
-          <p className="text-xs text-indigo-400 font-semibold mb-4">
-            {rollNo} • Year {yearOfStudy}
-          </p>
-
-          <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-800 text-left mb-4">
-            <div className="col-span-2">
-              <span className="text-[10px] text-slate-500 uppercase block font-medium">Campus</span>
-              <span className="text-xs text-white font-semibold truncate block" title={campusName}>{campusName}</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-500 uppercase block font-medium">Department</span>
-              <span className="text-xs text-slate-300 font-semibold">{department}</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-500 uppercase block font-medium">Timezone</span>
-              <span className="text-xs text-slate-300 font-semibold">Asia/Kolkata</span>
-            </div>
-          </div>
-
-          <a
-            href="/api/auth/signout"
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-white border border-rose-500/25 hover:border-rose-500/40 text-xs font-semibold transition-all active:scale-[0.98] shadow-sm cursor-target"
-            data-cursor-label="Log out"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Log out</span>
-          </a>
-        </section>
-
-        {/* Rank Progression Section (Lifetime Rank Ladder & Max Rank Progress) */}
-        <RankProgressSection progress={rankProgress} allTiers={allTiers} />
-
-        {/* Badges Showcase (Earned and Locked Badges Grouped by Rank & Milestones) */}
-        <section
-          aria-label="Student Badges"
-          className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Award className="w-4 h-4 text-amber-400" />
-              <h2 className="text-sm font-bold text-white">Badges & Achievements</h2>
-            </div>
-            <span className="text-[11px] text-amber-400/90 font-semibold">
-              {badges.filter((b) => b.isEarned).length} / {badges.length} Unlocked
-            </span>
-          </div>
-
-          {badges.length === 0 ? (
-            <p className="text-xs text-slate-500 py-3">Loading badge milestones...</p>
-          ) : (
-            <div className="space-y-6">
-              {/* Group 1: Academic Rank Badges */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
-                    <span>Academic Rank Badges</span>
-                  </h3>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    {badges.filter((b) => b.category === 'RANK' && b.isEarned).length} / {badges.filter((b) => b.category === 'RANK').length} Unlocked
-                  </span>
+            <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6 sm:gap-8">
+              {/* Avatar & Student Details */}
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6 text-center sm:text-left">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-tr from-zinc-700 via-zinc-800 to-zinc-950 border border-zinc-600/80 p-1 shadow-2xl shadow-black/60 flex items-center justify-center text-4xl shrink-0">
+                  <div className="w-full h-full rounded-2xl bg-zinc-900/90 flex items-center justify-center">
+                    👨‍🎓
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {badges
-                    .filter((b) => b.category === 'RANK')
-                    .sort((a, b) => ((a.criteria as any)?.min_level || 0) - ((b.criteria as any)?.min_level || 0))
-                    .map((badge) => (
-                      <BadgeTile
-                        key={badge.code}
-                        code={badge.code}
-                        name={badge.name}
-                        description={badge.description}
-                        category={badge.category}
-                        isEarned={badge.isEarned}
-                        earnedAt={badge.earnedAt}
-                        howToEarn={badge.howToEarn}
-                      />
-                    ))}
-                </div>
-              </div>
 
-              {/* Group 2: Learning Milestones & Achievements */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                    <span>Learning Milestones & Quests</span>
-                  </h3>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    {badges.filter((b) => b.category !== 'RANK' && b.isEarned).length} / {badges.filter((b) => b.category !== 'RANK').length} Unlocked
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {badges
-                    .filter((b) => b.category !== 'RANK')
-                    .map((badge) => (
-                      <BadgeTile
-                        key={badge.code}
-                        code={badge.code}
-                        name={badge.name}
-                        description={badge.description}
-                        category={badge.category}
-                        isEarned={badge.isEarned}
-                        earnedAt={badge.earnedAt}
-                        howToEarn={badge.howToEarn}
-                      />
-                    ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                    <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">{studentName}</h1>
+                    <RankChip rank={rankProgress?.currentRank} level={levelInfo.level} size="sm" showLevel />
+                  </div>
+                  <p className="text-xs font-mono text-zinc-400">
+                    Roll No: <span className="text-white font-medium">{rollNo}</span> • Year {yearOfStudy} • {department}
+                  </p>
 
-        {/* Personal XP History Ledger Feed */}
-        <section
-          aria-label="Personal XP History"
-          className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <History className="w-4 h-4 text-indigo-400" />
-              <h2 className="text-sm font-bold text-white">XP History Ledger</h2>
-            </div>
-            <span className="text-[11px] text-slate-500 font-mono">
-              {events.length} {events.length === 1 ? 'entry' : 'entries'}
-            </span>
-          </div>
-
-          {loading ? (
-            <p className="text-xs text-slate-500 py-4">Reading ledger events...</p>
-          ) : events.length === 0 ? (
-            <div className="text-center py-6 border border-dashed border-slate-800 rounded-2xl">
-              <Clock className="w-6 h-6 text-slate-600 mx-auto mb-2" />
-              <p className="text-xs text-slate-400 font-medium">No learning activities recorded yet.</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Complete daily quizzes or attend lectures to earn XP!
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {events.map((event) => {
-                const isValid = event.status === 'valid';
-                return (
-                  <div
-                    key={event.id}
-                    className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between ${
-                      isValid
-                        ? 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700'
-                        : 'bg-rose-950/20 border-rose-900/30 opacity-70'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-slate-200">
-                          {formatActionName(event.action_type)}
-                        </span>
-                        {!isValid && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                            Adjusted
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[10px] text-slate-500 font-mono truncate max-w-[200px]">
-                        {event.reference_id}
-                      </div>
-                      {!isValid && (
-                        <div className="text-[11px] text-amber-300/90 font-medium mt-1">
-                          XP adjusted by faculty: {event.void_reason || 'Administrative adjustment'}
-                        </div>
-                      )}
-                      <div className="text-[10px] text-slate-400 mt-0.5">
-                        {new Date(event.created_at).toLocaleDateString('en-IN', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          timeZone: 'Asia/Kolkata',
-                        })}
-                      </div>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2 text-xs text-zinc-400">
+                    <div className="px-3 py-1.5 rounded-xl bg-black/50 border border-zinc-800 flex items-center gap-2">
+                      <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500">Campus</span>
+                      <span className="text-white font-medium truncate max-w-[220px]" title={campusName}>{campusName}</span>
                     </div>
-
-                    <div className="text-right">
-                      <span
-                        className={`text-sm font-black font-mono ${
-                          isValid ? 'text-emerald-400' : 'text-slate-500 line-through'
-                        }`}
-                      >
-                        +{event.xp_amount} XP
-                      </span>
-                      {!isValid && (
-                        <div className="text-[9px] text-slate-500 font-mono uppercase tracking-wider">
-                          Adjusted
-                        </div>
-                      )}
+                    <div className="px-3 py-1.5 rounded-xl bg-black/50 border border-zinc-800 flex items-center gap-2">
+                      <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500">Timezone</span>
+                      <span className="text-zinc-300 font-medium">Asia/Kolkata</span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* Server-Enforced Anonymous Mode Toggle */}
-        <section
-          aria-label="Anonymous mode toggle"
-          className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col gap-3"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-400">
-                <EyeOff className="w-4 h-4" />
+                </div>
               </div>
-              <div>
-                <h2 className="text-sm font-bold text-white">Anonymous Mode</h2>
-                <p className="text-[11px] text-slate-400">Opt out of public leaderboard names</p>
+
+              {/* Quick Actions */}
+              <div className="shrink-0 flex items-center gap-3 self-center md:self-start">
+                <a
+                  href="/api/auth/signout"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700 hover:border-zinc-500 text-xs font-semibold transition-all active:scale-[0.98] shadow-sm cursor-target"
+                  data-cursor-label="Log out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Log out</span>
+                </a>
               </div>
             </div>
+          </section>
 
-            <button
-              type="button"
-              onClick={handleToggleAnonymous}
-              className={`w-12 h-6 rounded-full p-1 transition-colors ${
-                isAnonymous ? 'bg-indigo-600' : 'bg-slate-800'
-              }`}
-            >
-              <div
-                className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                  isAnonymous ? 'translate-x-6' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
+          {/* Rank Progression Section (Lifetime Rank Ladder & Max Rank Progress) */}
+          <RankProgressSection progress={rankProgress} allTiers={allTiers} />
 
-          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400 leading-relaxed">
-            <strong className="text-slate-300 block mb-0.5">Server-Enforced Privacy:</strong>
-            When enabled, your name is replaced by a fun avatar on the server before reaching any API responses. Faculty and admins can always see your real identity.
-          </div>
-        </section>
-
-        {/* Account Session & Log out */}
-        <section
-          aria-label="Account session actions"
-          className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 flex items-center justify-between"
-        >
-          <div>
-            <h2 className="text-sm font-bold text-white">Active Session</h2>
-            <p className="text-[11px] text-slate-400">Signed in as {studentName}</p>
-          </div>
-
-          <a
-            href="/api/auth/signout"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-300 hover:text-white bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 hover:border-rose-500/40 transition-all active:scale-95 cursor-target"
-            data-cursor-label="Sign out"
+          {/* Badges Showcase (Earned and Locked Badges Grouped by Rank & Milestones) */}
+          <section
+            aria-label="Student Badges"
+            className="p-6 sm:p-8 rounded-3xl bg-zinc-900/80 border border-zinc-800 shadow-xl"
           >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Log out</span>
-          </a>
-        </section>
-      </main>
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800">
+              <div className="flex items-center gap-2.5">
+                <Award className="w-5 h-5 text-white" />
+                <h2 className="text-base font-bold text-white">Badges & Achievements</h2>
+              </div>
+              <span className="text-xs text-zinc-300 font-mono font-semibold px-3 py-1 rounded-full bg-zinc-800 border border-zinc-700">
+                {badges.filter((b) => b.isEarned).length} / {badges.length} Unlocked
+              </span>
+            </div>
 
-      <BottomNav />
+            {badges.length === 0 ? (
+              <p className="text-xs text-zinc-500 py-3">Loading badge milestones...</p>
+            ) : (
+              <div className="space-y-8">
+                {/* Group 1: Academic Rank Badges */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+                      <span>Academic Rank Badges</span>
+                    </h3>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      {badges.filter((b) => b.category === 'RANK' && b.isEarned).length} / {badges.filter((b) => b.category === 'RANK').length} Unlocked
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {badges
+                      .filter((b) => b.category === 'RANK')
+                      .sort((a, b) => ((a.criteria as any)?.min_level || 0) - ((b.criteria as any)?.min_level || 0))
+                      .map((badge) => (
+                        <BadgeTile
+                          key={badge.code}
+                          code={badge.code}
+                          name={badge.name}
+                          description={badge.description}
+                          category={badge.category}
+                          isEarned={badge.isEarned}
+                          earnedAt={badge.earnedAt}
+                          howToEarn={badge.howToEarn}
+                        />
+                      ))}
+                  </div>
+                </div>
+
+                {/* Group 2: Learning Milestones & Achievements */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+                      <span>Learning Milestones & Quests</span>
+                    </h3>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      {badges.filter((b) => b.category !== 'RANK' && b.isEarned).length} / {badges.filter((b) => b.category !== 'RANK').length} Unlocked
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {badges
+                      .filter((b) => b.category !== 'RANK')
+                      .map((badge) => (
+                        <BadgeTile
+                          key={badge.code}
+                          code={badge.code}
+                          name={badge.name}
+                          description={badge.description}
+                          category={badge.category}
+                          isEarned={badge.isEarned}
+                          earnedAt={badge.earnedAt}
+                          howToEarn={badge.howToEarn}
+                        />
+                      ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Personal XP History Ledger Feed */}
+          <section
+            aria-label="Personal XP History"
+            className="p-6 sm:p-8 rounded-3xl bg-zinc-900/80 border border-zinc-800 shadow-xl"
+          >
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800">
+              <div className="flex items-center gap-2.5">
+                <History className="w-5 h-5 text-white" />
+                <h2 className="text-base font-bold text-white">XP History Ledger</h2>
+              </div>
+              <span className="text-xs text-zinc-400 font-mono px-3 py-1 rounded-full bg-zinc-800 border border-zinc-700">
+                {events.length} {events.length === 1 ? 'entry' : 'entries'}
+              </span>
+            </div>
+
+            {loading ? (
+              <p className="text-xs text-zinc-500 py-4">Reading ledger events...</p>
+            ) : events.length === 0 ? (
+              <div className="text-center py-10 border border-dashed border-zinc-800 rounded-2xl">
+                <Clock className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                <p className="text-sm text-zinc-400 font-medium">No learning activities recorded yet.</p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Complete daily quizzes or attend lectures to earn XP!
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {events.map((event) => {
+                  const isValid = event.status === 'valid';
+                  return (
+                    <div
+                      key={event.id}
+                      className={`p-4 rounded-2xl border transition-all flex items-center justify-between ${
+                        isValid
+                          ? 'bg-black/60 border-zinc-800 hover:border-zinc-700'
+                          : 'bg-zinc-950/60 border-zinc-800 opacity-70'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-bold text-zinc-200">
+                            {formatActionName(event.action_type)}
+                          </span>
+                          {!isValid && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700">
+                              Adjusted
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-zinc-500 font-mono truncate max-w-[280px]">
+                          {event.reference_id}
+                        </div>
+                        {!isValid && (
+                          <div className="text-xs text-zinc-400 font-medium mt-1">
+                            XP adjusted by faculty: {event.void_reason || 'Administrative adjustment'}
+                          </div>
+                        )}
+                        <div className="text-xs text-zinc-400 mt-1">
+                          {new Date(event.created_at).toLocaleDateString('en-IN', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            timeZone: 'Asia/Kolkata',
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span
+                          className={`text-base font-black font-mono ${
+                            isValid ? 'text-white' : 'text-zinc-500 line-through'
+                          }`}
+                        >
+                          +{event.xp_amount} XP
+                        </span>
+                        {!isValid && (
+                          <div className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider">
+                            Adjusted
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* Privacy & Session Settings (2-Column Grid on Wide Screens) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Server-Enforced Anonymous Mode Toggle */}
+            <section
+              aria-label="Anonymous mode toggle"
+              className="p-6 rounded-3xl bg-zinc-900/60 border border-zinc-800 flex flex-col justify-between gap-4 shadow-xl"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-white">
+                    <EyeOff className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-white">Anonymous Mode</h2>
+                    <p className="text-xs text-zinc-400">Opt out of public leaderboard names</p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleToggleAnonymous}
+                  className={`w-12 h-6 rounded-full p-1 transition-colors ${
+                    isAnonymous ? 'bg-white' : 'bg-zinc-800'
+                  }`}
+                >
+                  <div
+                    className={`w-4 h-4 rounded-full transition-transform ${
+                      isAnonymous ? 'bg-black translate-x-6' : 'bg-zinc-400 translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-black/60 border border-zinc-800 text-xs text-zinc-400 leading-relaxed">
+                <strong className="text-zinc-200 block mb-0.5">Server-Enforced Privacy:</strong>
+                When enabled, your name is replaced by a fun avatar on the server before reaching any API responses. Faculty and admins can always see your real identity.
+              </div>
+            </section>
+
+            {/* Account Session & Log out */}
+            <section
+              aria-label="Account session actions"
+              className="p-6 rounded-3xl bg-zinc-900/60 border border-zinc-800 flex flex-col justify-between gap-4 shadow-xl"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-bold text-white">Active Session</h2>
+                  <p className="text-xs text-zinc-400">Signed in as {studentName}</p>
+                </div>
+
+                <a
+                  href="/api/auth/signout"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 transition-all active:scale-95 cursor-target"
+                  data-cursor-label="Sign out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign out</span>
+                </a>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-black/60 border border-zinc-800 text-xs text-zinc-400 leading-relaxed font-mono">
+                Security status: Authenticated • Session active on this device.
+              </div>
+            </section>
+          </div>
+        </main>
+
+        <BottomNav />
+      </div>
     </div>
-  </div>
   );
 }

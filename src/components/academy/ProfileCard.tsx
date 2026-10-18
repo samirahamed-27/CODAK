@@ -85,7 +85,7 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
         <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">
           Student Profile
         </span>
-        <div className="flex items-center gap-1 text-[11px] font-mono text-sky-400 font-medium">
+        <div className="flex items-center gap-1 text-[11px] font-mono text-zinc-300 font-medium">
           <Shield className="w-3.5 h-3.5" />
           <span>Active</span>
         </div>
@@ -93,7 +93,7 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
 
       {/* Avatar Container with Sleek Minimalist Ring */}
       <div className="relative my-2">
-        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full p-[2px] bg-gradient-to-tr from-sky-400 via-slate-500 to-sky-300 shadow-md shadow-sky-500/10 flex items-center justify-center">
+        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full p-[2px] bg-gradient-to-tr from-zinc-600 via-white to-zinc-400 shadow-md shadow-white/10 flex items-center justify-center">
           <div className="w-full h-full rounded-full overflow-hidden bg-zinc-950 flex items-center justify-center">
             {avatarUrl ? (
               // User uploaded custom photo
@@ -107,7 +107,7 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
               // Sleek Minimal Avatar
               <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-zinc-400">
                 <svg
-                  className="w-12 h-12 text-sky-400/80"
+                  className="w-12 h-12 text-zinc-400"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -125,7 +125,7 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
 
         {/* Level Badge */}
         <div
-          className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-zinc-900 border border-white/10 text-sky-300 font-mono text-[10px] font-semibold shadow-md"
+          className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-zinc-900 border border-white/20 text-white font-mono text-[10px] font-semibold shadow-md"
           title={`Level ${profile.level}`}
         >
           LVL {profile.level}
@@ -186,7 +186,7 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
           <button
             type="button"
             onClick={handleRemoveAvatar}
-            className="w-full py-1.5 px-3 text-[11px] text-zinc-400 hover:text-rose-400 transition-colors flex items-center justify-center gap-1.5"
+            className="w-full py-1.5 px-3 text-[11px] text-zinc-400 hover:text-white transition-colors flex items-center justify-center gap-1.5"
           >
             <Trash2 className="w-3 h-3" />
             <span>Remove photo</span>

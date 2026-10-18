@@ -279,7 +279,7 @@ export default function StudentLearnPage() {
     dailyState?.questions && dailyState.questions.every((q) => q.isAnswered);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#07080B] pb-24 text-slate-100">
+    <div className="min-h-screen flex flex-col bg-black pb-24 text-zinc-100">
       {/* Celebration Modal Manager */}
       <CelebrationManager />
 
@@ -295,22 +295,22 @@ export default function StudentLearnPage() {
             stagger={0.03}
             triggerOnHover={true}
             color="#FFFFFF"
-            accentColor="#7DD3FC"
+            accentColor="#A1A1AA"
             style={{ fontSize: '1.25rem', letterSpacing: '0.05em' }}
           />
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-zinc-400 mt-1">
             Test your mastery with daily scored quizzes, practice problem sets, and concept matchmaking.
           </p>
         </div>
 
         {/* Mode Toggle Switch */}
-        <div className="grid grid-cols-3 p-1.5 rounded-2xl bg-slate-900 border border-slate-800 gap-1">
+        <div className="grid grid-cols-3 p-1.5 rounded-2xl bg-[#0c0c0e] border border-white/15 gap-1">
           <button
             onClick={() => setActiveTab('daily')}
             className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'daily'
-                ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-md shadow-rose-500/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white text-black font-bold shadow-md'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             <Flame className="w-3.5 h-3.5" />
@@ -320,8 +320,8 @@ export default function StudentLearnPage() {
             onClick={() => setActiveTab('practice')}
             className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'practice'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white text-black font-bold shadow-md'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             <BookOpen className="w-3.5 h-3.5" />
@@ -331,8 +331,8 @@ export default function StudentLearnPage() {
             onClick={() => setActiveTab('match')}
             className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'match'
-                ? 'bg-gradient-to-r from-cyan-600 to-sky-600 text-white shadow-md shadow-sky-600/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white text-black font-bold shadow-md'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             <Puzzle className="w-3.5 h-3.5" />
@@ -500,7 +500,7 @@ export default function StudentLearnPage() {
 
                 <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-amber-500 to-rose-500 transition-all duration-300"
+                    className="h-full bg-white transition-all duration-300 shadow-[0_0_8px_rgba(255,255,255,0.4)]"
                     style={{
                       width: `${((dailyIndex + 1) / (dailyState?.totalQuestions ?? 5)) * 100}%`,
                     }}
@@ -606,7 +606,7 @@ export default function StudentLearnPage() {
                       <button
                         onClick={handleDailyAnswerSubmit}
                         disabled={!selectedOption || submittingAnswer}
-                        className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white text-xs font-bold transition-all shadow-md shadow-rose-500/20 disabled:opacity-40"
+                        className="w-full py-3 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-all shadow-md shadow-white/10 disabled:opacity-40"
                       >
                         {submittingAnswer ? 'Verifying with Server...' : 'Submit Answer'}
                       </button>
@@ -616,7 +616,7 @@ export default function StudentLearnPage() {
                           setDailyIndex(dailyIndex + 1);
                           setSelectedOption(null);
                         }}
-                        className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2"
+                        className="w-full py-3 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-all shadow-md shadow-white/10 flex items-center justify-center gap-2"
                       >
                         <span>Next Question</span>
                         <ArrowRight className="w-4 h-4" />
@@ -625,7 +625,7 @@ export default function StudentLearnPage() {
                       <button
                         onClick={handleFinalizeDailyQuiz}
                         disabled={finalizing}
-                        className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2"
+                        className="w-full py-3 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-all shadow-lg shadow-white/10 flex items-center justify-center gap-2"
                       >
                         <span>{finalizing ? 'Scoring Quiz...' : 'Finish & Claim XP'}</span>
                         <Award className="w-4 h-4" />
@@ -782,15 +782,15 @@ export default function StudentLearnPage() {
         {activeTab === 'match' && (
           <div className="space-y-4">
             {/* Header / Intro banner */}
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-sky-950/30 to-slate-900 border border-sky-500/30 flex items-center justify-between gap-3">
+            <div className="p-4 rounded-2xl bg-[#0c0c0e] border border-white/15 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-sky-500/20 border border-sky-500/30 text-sky-400">
+                <div className="p-2.5 rounded-xl bg-white/10 border border-white/20 text-white">
                   <Puzzle className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
                     Concept Match
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-white">
                       +10 XP
                     </span>
                   </h3>
@@ -1035,7 +1035,7 @@ export default function StudentLearnPage() {
                       Object.keys(userMatches).length < matchRound.terms.length ||
                       matchSubmitting
                     }
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-xs font-bold transition-all disabled:opacity-40 shadow-lg shadow-sky-600/20 flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-all disabled:opacity-40 shadow-lg shadow-white/10 flex items-center justify-center gap-2"
                   >
                     <span>{matchSubmitting ? 'Verifying Matches...' : 'Submit Matches'}</span>
                     <CheckCircle2 className="w-4 h-4" />
