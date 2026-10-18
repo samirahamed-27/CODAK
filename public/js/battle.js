@@ -895,6 +895,13 @@ function playAttackAnimation(attacker) {
     const dirX = isPlayer ? 14 : -14;
     const dirY = isPlayer ? -8 : 8;
 
+    if (!isPlayer) {
+      battleVisualState.isEnemyAttacking = true;
+      if (typeof window !== 'undefined' && window.gameState) {
+        window.gameState.isEnemyAttacking = true;
+      }
+    }
+
     const startTime = performance.now();
     const duration = 280; // ms
 
@@ -923,6 +930,12 @@ function playAttackAnimation(attacker) {
       } else {
         targetObj.offsetX = 0;
         targetObj.offsetY = 0;
+        if (!isPlayer) {
+          battleVisualState.isEnemyAttacking = false;
+          if (typeof window !== 'undefined' && window.gameState) {
+            window.gameState.isEnemyAttacking = false;
+          }
+        }
         resolve();
       }
     }
@@ -933,7 +946,7 @@ function playAttackAnimation(attacker) {
 
 /**
  * showFloatingDamage(target, damage, isHeavy = false)
- * Appends floating combat damage text that rises and fades over the sprite.
+ * Appends floating combat damage/heal text that rises and fades over the sprite.
  */
 function showFloatingDamage(target, damage, isHeavy = false) {
   if (typeof document === 'undefined') return;
@@ -941,8 +954,9 @@ function showFloatingDamage(target, damage, isHeavy = false) {
   if (!layer) return;
 
   const dmgEl = document.createElement('div');
-  dmgEl.className = `combat-floating-damage ${isHeavy ? 'heavy' : ''}`;
-  dmgEl.textContent = `-${damage}`;
+  const isHeal = typeof damage === 'string' && damage.startsWith('+');
+  dmgEl.className = `combat-floating-damage ${isHeal ? 'heal' : (isHeavy ? 'heavy' : '')}`;
+  dmgEl.textContent = isHeal ? damage : `-${damage}`;
 
   // Position relative to target sprite on 160x144 canvas viewport
   if (target === 'player') {
@@ -955,17 +969,26 @@ function showFloatingDamage(target, damage, isHeavy = false) {
 
   layer.appendChild(dmgEl);
 
-  dmgEl.addEventListener('animationend', () => {
-    if (dmgEl.parentNode) {
-      dmgEl.parentNode.removeChild(dmgEl);
+  const detachDmg = () => {
+    try {
+      if (typeof dmgEl.remove === 'function') {
+        dmgEl.remove();
+      } else if (dmgEl.parentNode && typeof dmgEl.parentNode.removeChild === 'function') {
+        dmgEl.parentNode.removeChild(dmgEl);
+      }
+    } catch {
+      // Element already removed
     }
-  });
+  };
 
-  setTimeout(() => {
-    if (dmgEl.parentNode) {
-      dmgEl.parentNode.removeChild(dmgEl);
-    }
-  }, 1000);
+  if (typeof dmgEl.addEventListener === 'function') {
+    dmgEl.addEventListener('animationend', detachDmg);
+  }
+  setTimeout(detachDmg, 1000);
+}
+
+function showFloatingHeal(target = 'player', amount = 10) {
+  showFloatingDamage(target, `+${amount}`);
 }
 
 /**
@@ -2727,12 +2750,18 @@ function setCodePanelEnemyTurnUI(isEnemyTurn) {
   const textarea = document.getElementById('code-textarea');
   const btnRun = document.getElementById('btn-run-tests');
   const btnDevPower = document.getElementById('btn-dev-power');
+  const btnInventory = document.getElementById('btn-inventory');
+  const btnInventoryBattle = document.getElementById('btn-inventory-battle');
   const btnHolyHeal = document.getElementById('btn-holy-heal');
   const btnHint = document.getElementById('btn-hint');
   const btnReset = document.getElementById('btn-reset-code');
   const pickerContainer = document.getElementById('picker-cards-container');
 
   if (isEnemyTurn) {
+    battleVisualState.isEnemyTurn = true;
+    if (typeof window !== 'undefined' && window.gameState) {
+      window.gameState.isEnemyTurn = true;
+    }
     if (pickerBadge) {
       pickerBadge.textContent = 'ENEMY TURN...';
       pickerBadge.className = 'section-badge font-code text-red';
@@ -2748,6 +2777,8 @@ function setCodePanelEnemyTurnUI(isEnemyTurn) {
     if (textarea) textarea.disabled = true;
     if (btnRun) btnRun.disabled = true;
     if (btnDevPower) btnDevPower.disabled = true;
+    if (btnInventory) btnInventory.disabled = true;
+    if (btnInventoryBattle) btnInventoryBattle.disabled = true;
     if (btnHolyHeal) btnHolyHeal.disabled = true;
     if (btnHint) btnHint.disabled = true;
     if (btnReset) btnReset.disabled = true;
@@ -2755,11 +2786,27 @@ function setCodePanelEnemyTurnUI(isEnemyTurn) {
     if (pickerContainer) {
       const cards = pickerContainer.querySelectorAll('.picker-card');
       cards.forEach((c) => {
+        c.classList.remove('selected');
         c.classList.add('locked');
         c.style.pointerEvents = 'none';
       });
     }
+
+    const diffBar = document.getElementById('picker-difficulty-bar');
+    if (diffBar) {
+      const tabs = diffBar.querySelectorAll('.picker-diff-tab');
+      tabs.forEach((t) => {
+        t.classList.add('locked');
+        t.style.pointerEvents = 'none';
+      });
+    }
   } else {
+    battleVisualState.isEnemyTurn = false;
+    battleVisualState.isEnemyAttacking = false;
+    if (typeof window !== 'undefined' && window.gameState) {
+      window.gameState.isEnemyTurn = false;
+      window.gameState.isEnemyAttacking = false;
+    }
     if (pickerBadge) {
       pickerBadge.textContent = 'SELECT DIFFICULTY TO ATTACK';
       pickerBadge.className = 'section-badge font-code text-yellow';
@@ -2768,11 +2815,24 @@ function setCodePanelEnemyTurnUI(isEnemyTurn) {
       consoleBadge.textContent = 'SYS: READY';
       consoleBadge.className = 'section-badge font-code text-green';
     }
+    if (btnInventory) btnInventory.disabled = false;
+    if (btnInventoryBattle) btnInventoryBattle.disabled = false;
     if (btnHolyHeal) btnHolyHeal.disabled = false;
     if (pickerContainer) {
       const cards = pickerContainer.querySelectorAll('.picker-card');
       cards.forEach((c) => {
         c.style.pointerEvents = 'auto';
+      });
+    }
+
+    const diffBar = document.getElementById('picker-difficulty-bar');
+    if (diffBar) {
+      const tabs = diffBar.querySelectorAll('.picker-diff-tab');
+      tabs.forEach((t) => {
+        if (!t.classList.contains('bugmon-locked')) {
+          t.classList.remove('locked');
+          t.style.pointerEvents = 'auto';
+        }
       });
     }
   }
@@ -2810,6 +2870,67 @@ async function handlePlayerCodeSuccess(challenge, outcome) {
     window.gameState.score = battleVisualState.points;
   }
 
+  // Roll heal chip drop on full pass (only when passing all tests)
+  // Drop rules:
+  // - Chips drop only on a full pass of all tests, never on partial passes.
+  // - No drop if the player used the HINT button on that question.
+  const hintUsed = (window.gameState && window.gameState.hintUsedThisTurn) ||
+                   (typeof hintUsedThisTurn !== 'undefined' && hintUsedThisTurn);
+
+  let droppedChipId = null;
+  let chipAdded = false;
+
+  if (!hintUsed) {
+    const activeChallenge = challenge || (typeof window !== 'undefined' && window.activeChallenge) || null;
+    if (activeChallenge && activeChallenge.willReceiveItem) {
+      droppedChipId = activeChallenge.willReceiveItem.id;
+    } else if (activeChallenge && activeChallenge.willReceiveItem === null) {
+      droppedChipId = null;
+    } else if (typeof rollChipDrop === 'function') {
+      droppedChipId = rollChipDrop(diff);
+    } else if (typeof window !== 'undefined' && typeof window.rollChipDrop === 'function') {
+      droppedChipId = window.rollChipDrop(diff);
+    }
+  }
+
+  // Trigger drop pop animation or dim flicker on question card's chip image
+  const dropAnimTrigger = window.triggerCardDropAnimation || (typeof triggerCardDropAnimation === 'function' ? triggerCardDropAnimation : null);
+  if (dropAnimTrigger) {
+    dropAnimTrigger(diff, droppedChipId);
+  }
+
+  if (droppedChipId) {
+    if (typeof addChip === 'function') {
+      chipAdded = addChip(droppedChipId);
+    } else if (typeof window !== 'undefined' && typeof window.addChip === 'function') {
+      chipAdded = window.addChip(droppedChipId);
+    }
+
+    if (chipAdded) {
+      if (window.gameState) {
+        window.gameState.stats = window.gameState.stats || {};
+        window.gameState.stats.chipsFound = (window.gameState.stats.chipsFound || 0) + 1;
+      }
+      const showPopup = window.showRewardPopup || (typeof showRewardPopup === 'function' ? showRewardPopup : null);
+      if (showPopup) {
+        showPopup(droppedChipId);
+      }
+      const chipsConfig = window.CHIPS || (typeof CHIPS !== 'undefined' ? CHIPS : null);
+      const chipConfig = chipsConfig ? chipsConfig[droppedChipId] : null;
+      const chipName = chipConfig ? chipConfig.name.toUpperCase() : 'CHIP';
+      if (window.appendConsoleLine) {
+        window.appendConsoleLine(`> ITEM FOUND! +1 ${chipName} added to inventory.`, 'console-pass');
+      }
+    } else {
+      const chipsConfig = window.CHIPS || (typeof CHIPS !== 'undefined' ? CHIPS : null);
+      const chipConfig = chipsConfig ? chipsConfig[droppedChipId] : null;
+      const chipName = chipConfig ? chipConfig.name : 'Chip';
+      if (window.appendConsoleLine) {
+        window.appendConsoleLine(`> Inventory full for ${chipName}!`, 'console-warn');
+      }
+    }
+  }
+
   // 3. Sequential attack and hit animations
   const triggerAttack = window.playAttackAnimation || playAttackAnimation;
   const triggerHit = window.playHitAnimation || playHitAnimation;
@@ -2838,6 +2959,19 @@ async function handlePlayerCodeSuccess(challenge, outcome) {
   }
 
   await triggerMsg(`${player.name.toUpperCase()} compiled clean code! Dealt ${damage} DMG to ${enemy.name.toUpperCase()}! (+${pts} PTS)`);
+
+  // Dialogue feedback for chip drop (never show "no drop" message)
+  if (droppedChipId) {
+    await new Promise((r) => setTimeout(r, 600));
+    const chipsConfig = window.CHIPS || (typeof CHIPS !== 'undefined' ? CHIPS : null);
+    const chipConfig = chipsConfig ? chipsConfig[droppedChipId] : null;
+    const chipName = chipConfig ? chipConfig.name : 'Chip';
+    if (chipAdded) {
+      await triggerMsg(`${chipName} added to inventory!`);
+    } else {
+      await triggerMsg(`Inventory full for ${chipName}!`);
+    }
+  }
 
   // End-of-battle check if enemy HP <= 0:
   if (newEnemyHp <= 0) {
@@ -3131,6 +3265,7 @@ window.BattleEngine = {
   playAttackAnimation,
   playHitAnimation,
   showFloatingDamage,
+  showFloatingHeal,
   triggerHeavyScreenShake,
   showMessage,
   typeText,
@@ -3170,6 +3305,7 @@ window.triggerBugmonTransformation = triggerBugmonTransformation;
 window.playAttackAnimation = playAttackAnimation;
 window.playHitAnimation = playHitAnimation;
 window.showFloatingDamage = showFloatingDamage;
+window.showFloatingHeal = showFloatingHeal;
 window.triggerHeavyScreenShake = triggerHeavyScreenShake;
 window.showMessage = showMessage;
 window.typeText = typeText;

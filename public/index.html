@@ -172,6 +172,28 @@
               <!-- Floating combat damage text layer -->
               <div id="combat-floating-damage-layer" class="combat-floating-damage-layer" aria-hidden="true"></div>
 
+              <!-- Chip Inventory Bar (Three Slots in a Row Above Dialogue Box) -->
+              <div id="chip-inventory-bar" class="chip-inventory-bar font-pixel" role="toolbar" aria-label="Heal Chips Inventory Bar">
+                <button type="button" class="chip-slot dimmed" id="chip-slot-low" data-chip="low" aria-label="Low Chip (Restores 5 HP) - Shortcut Key 1">
+                  <canvas class="chip-icon-canvas" id="chip-icon-low" width="20" height="20" aria-hidden="true"></canvas>
+                  <span class="chip-slot-key font-pixel">1</span>
+                  <span class="chip-slot-count font-pixel" id="chip-count-low">x0</span>
+                  <div class="chip-tooltip font-pixel" role="tooltip">LOW CHIP +5 HP</div>
+                </button>
+                <button type="button" class="chip-slot dimmed" id="chip-slot-normal" data-chip="normal" aria-label="Normal Chip (Restores 10 HP) - Shortcut Key 2">
+                  <canvas class="chip-icon-canvas" id="chip-icon-normal" width="20" height="20" aria-hidden="true"></canvas>
+                  <span class="chip-slot-key font-pixel">2</span>
+                  <span class="chip-slot-count font-pixel" id="chip-count-normal">x0</span>
+                  <div class="chip-tooltip font-pixel" role="tooltip">NORMAL CHIP +10 HP</div>
+                </button>
+                <button type="button" class="chip-slot dimmed" id="chip-slot-advance" data-chip="advance" aria-label="Advance Chip (Restores 15 HP) - Shortcut Key 3">
+                  <canvas class="chip-icon-canvas" id="chip-icon-advance" width="20" height="20" aria-hidden="true"></canvas>
+                  <span class="chip-slot-key font-pixel">3</span>
+                  <span class="chip-slot-count font-pixel" id="chip-count-advance">x0</span>
+                  <div class="chip-tooltip font-pixel" role="tooltip">ADVANCE CHIP +15 HP</div>
+                </button>
+              </div>
+
               <!-- Dialogue box along the bottom as a DOM element over the canvas -->
               <div id="battle-dialogue-overlay" class="battle-dialogue-overlay font-pixel" role="region" aria-live="polite">
                 <div id="battle-dialogue-text" class="dialogue-text">A wild Bugmon appeared!</div>
@@ -186,6 +208,9 @@
               &gt; ATTACKS ARE TRIGGERED FROM THE CODE PANEL ON THE RIGHT.
             </div>
             <div class="battle-footer-actions">
+              <button type="button" class="pixel-btn-sm font-pixel pixel-btn-purple" id="btn-inventory-battle" title="Open Codemon inventory items">
+                🎒 INVENTORY
+              </button>
               <button type="button" class="pixel-btn-sm font-pixel btn-bug-mode" id="btn-bug-mode" title="Instantly transform the enemy into a Bugmon">
                 ⚡ BUG MODE
               </button>
@@ -214,6 +239,14 @@
                 <div class="result-stat-row">
                   <span>TURNS REMAINING:</span>
                   <span id="result-turns-val" class="text-white">4</span>
+                </div>
+                <div class="result-stat-row">
+                  <span>CHIPS FOUND:</span>
+                  <span id="result-chips-found-val" class="text-yellow">0</span>
+                </div>
+                <div class="result-stat-row">
+                  <span>CHIPS USED:</span>
+                  <span id="result-chips-used-val" class="text-green">0</span>
                 </div>
               </div>
 
@@ -288,6 +321,47 @@
             <a href="learn.html" id="btn-pause-quit" class="pixel-btn pixel-btn-dark font-pixel" aria-label="Quit battle to learn section">
               ◀ QUIT TO LEARN
             </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inventory Modal Dialog -->
+      <div id="inventory-overlay" class="inventory-overlay font-pixel" style="display: none;" role="dialog" aria-modal="true" aria-label="Codemon Inventory">
+        <div class="inventory-modal">
+          <div class="inventory-modal-header">
+            <div class="inventory-title-group">
+              <span class="inventory-badge font-pixel">🎒 CODEMON INVENTORY</span>
+              <span class="inventory-subtitle font-code">&gt; Heal chips</span>
+            </div>
+            <button type="button" id="btn-inventory-close" class="inventory-close-btn font-pixel" aria-label="Close inventory">✕</button>
+          </div>
+
+          <div class="inventory-status-bar font-code">
+            <div class="inv-status-col">
+              <span class="inv-label">ACTIVE:</span>
+              <span id="inv-active-codemon" class="text-yellow">JASKULL (LV 5)</span>
+            </div>
+            <div class="inv-status-col">
+              <span class="inv-label">HEALTH:</span>
+              <span id="inv-active-hp" class="text-green">90 / 90 HP</span>
+            </div>
+            <div class="inv-status-col">
+              <span class="inv-label">TURNS LEFT:</span>
+              <span id="inv-active-turns" class="text-cyan">8 TURNS</span>
+            </div>
+          </div>
+
+          <div class="inventory-items-grid" id="inventory-items-container">
+            <!-- Dynamically populated with 3 heal chip cards -->
+          </div>
+
+          <div class="inventory-modal-footer font-pixel">
+            <div class="inv-footer-hint font-code" id="inv-footer-hint">
+              &gt; SELECT A CHIP TO USE DURING BATTLE.
+            </div>
+            <button type="button" id="btn-inventory-close-bottom" class="pixel-btn pixel-btn-dark font-pixel" aria-label="Close inventory and return to battle">
+              ◀ BACK TO BATTLE
+            </button>
           </div>
         </div>
       </div>
@@ -381,6 +455,8 @@
               <span id="current-challenge-badge" class="badge-difficulty font-pixel">NO MOVE SELECTED</span>
             </div>
             <div class="editor-header-right">
+
+
               <!-- Turn Timer Bar (60s easy, 90s medium, 120s hard) -->
               <div id="turn-timer-container" class="turn-timer-container font-pixel">
                 <span id="turn-timer-text" class="turn-timer-text">TIME: --</span>
@@ -451,22 +527,20 @@
             </div>
           </div>
 
-          <!-- Editor Actions Toolbar: RUN TESTS, DEV POWER, HOLY HEAL, HINT, RESET CODE -->
+          <!-- Editor Actions Toolbar: RUN TESTS, INVENTORY, HINT, DEV POWER, RESET CODE -->
           <div class="editor-toolbar font-pixel">
             <div class="toolbar-left">
               <button type="button" id="btn-run-tests" class="pixel-btn pixel-btn-green font-pixel" aria-label="Run test suite">
                 ▶ RUN TESTS
               </button>
-              <div class="toolbar-dev-col">
-                <button type="button" id="btn-dev-power" class="pixel-btn pixel-btn-yellow font-pixel" aria-label="Dev power override: auto-pass all tests">
-                  ⚡ DEV POWER
-                </button>
-                <button type="button" id="btn-holy-heal" class="pixel-btn pixel-btn-cyan font-pixel" aria-label="Holy heal: restore user's codemon to full HP">
-                  ✨ HOLY HEAL
-                </button>
-              </div>
+              <button type="button" id="btn-inventory" class="pixel-btn pixel-btn-purple font-pixel" aria-label="Open Codemon inventory items">
+                🎒 INVENTORY
+              </button>
               <button type="button" id="btn-hint" class="pixel-btn pixel-btn-blue font-pixel" aria-label="Reveal hint (-5 points)">
                 ? HINT (-5 PTS)
+              </button>
+              <button type="button" id="btn-dev-power" class="pixel-btn-dev font-pixel" aria-label="Dev power override: auto-pass all tests" title="Developer cheat: auto-pass all test cases">
+                ⚡ DEV POWER
               </button>
             </div>
             <div class="toolbar-right">
@@ -510,6 +584,7 @@
 
   <!-- Game Scripts -->
   <script src="js/data.js"></script>
+  <script src="js/items.js"></script>
   <script src="js/runner.js"></script>
   <script src="js/battle.js"></script>
   <script src="js/main.js"></script>

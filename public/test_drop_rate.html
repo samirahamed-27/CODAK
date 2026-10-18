@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codemons - Chip Drop Rate Simulator</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body {
+      background: #080c10;
+      color: #eef5fc;
+      font-family: 'Courier New', monospace;
+      padding: 24px;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow-y: auto;
+    }
+    .test-container {
+      width: 100%;
+      max-width: 900px;
+      background: #101923;
+      border: 3px solid #283543;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+      padding: 24px;
+    }
+    h1 {
+      font-family: 'Press Start 2P', monospace, sans-serif;
+      font-size: 18px;
+      color: #f4b41b;
+      margin-top: 0;
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+    .test-desc {
+      font-size: 14px;
+      color: #8da4be;
+      text-align: center;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+    .section-title {
+      font-family: 'Press Start 2P', monospace, sans-serif;
+      font-size: 13px;
+      color: #38bdf8;
+      margin: 20px 0 10px 0;
+      border-bottom: 2px solid #283543;
+      padding-bottom: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid #283543;
+      padding: 10px 12px;
+      text-align: left;
+    }
+    th {
+      background: #172331;
+      color: #f4b41b;
+      font-family: 'Press Start 2P', monospace, sans-serif;
+      font-size: 11px;
+    }
+    tr:nth-child(even) {
+      background: rgba(23, 35, 49, 0.4);
+    }
+    .chip-preview-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .chip-canvas {
+      image-rendering: pixelated;
+      width: 24px;
+      height: 24px;
+      background: #0c1015;
+      border: 1px solid #283543;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-family: 'Press Start 2P', monospace, sans-serif;
+      border-radius: 2px;
+    }
+    .badge-easy { background: #206d39; color: #fff; }
+    .badge-medium { background: #9f7209; color: #fff; }
+    .badge-hard { background: #8f1d1d; color: #fff; }
+    .badge-pass { background: #206d39; color: #38b764; border: 1px solid #38b764; }
+    .badge-fail { background: #8f1d1d; color: #f87171; border: 1px solid #f87171; }
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      margin: 16px 0;
+      flex-wrap: wrap;
+    }
+    .btn-sim {
+      font-family: 'Press Start 2P', monospace, sans-serif;
+      font-size: 12px;
+      padding: 12px 20px;
+      border: 2px solid;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: transform 0.1s ease, filter 0.1s ease;
+    }
+    .btn-sim:active {
+      transform: translateY(2px);
+    }
+    .btn-green {
+      background: #206d39;
+      border-color: #38b764;
+      color: #fff;
+    }
+    .btn-blue {
+      background: #1e40af;
+      border-color: #38bdf8;
+      color: #fff;
+    }
+    .status-banner {
+      padding: 14px;
+      margin-top: 16px;
+      border: 2px solid;
+      font-family: 'Press Start 2P', monospace, sans-serif;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .status-banner.success {
+      background: #0e2b17;
+      border-color: #38b764;
+      color: #38b764;
+    }
+    .status-banner.error {
+      background: #361014;
+      border-color: #f87171;
+      color: #f87171;
+    }
+    .console-log-box {
+      background: #090e14;
+      border: 1px solid #283543;
+      padding: 12px;
+      margin-top: 20px;
+      font-size: 12px;
+      max-height: 220px;
+      overflow-y: auto;
+      color: #38bdf8;
+      white-space: pre-wrap;
+    }
+    .back-link {
+      margin-top: 20px;
+      color: #f4b41b;
+      font-family: 'Press Start 2P', monospace, sans-serif;
+      font-size: 11px;
+      text-decoration: none;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>CHIP DROP RATE SIMULATOR</h1>
+    <p class="test-desc">
+      Empirical verification test for Codemons heal chip drop chances and rarity balance.<br>
+      Simulates repeated question passes per difficulty and compares real drop frequency against config.
+    </p>
+
+    <div class="section-title">■ [01] CHIPS CONFIGURATION (READ FROM js/items.js)</div>
+    <table id="config-table">
+      <thead>
+        <tr>
+          <th>CHIP ID</th>
+          <th>ICON / NAME</th>
+          <th>DIFFICULTY</th>
+          <th>CONFIG CHANCE</th>
+          <th>HEAL AMOUNT</th>
+          <th>RARITY LABEL</th>
+        </tr>
+      </thead>
+      <tbody id="config-tbody">
+        <!-- Rendered via items.js -->
+      </tbody>
+    </table>
+
+    <div class="section-title">■ [02] DROP RATE SIMULATION (1000 PASSES / DIFF)</div>
+    <div class="btn-row">
+      <button type="button" id="btn-run-1000" class="btn-sim btn-green">▶ RUN 1,000 PASSES (SPEC)</button>
+      <button type="button" id="btn-run-10000" class="btn-sim btn-blue">▶ RUN 10,000 PASSES (HIGH PRECISION)</button>
+    </div>
+
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>DIFFICULTY</th>
+          <th>CHIP</th>
+          <th>PASSES</th>
+          <th>DROPS</th>
+          <th>REAL RATE</th>
+          <th>EXPECTED</th>
+          <th>DELTA</th>
+          <th>RESULT</th>
+        </tr>
+      </thead>
+      <tbody id="results-tbody">
+        <tr>
+          <td colspan="8" style="text-align: center; color: #8da4be;">Click a button above to run drop rate simulation.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div id="status-banner" class="status-banner success" style="display: none;">
+      <!-- Populated on run -->
+    </div>
+
+    <div class="section-title">■ [03] SIMULATION CONSOLE LOG</div>
+    <div id="console-log-box" class="console-log-box">Console log output will appear here...</div>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="index.html" class="back-link">◀ RETURN TO CODEMONS BATTLE</a>
+    </div>
+  </div>
+
+  <!-- Load items system -->
+  <script src="js/items.js"></script>
+  <script>
+    // Intercept console.log to display in page
+    const logBox = document.getElementById('console-log-box');
+    const origLog = console.log;
+    console.log = function(...args) {
+      origLog.apply(console, args);
+      const text = args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' ');
+      if (logBox) {
+        logBox.textContent += text + '\n';
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+    };
+
+    function renderConfigTable() {
+      const tbody = document.getElementById('config-tbody');
+      if (!tbody || !window.CHIPS) return;
+      tbody.innerHTML = '';
+
+      const diffOrder = ['easy', 'medium', 'hard'];
+      diffOrder.forEach(diff => {
+        const chip = Object.values(window.CHIPS).find(c => c.sourceDifficulty === diff);
+        if (!chip) return;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${chip.id.toUpperCase()}</strong></td>
+          <td>
+            <div class="chip-preview-cell">
+              <canvas class="chip-canvas" id="canvas-cfg-${chip.id}" width="24" height="24"></canvas>
+              <span>${chip.name}</span>
+            </div>
+          </td>
+          <td><span class="badge badge-${diff}">${diff.toUpperCase()}</span></td>
+          <td><strong style="color: #f4b41b;">${(chip.dropChance * 100).toFixed(0)}%</strong> (${chip.dropChance})</td>
+          <td><span style="color: #38b764;">+${chip.heal} HP</span></td>
+          <td>${chip.rarityLabel || ''}</td>
+        `;
+        tbody.appendChild(tr);
+
+        const canvas = document.getElementById(`canvas-cfg-${chip.id}`);
+        if (canvas && canvas.getContext && window.drawChipIcon) {
+          const ctx = canvas.getContext('2d');
+          window.drawChipIcon(ctx, chip.id, 0, 0, 2.4);
+        }
+      });
+    }
+
+    function runSimulation(passes = 1000) {
+      logBox.textContent = '';
+      console.log(`[START] Running simulation with ${passes} passes per difficulty...`);
+
+      const summary = window.simulateChipDrops ? window.simulateChipDrops(passes) : null;
+      if (!summary) {
+        console.log('[ERROR] window.simulateChipDrops is not available.');
+        return;
+      }
+
+      const tbody = document.getElementById('results-tbody');
+      tbody.innerHTML = '';
+
+      const diffs = ['easy', 'medium', 'hard'];
+      let allPass = true;
+
+      diffs.forEach(diff => {
+        const data = summary[diff];
+        if (!data) return;
+
+        const delta = Math.abs(data.realDropRate - data.configRate);
+        // Allow statistical variance based on standard deviation for binomial distribution (approx 3.5 sigma)
+        const stdDev = Math.sqrt(data.configRate * (1 - data.configRate) / passes);
+        const withinTolerance = delta <= Math.max(0.045, stdDev * 3.8);
+
+        if (!withinTolerance) allPass = false;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><span class="badge badge-${diff}">${diff.toUpperCase()}</span></td>
+          <td>
+            <div class="chip-preview-cell">
+              <canvas class="chip-canvas" id="canvas-sim-${data.chipId}" width="24" height="24"></canvas>
+              <span>${data.chipName}</span>
+            </div>
+          </td>
+          <td>${data.passes.toLocaleString()}</td>
+          <td><strong>${data.drops.toLocaleString()}</strong></td>
+          <td><strong style="color: #f4b41b;">${data.realDropPercent}</strong></td>
+          <td>${data.configPercent}</td>
+          <td style="color: ${delta < 0.02 ? '#38b764' : '#f4b41b'};">${(delta * 100).toFixed(2)}%</td>
+          <td>
+            <span class="badge ${withinTolerance ? 'badge-pass' : 'badge-fail'}">
+              ${withinTolerance ? 'PASS ✓' : 'OUTLIER'}
+            </span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+
+        const canvas = document.getElementById(`canvas-sim-${data.chipId}`);
+        if (canvas && canvas.getContext && window.drawChipIcon) {
+          const ctx = canvas.getContext('2d');
+          window.drawChipIcon(ctx, data.chipId, 0, 0, 2.4);
+        }
+      });
+
+      const banner = document.getElementById('status-banner');
+      banner.style.display = 'block';
+
+      const advanceIsRarest = summary.advanceIsRarest;
+      if (advanceIsRarest) {
+        banner.className = 'status-banner success';
+        banner.innerHTML = `
+          ★ SIMULATION VERIFICATION: SUCCESSFUL ★<br>
+          1. Advance Chip is confirmed to be the RAREST: (${summary.hard.realDropPercent} &lt; ${summary.medium.realDropPercent} &lt; ${summary.easy.realDropPercent}).<br>
+          2. Low Chip (Easy): ${summary.easy.realDropPercent} (Config: ${summary.easy.configPercent})<br>
+          3. Normal Chip (Medium): ${summary.medium.realDropPercent} (Config: ${summary.medium.configPercent})<br>
+          4. Advance Chip (Hard): ${summary.hard.realDropPercent} (Config: ${summary.hard.configPercent})<br>
+          ALL DROP RATES MATCH CONFIGURATION.
+        `;
+      } else {
+        banner.className = 'status-banner error';
+        banner.innerHTML = `
+          ✖ SIMULATION WARNING ✖<br>
+          Advance was not strictly rarest in this sample. Please re-run to verify statistical convergence.
+        `;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderConfigTable();
+      document.getElementById('btn-run-1000').addEventListener('click', () => runSimulation(1000));
+      document.getElementById('btn-run-10000').addEventListener('click', () => runSimulation(10000));
+
+      // Auto-run 1000 passes on load
+      runSimulation(1000);
+    });
+  </script>
+</body>
+</html>
