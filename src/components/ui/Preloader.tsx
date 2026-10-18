@@ -26,11 +26,11 @@ export const Preloader: React.FC<PreloaderProps> = ({
   duration = 2000,
   text = 'Authenticating CODAK Session...',
   subtext = 'Preparing your personalized academic dashboard',
-  bgColor = '#07080B',
+  bgColor = '#070D19',
   accentColor = '#38BDF8',
   zIndex = 99999,
   position = 'fixed',
-  stairCount = 5,
+  stairCount = 6,
   onComplete,
 }) => {
   const [progress, setProgress] = useState(0);
@@ -56,10 +56,11 @@ export const Preloader: React.FC<PreloaderProps> = ({
       if (pct >= 100) {
         clearInterval(interval);
         setPhase('exiting');
+        // Graceful exit timeout synchronized with smooth stairs ease
         const exitTimeout = setTimeout(() => {
           setPhase('done');
           onComplete?.();
-        }, duration * 0.35);
+        }, 1250);
 
         return () => clearTimeout(exitTimeout);
       }
@@ -94,53 +95,70 @@ export const Preloader: React.FC<PreloaderProps> = ({
           {/* 1. STAIRS VARIANT                                         */}
           {/* ========================================================= */}
           {variant === 'stairs' && (
-            <div className="absolute inset-0 flex w-full h-full">
+            <div className="absolute inset-0 flex w-full h-full overflow-hidden">
+              {/* Ambient light blue background glow */}
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-sky-900/20 via-[#060c18]/90 to-[#04070d] pointer-events-none -z-10" />
+
               {Array.from({ length: stairCount }).map((_, i) => (
                 <motion.div
                   key={i}
                   initial={{ y: 0 }}
                   animate={isExiting ? { y: '-100%' } : { y: 0 }}
                   transition={{
-                    duration: 0.65,
-                    ease: [0.76, 0, 0.24, 1],
-                    delay: isExiting ? (stairCount - i - 1) * 0.07 : 0,
+                    duration: 0.85,
+                    ease: [0.77, 0, 0.175, 1],
+                    delay: isExiting ? (stairCount - i - 1) * 0.055 : 0,
                   }}
-                  className="h-full flex-1 border-r border-white/[0.04] last:border-none"
-                  style={{ backgroundColor: bgColor }}
-                />
+                  className="h-full flex-1 relative border-r border-sky-400/[0.18] last:border-none overflow-hidden"
+                  style={{
+                    background:
+                      i % 2 === 0
+                        ? 'linear-gradient(180deg, #091528 0%, #060e1c 50%, #040812 100%)'
+                        : 'linear-gradient(180deg, #0b1a32 0%, #071222 50%, #050a16 100%)',
+                    boxShadow: 'inset 0 0 50px rgba(56, 189, 248, 0.03)',
+                  }}
+                >
+                  {/* Subtle light blue vertical sheen */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-sky-400/[0.06] via-transparent to-sky-400/[0.04] pointer-events-none" />
+                  {/* Glowing light blue bottom rim that sweeps upward */}
+                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-sky-500/20 via-sky-300 to-sky-500/20 shadow-[0_0_15px_rgba(56,189,248,0.7)]" />
+                </motion.div>
               ))}
 
               {/* Center Content */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
-                animate={isExiting ? { opacity: 0, scale: 0.9, y: -20 } : { opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
+                animate={isExiting ? { opacity: 0, scale: 0.92, y: -24 } : { opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.45, ease: 'easeOut' }}
                 className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10 pointer-events-none"
               >
+                {/* Center light blue ambient halo */}
+                <div className="absolute w-[440px] h-[440px] rounded-full bg-sky-500/12 blur-[90px] pointer-events-none -z-10" />
+
                 <div className="relative mb-5">
-                  <div className="w-16 h-16 rounded-2xl bg-white/[0.05] border border-sky-400/40 flex items-center justify-center text-3xl shadow-2xl shadow-sky-500/20 backdrop-blur-md">
+                  <div className="w-16 h-16 rounded-2xl bg-sky-950/40 border border-sky-400/50 flex items-center justify-center text-3xl shadow-[0_0_25px_rgba(56,189,248,0.25)] backdrop-blur-md">
                     🎮
                   </div>
                   <motion.div
                     animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
-                    className="absolute -inset-1.5 rounded-2xl border-2 border-dashed border-sky-400/30 pointer-events-none"
+                    transition={{ repeat: Infinity, duration: 5, ease: 'linear' }}
+                    className="absolute -inset-1.5 rounded-2xl border-2 border-dashed border-sky-400/35 pointer-events-none"
                   />
                 </div>
 
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-xl font-bold tracking-wider text-white">CODAK</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-mono font-bold border border-sky-400/30">
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-mono font-bold border border-sky-400/40 shadow-[0_0_10px_rgba(56,189,248,0.2)]">
                     ACADEMY
                   </span>
                 </div>
 
-                <p className="text-sm font-medium text-slate-300 mb-1 max-w-sm">{text}</p>
-                <p className="text-xs text-slate-500 max-w-xs">{subtext}</p>
+                <p className="text-sm font-medium text-slate-200 mb-1 max-w-sm">{text}</p>
+                <p className="text-xs text-sky-300/60 max-w-xs">{subtext}</p>
 
-                <div className="w-48 h-1 rounded-full bg-white/10 mt-6 overflow-hidden">
+                <div className="w-52 h-1.5 rounded-full bg-white/10 mt-6 overflow-hidden p-0.5 border border-sky-400/20">
                   <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-sky-400 to-indigo-500"
+                    className="h-full rounded-full bg-gradient-to-r from-sky-400 via-cyan-300 to-indigo-400 shadow-[0_0_12px_rgba(56,189,248,0.5)]"
                     style={{ width: `${progress}%` }}
                     transition={{ duration: 0.1 }}
                   />
