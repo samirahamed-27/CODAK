@@ -5,6 +5,7 @@ import './globals.css';
 import { DemoRoleSwitch } from '@/components/DemoRoleSwitch';
 import Aurora from '@/components/Aurora';
 import TargetCursor from '@/components/ui/TargetCursor';
+import { PreloaderProvider } from '@/components/ui/PreloaderContext';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -70,9 +71,11 @@ export default function RootLayout({
           cursorColor="#ffffff"
           cursorColorOnTarget="#38BDF8"
         />
-        <div className="relative z-10 flex-1 flex flex-col w-full">
-          {children}
-        </div>
+        <PreloaderProvider>
+          <div className="relative z-10 flex-1 flex flex-col w-full">
+            {children}
+          </div>
+        </PreloaderProvider>
       </body>
     </html>
   );

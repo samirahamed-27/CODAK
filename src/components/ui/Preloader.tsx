@@ -17,6 +17,7 @@ export interface PreloaderProps {
   zIndex?: number;
   position?: 'fixed' | 'absolute';
   stairCount?: number;
+  readyToExit?: boolean;
   onComplete?: () => void;
 }
 
@@ -31,6 +32,7 @@ export const Preloader: React.FC<PreloaderProps> = ({
   zIndex = 99999,
   position = 'fixed',
   stairCount = 6,
+  readyToExit = true,
   onComplete,
 }) => {
   const [progress, setProgress] = useState(0);
@@ -50,28 +52,51 @@ export const Preloader: React.FC<PreloaderProps> = ({
 
     const interval = setInterval(() => {
       const elapsed = performance.now() - startTime;
-      const pct = Math.min(100, Math.round((elapsed / (duration * 0.75)) * 100));
+      const pct = Math.min(100, Math.round((elapsed / (duration * 0.72)) * 100));
       setProgress(pct);
 
       if (pct >= 100) {
         clearInterval(interval);
-        setPhase('exiting');
-        // Graceful exit timeout synchronized with smooth stairs ease
-        const exitTimeout = setTimeout(() => {
-          setPhase('done');
-          onComplete?.();
-        }, 1250);
-
-        return () => clearTimeout(exitTimeout);
       }
     }, intervalTime);
 
     return () => clearInterval(interval);
-  }, [active, duration, onComplete]);
+  }, [active, duration]);
 
-  if (!active && phase === 'done') return null;
+  // Once progress reaches 100%, trigger exit when destination route is ready
+  useEffect(() => {
+    if (progress < 100 || phase !== 'loading') return;
 
-  const isExiting = phase === 'exiting' || phase === 'done';
+    let exitTimer: NodeJS.Timeout;
+
+    if (readyToExit) {
+      setPhase('exiting');
+      exitTimer = setTimeout(() => {
+        setPhase('done');
+        onComplete?.();
+      }, 1250);
+    } else {
+      // Fallback: never hang indefinitely, max wait 800ms for destination route mount
+      const fallback = setTimeout(() => {
+        setPhase('exiting');
+        exitTimer = setTimeout(() => {
+          setPhase('done');
+          onComplete?.();
+        }, 1250);
+      }, 800);
+
+      return () => {
+        clearTimeout(fallback);
+        clearTimeout(exitTimer);
+      };
+    }
+
+    return () => clearTimeout(exitTimer);
+  }, [progress, readyToExit, phase, onComplete]);
+
+  if (!active || phase === 'done') return null;
+
+  const isExiting = phase === 'exiting';
 
   // Dynamic progress stage label for percentage variant
   const getStageLabel = (p: number) => {
@@ -96,8 +121,13 @@ export const Preloader: React.FC<PreloaderProps> = ({
           {/* ========================================================= */}
           {variant === 'stairs' && (
             <div className="absolute inset-0 flex w-full h-full overflow-hidden">
-              {/* Ambient light blue background glow */}
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-sky-900/20 via-[#060c18]/90 to-[#04070d] pointer-events-none -z-10" />
+              {/* Ambient light blue background glow (fades out as stairs lift) */}
+              <motion.div
+                initial={{ opacity: 1 }}
+                animate={isExiting ? { opacity: 0 } : { opacity: 1 }}
+                transition={{ duration: 0.55 }}
+                className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-sky-900/25 via-[#060c18]/95 to-[#04070d] pointer-events-none -z-10"
+              />
 
               {Array.from({ length: stairCount }).map((_, i) => (
                 <motion.div

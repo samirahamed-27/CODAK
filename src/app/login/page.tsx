@@ -4,7 +4,7 @@ import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { SignIn1 } from '@/components/ui/modern-stunning-sign-in';
-import { Preloader } from '@/components/ui/Preloader';
+import { usePreloader } from '@/components/ui/PreloaderContext';
 import { GraduationCap, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -69,14 +69,8 @@ function LoginPageContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // React Bits Pro Preloader State
-  const [isPreloading, setIsPreloading] = useState(false);
-  const [preloadRole, setPreloadRole] = useState<'student' | 'faculty' | 'admin'>('student');
-
-  const handlePreloadComplete = () => {
-    router.push(`/${preloadRole}`);
-    router.refresh();
-  };
+  // Global React Bits Pro Stairs Preloader
+  const { startPreload, isPreloading } = usePreloader();
 
   const handleAuthSubmit = async (inputEmail: string, inputPassword?: string) => {
     setLoading(true);
@@ -108,8 +102,12 @@ function LoginPageContent() {
         if (demo || isPlaceholderSupabase) {
           const targetRole = demo ? demo.role : 'student';
           setSuccessMessage(`Demo access verified for ${targetEmail}!`);
-          setPreloadRole(targetRole);
-          setIsPreloading(true);
+          startPreload({
+            role: targetRole,
+            destination: `/${targetRole}`,
+            text: `Welcome to CODAK • Entering ${targetRole.toUpperCase()} Hub`,
+            subtext: 'Initializing XP ledger, course velocity & battle arena...',
+          });
           return;
         }
 
@@ -127,15 +125,23 @@ function LoginPageContent() {
 
         const role = (profile?.role as 'student' | 'faculty' | 'admin') || 'student';
         setSuccessMessage('Credentials verified!');
-        setPreloadRole(role);
-        setIsPreloading(true);
+        startPreload({
+          role: role,
+          destination: `/${role}`,
+          text: `Welcome to CODAK • Entering ${role.toUpperCase()} Hub`,
+          subtext: 'Initializing XP ledger, course velocity & battle arena...',
+        });
       }
     } catch (err: any) {
       if (demo || isPlaceholderSupabase) {
         const targetRole = demo ? demo.role : 'student';
         setSuccessMessage(`Demo access verified for ${targetEmail}!`);
-        setPreloadRole(targetRole);
-        setIsPreloading(true);
+        startPreload({
+          role: targetRole,
+          destination: `/${targetRole}`,
+          text: `Welcome to CODAK • Entering ${targetRole.toUpperCase()} Hub`,
+          subtext: 'Initializing XP ledger, course velocity & battle arena...',
+        });
         return;
       }
       setErrorMessage(err.message || 'An unexpected error occurred.');
@@ -170,8 +176,12 @@ function LoginPageContent() {
 
       if (data.session) {
         setSuccessMessage('Account created successfully!');
-        setPreloadRole('student');
-        setIsPreloading(true);
+        startPreload({
+          role: 'student',
+          destination: '/student',
+          text: 'Welcome to CODAK • Entering STUDENT Hub',
+          subtext: 'Initializing XP ledger, course velocity & battle arena...',
+        });
       } else {
         setSuccessMessage('Account created! Please check your email to verify your account.');
         setLoading(false);
@@ -183,17 +193,11 @@ function LoginPageContent() {
   };
 
   return (
-    <div className="relative min-h-screen">
-      {/* React Bits Pro Preloader (Stairs Style) */}
-      <Preloader
-        active={isPreloading}
-        variant="stairs"
-        text={`Welcome to CODAK • Entering ${preloadRole.toUpperCase()} Hub`}
-        subtext="Initializing XP ledger, course velocity & battle arena..."
-        duration={2000}
-        onComplete={handlePreloadComplete}
-      />
-
+    <div
+      className={`relative min-h-screen transition-all duration-300 ${
+        isPreloading ? 'opacity-0 pointer-events-none scale-[0.98]' : 'opacity-100 scale-100'
+      }`}
+    >
       {mode === 'signin' ? (
         <div className="relative min-h-screen">
           {/* Mode Toggle Bar */}
