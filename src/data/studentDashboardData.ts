@@ -95,38 +95,16 @@ export function getHeatmapColorLevel(xp: number): {
  * Mock Student Profile Data
  */
 export const initialStudentProfile: StudentProfile = {
-  id: 'usr_student_042',
-  name: 'Aarav Sharma',
-  titleTag: 'Code Apprentice',
-  avatarUrl: null, // Default avatar will be rendered if null
-  rank: '#3 in Computer Science',
-  level: 7,
-  totalXp: 1420,
-  currentStreak: 12,
-  unreadNotifications: 2,
-  notifications: [
-    {
-      id: 'notif_1',
-      sender: 'Prof. Ananya Sen',
-      message: 'Great work on the Binary Search Tree duel quest! +30 XP awarded.',
-      timestamp: '2 hours ago',
-      unread: true,
-    },
-    {
-      id: 'notif_2',
-      sender: 'Campus Arena',
-      message: 'Weekly League Reset in 3 days. You are currently in Gold Tier!',
-      timestamp: 'Yesterday',
-      unread: true,
-    },
-    {
-      id: 'notif_3',
-      sender: 'Peer Hub',
-      message: 'Rohan Mehta requested peer assistance for Dynamic Programming.',
-      timestamp: '2 days ago',
-      unread: false,
-    },
-  ],
+  id: '',
+  name: '',
+  titleTag: 'Apprentice',
+  avatarUrl: null,
+  rank: 'Loading rank...',
+  level: 1,
+  totalXp: 0,
+  currentStreak: 0,
+  unreadNotifications: 0,
+  notifications: [],
 };
 
 /**

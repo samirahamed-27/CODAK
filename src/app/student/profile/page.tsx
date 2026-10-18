@@ -88,7 +88,7 @@ export default function StudentProfilePage() {
           studentId = demoStudent.id;
           setRollNo(demoStudent.roll_no);
           setDepartment(demoStudent.department);
-          setStudentName((demoStudent as any).profiles?.full_name || 'Aarav Sharma');
+          setStudentName((demoStudent as any).profiles?.full_name || 'Student');
         }
       }
 

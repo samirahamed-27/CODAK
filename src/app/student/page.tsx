@@ -15,6 +15,7 @@ import { levelFromXp } from '@/lib/levels';
 import { getStudentStreakAction } from '@/app/actions/quiz';
 import { getStudentDashboardDataAction } from '@/app/actions/student-dashboard';
 import { CelebrationManager, triggerCelebrationCheck } from '@/components/animations/CelebrationManager';
+import { createClient } from '@/lib/supabase/client';
 
 export default function StudentDashboardPage() {
   const [profile, setProfile] = useState<StudentProfile>(initialStudentProfile);
@@ -41,11 +42,50 @@ export default function StudentDashboardPage() {
     let mounted = true;
 
     // Load real student profile, ledger XP, and academic info
-    getStudentDashboardDataAction().then((res) => {
-      if (mounted && res.success && res.authenticated) {
+    getStudentDashboardDataAction().then(async (res) => {
+      if (!mounted) return;
+      if (res.success && res.authenticated) {
         setProfile(res.profile);
         if (res.activityCalendar && Object.keys(res.activityCalendar).length > 0) {
           setActivityCalendar(res.activityCalendar);
+        }
+      } else {
+        // Resilient client-side auth fallback
+        try {
+          const supabase = createClient();
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (user && mounted) {
+            const { data: prof } = await supabase
+              .from('profiles')
+              .select('full_name, avatar_url')
+              .eq('id', user.id)
+              .maybeSingle();
+
+            const { data: stud } = await supabase
+              .from('students')
+              .select('department, roll_no')
+              .eq('id', user.id)
+              .maybeSingle();
+
+            const fallbackName =
+              prof?.full_name ||
+              user.user_metadata?.full_name ||
+              user.user_metadata?.name ||
+              user.email?.split('@')[0] ||
+              'Student';
+
+            setProfile((prev) => ({
+              ...prev,
+              id: user.id,
+              name: fallbackName,
+              avatarUrl: prof?.avatar_url || prev.avatarUrl,
+              rank: stud?.department ? `#1 in ${stud.department}` : prev.rank,
+            }));
+          }
+        } catch {
+          // Keep current state
         }
       }
     });

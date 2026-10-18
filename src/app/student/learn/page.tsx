@@ -283,7 +283,7 @@ export default function StudentLearnPage() {
       {/* Celebration Modal Manager */}
       <CelebrationManager />
 
-      <Navbar role="student" userName="Aarav Sharma" />
+      <Navbar role="student" />
 
       <main className="flex-1 max-w-xl w-full mx-auto px-4 py-6 flex flex-col gap-5">
         <div>

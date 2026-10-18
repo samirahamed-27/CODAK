@@ -135,17 +135,27 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
 
       {/* Name and Rank */}
       <div className="mt-3 mb-4">
-        <Shuffle
-          text={profile.name}
-          tag="h2"
-          effect="slide"
-          duration={0.35}
-          stagger={0.03}
-          triggerOnHover={true}
-          color="#FFFFFF"
-          accentColor="#A1A1AA"
-          style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
-        />
+        {profile.name ? (
+          <Shuffle
+            key={profile.name}
+            text={profile.name}
+            tag="h2"
+            effect="slide"
+            duration={0.35}
+            stagger={0.03}
+            triggerOnHover={true}
+            color="#FFFFFF"
+            accentColor="#A1A1AA"
+            style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
+          />
+        ) : (
+          <h2
+            style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
+            className="text-white"
+          >
+            Student
+          </h2>
+        )}
         <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
           <RankChip level={profile.level} size="sm" showLevel />
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-[11px] font-mono text-zinc-300">

@@ -19,10 +19,45 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
   const router = useRouter();
   const supabase = createClient();
   const [mounted, setMounted] = useState(false);
+  const [displayName, setDisplayName] = useState<string | undefined>(
+    userName && userName !== 'Aarav Sharma' ? userName : undefined
+  );
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+
+    if (userName && userName !== 'Aarav Sharma') {
+      setDisplayName(userName);
+      return;
+    }
+
+    async function loadUser() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (profile?.full_name && profile.full_name !== 'Student User') {
+            setDisplayName(profile.full_name);
+          } else if (user.user_metadata?.full_name || user.user_metadata?.name) {
+            setDisplayName(user.user_metadata.full_name || user.user_metadata.name);
+          } else if (user.email) {
+            const prefix = user.email.split('@')[0];
+            setDisplayName(prefix.charAt(0).toUpperCase() + prefix.slice(1));
+          }
+        }
+      } catch {
+        // fallback
+      }
+    }
+    loadUser();
+  }, [userName, supabase]);
 
   const getRoleBadge = () => {
     switch (role) {
@@ -101,9 +136,9 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
 
         <div className="flex items-center gap-2.5 sm:gap-3" suppressHydrationWarning>
           {getRoleBadge()}
-          {userName && (
+          {displayName && (
             <span className="hidden sm:inline text-xs text-zinc-400 font-medium">
-              {userName}
+              {displayName}
             </span>
           )}
           {mounted && (

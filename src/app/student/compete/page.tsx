@@ -372,7 +372,7 @@ export default function StudentCompetePage() {
         {/* Celebration Modal Manager */}
         <CelebrationManager />
 
-        <Navbar role="student" userName="Aarav Sharma" />
+        <Navbar role="student" />
 
         <main className="flex-1 max-w-lg w-full mx-auto px-4 py-6 flex flex-col gap-5">
           {/* Top navigation tabs */}

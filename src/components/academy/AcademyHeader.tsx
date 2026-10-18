@@ -26,17 +26,27 @@ export function AcademyHeader({ profile }: AcademyHeaderProps) {
       <div className="flex flex-wrap items-center gap-4 sm:gap-6">
         <div>
           <div className="flex items-center gap-3">
-            <Shuffle
-              text={profile.name}
-              tag="h1"
-              effect="slide"
-              duration={0.35}
-              stagger={0.03}
-              triggerOnHover={true}
-              color="#FFFFFF"
-              accentColor="#A1A1AA"
-              style={{ fontSize: 'clamp(1.35rem, 2.5vw, 1.85rem)', letterSpacing: '0.02em', fontWeight: 700 }}
-            />
+            {profile.name ? (
+              <Shuffle
+                key={profile.name}
+                text={profile.name}
+                tag="h1"
+                effect="slide"
+                duration={0.35}
+                stagger={0.03}
+                triggerOnHover={true}
+                color="#FFFFFF"
+                accentColor="#A1A1AA"
+                style={{ fontSize: 'clamp(1.35rem, 2.5vw, 1.85rem)', letterSpacing: '0.02em', fontWeight: 700 }}
+              />
+            ) : (
+              <h1
+                style={{ fontSize: 'clamp(1.35rem, 2.5vw, 1.85rem)', letterSpacing: '0.02em', fontWeight: 700 }}
+                className="text-white"
+              >
+                Student
+              </h1>
+            )}
 
             {/* Game Title Tag Badge */}
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-white/10 border border-white/20 text-white">

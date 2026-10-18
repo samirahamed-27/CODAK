@@ -57,7 +57,7 @@ export default function StudentQuestsPage() {
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col w-full">
-        <Navbar role="student" userName="Aarav Sharma" />
+        <Navbar role="student" />
 
         <main className="flex-1 max-w-lg w-full mx-auto px-4 py-6 flex flex-col gap-5">
           {/* Top header navigation */}

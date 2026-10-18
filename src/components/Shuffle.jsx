@@ -579,6 +579,11 @@ const Shuffle = ({
         onEnter: create
       });
 
+      // Ensure create runs immediately if the element is already in viewport
+      if (typeof window !== 'undefined' && el.getBoundingClientRect().top < window.innerHeight) {
+        create();
+      }
+
       return () => {
         st.kill();
         removeHover();
