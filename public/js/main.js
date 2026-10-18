@@ -110,6 +110,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let activeEnemy = null;
   let isGamePaused = false;
   let isTimerPaused = false;
+  let isQuestionLocked = false;
 
   // Sound state with localStorage persistence
   let soundEnabled = true;
@@ -1295,6 +1296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     activeChallenge = null;
+    isQuestionLocked = false;
     hintUsedThisTurn = false;
     if (window.gameState) {
       window.gameState.hintUsedThisTurn = false;
@@ -1391,7 +1393,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let activeExpandedIndex = 0;
 
   function showExpandedPicker(index) {
-    if (!battleActive || activeChallenge || !pickerExpandedOverlay) return;
+    if (!battleActive || activeChallenge || isQuestionLocked || !pickerExpandedOverlay) return;
     if (!currentTurnCards || currentTurnCards.length === 0) return;
     if (typeof isEnemyTurn !== 'undefined' && isEnemyTurn) return;
 
@@ -1444,7 +1446,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       tab.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (isLocked) return;
+        if (isLocked || isQuestionLocked) return;
         const allCardEls = pickerCardsContainer ? pickerCardsContainer.querySelectorAll('.picker-card') : [];
         const cardEl = allCardEls[idx];
         hideExpandedPicker();
@@ -1469,7 +1471,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           e.stopPropagation();
-          if (isLocked) return;
+          if (isLocked || isQuestionLocked) return;
           const allCardEls = pickerCardsContainer ? pickerCardsContainer.querySelectorAll('.picker-card') : [];
           const cardEl = allCardEls[idx];
           hideExpandedPicker();
@@ -1522,7 +1524,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     pickerExpandedBody.onclick = () => {
-      if (isLocked) return;
+      if (isLocked || isQuestionLocked) return;
       const allCardEls = pickerCardsContainer ? pickerCardsContainer.querySelectorAll('.picker-card') : [];
       const cardEl = allCardEls[activeExpandedIndex];
       hideExpandedPicker();
@@ -1532,7 +1534,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     pickerExpandedBody.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        if (isLocked) return;
+        if (isLocked || isQuestionLocked) return;
         const allCardEls = pickerCardsContainer ? pickerCardsContainer.querySelectorAll('.picker-card') : [];
         const cardEl = allCardEls[activeExpandedIndex];
         hideExpandedPicker();
@@ -1650,12 +1652,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
             <div class="picker-card-title font-pixel">${challenge.title || 'Challenge'}</div>
             <div class="picker-card-desc font-code">${challenge.description || ''}</div>
+            <div class="picker-card-action-bar font-pixel">► CLICK QUESTION TO SELECT & START TURN ◄</div>
           </div>
           ${rewardStripHtml}
         `;
 
         card.addEventListener('click', () => {
           if (isTestingCode || (typeof isEnemyTurn !== 'undefined' && isEnemyTurn)) return;
+          if (isQuestionLocked) return;
           setActiveQuestion(idx, true);
         });
 
@@ -1663,6 +1667,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             if (isTestingCode || (typeof isEnemyTurn !== 'undefined' && isEnemyTurn)) return;
+            if (isQuestionLocked) return;
             setActiveQuestion(idx, true);
           }
         });
@@ -1706,7 +1711,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         tab.setAttribute('tabindex', isLocked ? '-1' : '0');
         tab.title = isLocked
           ? 'Easy challenge is locked in Bugmon battle'
-          : `${(challenge.difficulty || 'EASY').toUpperCase()} (${dmg} DMG)${willReceiveItem && itemChip ? ` • Item: ${itemChip.name}` : ''} - Click to open question`;
+          : `${(challenge.difficulty || 'EASY').toUpperCase()} (${dmg} DMG)${willReceiveItem && itemChip ? ` • Item: ${itemChip.name}` : ''} - Click to preview question`;
 
         const diffLabel = (challenge.difficulty || 'easy').toUpperCase() === 'MEDIUM' ? 'MED' : (challenge.difficulty || 'easy').toUpperCase();
 
@@ -1736,6 +1741,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         tab.addEventListener('click', (e) => {
           e.preventDefault();
+          if (isQuestionLocked) {
+            playSound('error');
+            if (window.typeText) window.typeText('Question locked in for this turn! Solve it or wait for next turn.', 20);
+            return;
+          }
           if (isLocked) {
             playSound('error');
             if (window.typeText) window.typeText('Easy challenges are locked during Bugmon battle!', 20);
@@ -1743,20 +1753,33 @@ document.addEventListener('DOMContentLoaded', async () => {
           }
           if (typeof isEnemyTurn !== 'undefined' && isEnemyTurn) return;
           if (isTestingCode) return;
-          setActiveQuestion(idx, true);
+          // Clicking tab previews the question without locking it in
+          setActiveQuestion(idx, false);
         });
 
         tab.addEventListener('keydown', (e) => {
+          if (isQuestionLocked) {
+            if (['ArrowRight', 'ArrowLeft', 'Enter', ' '].includes(e.key)) {
+              e.preventDefault();
+            }
+            return;
+          }
           if (e.key === 'ArrowRight') {
             e.preventDefault();
             const nextIdx = (idx + 1) % cards.length;
             const allTabs = diffBar.querySelectorAll('.picker-diff-tab');
-            if (allTabs[nextIdx]) allTabs[nextIdx].focus();
+            if (allTabs[nextIdx]) {
+              allTabs[nextIdx].focus();
+              setActiveQuestion(nextIdx, false);
+            }
           } else if (e.key === 'ArrowLeft') {
             e.preventDefault();
             const prevIdx = (idx - 1 + cards.length) % cards.length;
             const allTabs = diffBar.querySelectorAll('.picker-diff-tab');
-            if (allTabs[prevIdx]) allTabs[prevIdx].focus();
+            if (allTabs[prevIdx]) {
+              allTabs[prevIdx].focus();
+              setActiveQuestion(prevIdx, false);
+            }
           } else if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             if (isLocked) return;
@@ -1772,6 +1795,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function setActiveQuestion(index, openInEditor = true) {
       if (!cards[index]) return;
+      if (isQuestionLocked && activeChallenge && cards[index].id !== activeChallenge.id) {
+        playSound('error');
+        return;
+      }
       activeDifficultyIndex = index;
       const targetChallenge = cards[index];
       const targetCard = cardElements[index];
@@ -1798,6 +1825,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
           c.classList.remove('active');
           c.classList.remove('selected');
+          c.classList.remove('question-locked-in');
           c.setAttribute('aria-selected', 'false');
         }
       });
@@ -1807,7 +1835,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
 
-    window.switchPickerQuestion = (idx) => setActiveQuestion(idx, true);
+    window.switchPickerQuestion = (idx) => {
+      if (isQuestionLocked) return;
+      setActiveQuestion(idx, true);
+    };
 
     if (window.updateQuestionCardChipFullBadges) {
       window.updateQuestionCardChipFullBadges();
@@ -1825,8 +1856,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!battleActive) return;
     if (typeof isEnemyTurn !== 'undefined' && isEnemyTurn) return;
     if (isTestingCode) return;
+    if (isQuestionLocked && activeChallenge && activeChallenge.id !== challenge.id) {
+      playSound('error');
+      return;
+    }
     if (activeChallenge && activeChallenge.id === challenge.id && cardElement && cardElement.classList.contains('selected')) {
       return;
+    }
+
+    // Once a question is selected and clicked, lock it for the remainder of this turn
+    isQuestionLocked = true;
+    if (window.gameState) {
+      window.gameState.isQuestionLocked = true;
     }
 
     hideExpandedPicker();
@@ -1834,33 +1875,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     activeChallenge = challenge;
     battleUsedChallenges.add(challenge.id);
 
-    // Clicking a card selects it, activates it and syncs tabs
+    // Clicking a card selects it, activates it, locks it, and syncs tabs
     const allCards = pickerCardsContainer ? pickerCardsContainer.querySelectorAll('.picker-card') : [];
     allCards.forEach((c) => {
       if (c === cardElement) {
         c.classList.add('selected');
         c.classList.add('active');
+        c.classList.add('question-locked-in');
         c.classList.remove('locked');
         c.setAttribute('aria-selected', 'true');
         c.removeAttribute('aria-disabled');
         c.tabIndex = 0;
+        const actionBar = c.querySelector('.picker-card-action-bar');
+        if (actionBar) {
+          actionBar.textContent = '🔒 QUESTION LOCKED IN • SOLVE IN EDITOR BELOW';
+        }
       } else {
         c.classList.remove('selected');
         c.classList.remove('active');
+        c.classList.remove('question-locked-in');
         c.setAttribute('aria-selected', 'false');
       }
     });
 
     const diffBar = document.getElementById('picker-difficulty-bar') || pickerDifficultyBar;
     if (diffBar) {
+      diffBar.classList.add('question-locked');
       const allTabs = diffBar.querySelectorAll('.picker-diff-tab');
       allTabs.forEach((tab) => {
         if (tab.classList.contains(challenge.difficulty)) {
           tab.classList.add('active');
+          tab.classList.add('question-locked-tab');
+          tab.classList.remove('tab-locked-out');
           tab.setAttribute('aria-selected', 'true');
         } else {
           tab.classList.remove('active');
+          tab.classList.remove('question-locked-tab');
+          tab.classList.add('tab-locked-out');
           tab.setAttribute('aria-selected', 'false');
+          tab.setAttribute('tabindex', '-1');
+          tab.setAttribute('aria-disabled', 'true');
         }
       });
     }
@@ -1870,7 +1924,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (pickerStatusBadge) {
       const itemNote = (challenge && challenge.willReceiveItem) ? ` + [${challenge.willReceiveItem.name.toUpperCase()}]` : '';
-      pickerStatusBadge.textContent = `MOVE SELECTED: ${challenge.difficulty.toUpperCase()} (${dmg} DMG)${itemNote}`;
+      pickerStatusBadge.textContent = `LOCKED IN: ${challenge.difficulty.toUpperCase()} (${dmg} DMG)${itemNote}`;
       pickerStatusBadge.className = 'section-badge font-code text-green';
     }
 
@@ -2927,6 +2981,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     turnsLeft = startingTurns;
     targetPoints = 120;
     battleActive = true;
+    isQuestionLocked = false;
     window.gameState.battleActive = true;
     window.gameState.isBugmonBattle = false;
     window.gameState.xp = typeof window.gameState.xp === 'number' ? window.gameState.xp : 100;
@@ -3912,6 +3967,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.handleBattleOutcome = handleBattleOutcome;
   window.initResizablePanels = initResizablePanels;
   window.initCardVisibilityToggles = initCardVisibilityToggles;
+  window.isQuestionLocked = () => isQuestionLocked;
+  window.selectChallengeCard = selectChallengeCard;
 
   // Initial setup
   renderStarters();

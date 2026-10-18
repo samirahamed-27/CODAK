@@ -1720,6 +1720,59 @@ body.resizing-row .split-resizer-row .resizer-row-handle span {
   animation: none !important;
 }
 
+/* Question Locking (User cannot change question once clicked) */
+.picker-difficulty-bar.question-locked .picker-diff-tab:not(.active) {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  filter: grayscale(0.7) !important;
+  border-color: var(--gb-dark) !important;
+  animation: none !important;
+}
+
+.picker-difficulty-bar.question-locked .picker-diff-tab.active {
+  cursor: default !important;
+  box-shadow: 0 0 12px rgba(38, 222, 129, 0.45), var(--pixel-border-sm) !important;
+}
+
+.picker-diff-tab.tab-locked-out {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  filter: grayscale(0.7) !important;
+  border-color: var(--gb-dark) !important;
+}
+
+.picker-card-action-bar {
+  margin-top: 10px;
+  padding: 6px 12px;
+  font-size: 11px;
+  text-align: center;
+  border: 1px dashed var(--pixel-yellow);
+  color: var(--pixel-yellow);
+  background-color: rgba(244, 180, 27, 0.08);
+  letter-spacing: 0.06em;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.picker-card:hover:not(.question-locked-in):not(.locked) .picker-card-action-bar {
+  background-color: rgba(244, 180, 27, 0.22);
+  border-style: solid;
+  color: var(--pixel-white);
+}
+
+.picker-card.question-locked-in .picker-card-action-bar {
+  border: 1px solid var(--pixel-green);
+  color: var(--pixel-green);
+  background-color: rgba(56, 183, 100, 0.12);
+}
+
+.picker-card.question-locked-in {
+  cursor: default !important;
+  box-shadow: 0 0 0 2px var(--pixel-green), var(--pixel-border) !important;
+}
+
 /* Tab Content: Left Title + DMG, Right Chip Image Preview */
 .picker-diff-tab-left {
   display: flex;

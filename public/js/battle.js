@@ -2831,10 +2831,13 @@ function setCodePanelEnemyTurnUI(isEnemyTurn) {
 
     const diffBar = document.getElementById('picker-difficulty-bar');
     if (diffBar) {
+      diffBar.classList.remove('question-locked');
       const tabs = diffBar.querySelectorAll('.picker-diff-tab');
       tabs.forEach((t) => {
         if (!t.classList.contains('bugmon-locked')) {
           t.classList.remove('locked');
+          t.classList.remove('tab-locked-out');
+          t.classList.remove('question-locked-tab');
           t.style.pointerEvents = 'auto';
         }
       });
