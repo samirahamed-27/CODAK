@@ -47,6 +47,7 @@ export const KatanaCanvas: React.FC<KatanaCanvasProps> = ({
 
     const resize = () => {
       const rect = container.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
       const dpr = window.devicePixelRatio || 1;
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;

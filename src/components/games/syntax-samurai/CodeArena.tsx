@@ -118,8 +118,13 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
   // Recalculate bounding boxes when typewriter streaming finishes or window resizes
   useEffect(() => {
     if (!isStreaming) {
-      const timer = setTimeout(updateBoundingBoxes, 40);
-      return () => clearTimeout(timer);
+      updateBoundingBoxes();
+      const t1 = setTimeout(updateBoundingBoxes, 50);
+      const t2 = setTimeout(updateBoundingBoxes, 180);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     }
   }, [isStreaming, updateBoundingBoxes]);
 
@@ -175,12 +180,12 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
       // Spawn 65 pixel crumble particles erupting along cut vector
       if (crumbleEngineRef.current && e.token) {
         let cutAngle = e.slashAngle;
-        if (cutAngle === undefined && e.cutSegment) {
+        if ((cutAngle === undefined || isNaN(cutAngle)) && e.cutSegment) {
           const cdx = e.cutSegment.p2.x - e.cutSegment.p1.x;
           const cdy = e.cutSegment.p2.y - e.cutSegment.p1.y;
           cutAngle = Math.atan2(cdy, cdx);
         }
-        if (cutAngle === undefined) {
+        if (cutAngle === undefined || isNaN(cutAngle)) {
           cutAngle = -Math.PI / 4;
         }
         setSlashCutAngle(cutAngle);
@@ -532,7 +537,7 @@ const codeFontStyle: React.CSSProperties = {
       {/* =========================================================================
           SLICING BATTLE ARENA (CODE VIEWPORT)
           ========================================================================= */}
-      <div className="relative z-10 p-4 sm:p-6 flex-1 flex flex-col justify-between gap-4 min-h-0 overflow-hidden">
+      <div className="relative z-10 p-4 sm:p-6 flex-1 flex flex-col justify-between gap-4 min-h-0 overflow-y-auto overflow-x-hidden">
         {/* Editor Window Chrome with 80ms screen micro-shake & visual impact flash */}
         <div
           className={`relative rounded-2xl bg-[#0c0d14]/95 border border-zinc-800/90 shadow-2xl flex-1 flex flex-col justify-between min-h-0 overflow-hidden transition-transform duration-75 ${
