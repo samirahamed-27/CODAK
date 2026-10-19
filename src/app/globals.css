@@ -386,3 +386,11 @@ canvas,
   scrollbar-width: none;
 }
 
+/* Safe-area insets for mobile notched devices and home bars */
+.safe-area-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+.safe-area-top {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+

@@ -22,6 +22,14 @@ export const metadata: Metadata = {
   description: 'CODAK - Next-Gen Gamified Academic Platform: Learn, Play, and Compete.',
 };
 
+export const viewport = {
+  themeColor: '#000000',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover' as const,
+};
+
 export default function RootLayout({
   children,
 }: {

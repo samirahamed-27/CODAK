@@ -469,17 +469,19 @@ export default function StudentPracticePage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-zinc-300 flex items-center justify-between">
                   <span>Solution URL / Profile Handle</span>
-                  <span className="text-[10px] text-zinc-500">(Optional)</span>
+                  <span className="text-[10px] text-zinc-400 font-mono">(Required)</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., https://hackerrank.com/submissions/... or username"
+                  required
+                  minLength={3}
+                  placeholder="e.g., https://leetcode.com/submissions/... or handle"
                   value={submissionProof}
                   onChange={(e) => setSubmissionProof(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white transition-all font-mono"
                 />
                 <p className="text-[10px] text-zinc-400 leading-relaxed">
-                  Honor system verification: confirming your solve immediately awards XP. Daily limits apply (5 practice, 2 competitions).
+                  Verifiable ledger recording: provide your submission link or profile handle. Daily rate limits apply (5 practice, 2 competitions).
                 </p>
               </div>
 

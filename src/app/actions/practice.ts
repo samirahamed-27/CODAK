@@ -129,6 +129,15 @@ export async function claimPracticeProblemAction(payload: {
     return { success: false, error: rl.error };
   }
 
+  // Anti-gaming guard: Require verifiable solution link or profile handle to prevent idle-click XP farming
+  const trimmedProof = payload.submissionProof?.trim();
+  if (!trimmedProof || trimmedProof.length < 3) {
+    return {
+      success: false,
+      error: 'Please provide a verifiable solution URL or profile handle (LeetCode, HackerRank, Codeforces, or GitHub) to confirm your practice solve.',
+    };
+  }
+
   try {
     const adminClient = createAdminClient();
     await ensureStudentRecord(adminClient, user);
