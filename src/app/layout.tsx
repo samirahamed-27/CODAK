@@ -22,11 +22,14 @@ export const metadata: Metadata = {
   description: 'CODAK - Next-Gen Gamified Academic Platform: Learn, Play, and Compete.',
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon.png', type: 'image/png', sizes: '64x64' },
+      { url: '/favicon.ico?v=2', sizes: 'any' },
+      { url: '/icon.png?v=2', type: 'image/png', sizes: '64x64' },
+      { url: '/assets/icons/icon-32.png?v=2', type: 'image/png', sizes: '32x32' },
+      { url: '/assets/icons/icon-16.png?v=2', type: 'image/png', sizes: '16x16' },
     ],
+    shortcut: '/favicon.ico?v=2',
     apple: [
-      { url: '/apple-icon.png', sizes: '64x64', type: 'image/png' },
+      { url: '/apple-icon.png?v=2', sizes: '64x64', type: 'image/png' },
     ],
   },
 };
@@ -50,6 +53,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark bg-black`}
     >
       <head>
+        <link rel="icon" href="/favicon.ico?v=2" sizes="any" />
+        <link rel="icon" href="/icon.png?v=2" type="image/png" sizes="64x64" />
+        <link rel="icon" href="/assets/icons/icon-32.png?v=2" type="image/png" sizes="32x32" />
+        <link rel="icon" href="/assets/icons/icon-16.png?v=2" type="image/png" sizes="16x16" />
+        <link rel="shortcut icon" href="/favicon.ico?v=2" />
+        <link rel="apple-touch-icon" href="/apple-icon.png?v=2" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
