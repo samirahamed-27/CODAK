@@ -115,3 +115,53 @@ export interface BladeSpark {
   maxLife: number;
 }
 
+export type SamuraiRank = 'SHOGUN' | 'DAIMYO' | 'SAMURAI' | 'RONIN';
+
+export interface SamuraiRankDetails {
+  rank: SamuraiRank;
+  label: string;
+  kanji: string;
+  title: string;
+  color: string;
+  borderColor: string;
+  badgeGradient: string;
+  minAccuracy: number;
+  requiresCodemare?: boolean;
+  lore: string;
+}
+
+export interface QuestionResultMeta {
+  wasSliced: boolean;
+  selectedFix: string | null;
+  timeRemainingSec: number;
+  combo: number;
+  timeBonus: number;
+}
+
+export interface QuestionReviewItem {
+  question: SyntaxQuestion;
+  wasSliced: boolean;
+  selectedFix: string | null;
+  isCorrect: boolean;
+  timeRemainingSec: number;
+  timeBonus: number;
+  xpEarned: number;
+}
+
+export interface VictoryStats {
+  enemy: EnemyProfile;
+  difficulty: DifficultyConfig;
+  slashesLanded: number;
+  totalQuestions: number;
+  correctCount: number;
+  accuracyPercent: number;
+  maxCombo: number;
+  baseXp: number;
+  accuracyBonusXp: number;
+  comboBonusXp: number;
+  timeBonusXp: number;
+  totalScore: number;
+  rank: SamuraiRank;
+  reviewItems: QuestionReviewItem[];
+}
+
