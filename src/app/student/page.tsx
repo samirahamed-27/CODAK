@@ -7,14 +7,13 @@ import { AcademySidebar } from '@/components/academy/AcademySidebar';
 import { AcademyHeader } from '@/components/academy/AcademyHeader';
 import { ProfileCard } from '@/components/academy/ProfileCard';
 import { WorkReportCard } from '@/components/academy/WorkReportCard';
-import { ToDoCard } from '@/components/academy/ToDoCard';
+import { CodemonCard } from '@/components/academy/CodemonCard';
 import { DeadlinesCard } from '@/components/academy/DeadlinesCard';
 import { ScoreCard } from '@/components/academy/ScoreCard';
 import { initialStudentProfile, StudentProfile } from '@/data/studentDashboardData';
-import { levelFromXp } from '@/lib/levels';
 import { getStudentStreakAction } from '@/app/actions/quiz';
 import { getStudentDashboardDataAction } from '@/app/actions/student-dashboard';
-import { CelebrationManager, triggerCelebrationCheck } from '@/components/animations/CelebrationManager';
+import { CelebrationManager } from '@/components/animations/CelebrationManager';
 import { createClient } from '@/lib/supabase/client';
 
 export default function StudentDashboardPage() {
@@ -219,9 +218,9 @@ export default function StudentDashboardPage() {
               <WorkReportCard activityData={activityCalendar} />
             </div>
 
-            {/* Card 3: To do Card (Right, 4 cols) */}
+            {/* Card 3: Codemon Arena Game Card (Right, 4 cols) */}
             <div className="md:col-span-2 lg:col-span-4 flex flex-col">
-              <ToDoCard />
+              <CodemonCard />
             </div>
           </section>
 
