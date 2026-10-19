@@ -6,6 +6,14 @@
   transition: opacity 0.15s ease-out;
 }
 
+body.katana-mode .target-cursor,
+body:has([data-katana-active="true"]) .target-cursor {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+
 .target-cursor__corner {
   position: absolute;
   top: 0;

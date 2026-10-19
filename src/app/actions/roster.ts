@@ -139,12 +139,30 @@ export async function getStudentDirectoryAction(params?: {
     if (studentIds.length > 0) {
       const { data: streaks } = await adminClient
         .from('student_streaks')
-        .select('student_id, current_streak')
+        .select('student_id, current_streak, last_quiz_date, freeze_days_used_this_month, freeze_days_month')
         .in('student_id', studentIds);
 
       if (streaks) {
+        const todayDate = new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Asia/Kolkata',
+        }).format(new Date());
+        const currentMonth = todayDate.substring(0, 7);
+
         for (const st of streaks) {
-          streakMap.set(st.student_id, st.current_streak || 0);
+          let s = st.current_streak || 0;
+          if (st.last_quiz_date && st.last_quiz_date !== todayDate) {
+            const d1 = new Date(`${st.last_quiz_date}T00:00:00Z`);
+            const d2 = new Date(`${todayDate}T00:00:00Z`);
+            const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+            if (diffDays > 1) {
+              const freezeUsed = st.freeze_days_month === currentMonth ? (st.freeze_days_used_this_month ?? 0) : 0;
+              const freezesRemaining = Math.max(0, 2 - freezeUsed);
+              if (diffDays - 1 > freezesRemaining) {
+                s = 0;
+              }
+            }
+          }
+          streakMap.set(st.student_id, s);
         }
       }
     }

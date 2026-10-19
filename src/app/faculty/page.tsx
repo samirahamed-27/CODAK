@@ -112,6 +112,13 @@ export default function FacultyDashboardPage() {
 
           <div className="flex flex-wrap items-center gap-3">
             <Link
+              href="/faculty/leaderboard"
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-white text-xs font-semibold transition-all"
+            >
+              <Trophy className="w-4 h-4 text-amber-400" />
+              <span>Campus Standings</span>
+            </Link>
+            <Link
               href="/faculty/flags"
               className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-white text-xs font-semibold transition-all"
             >

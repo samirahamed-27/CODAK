@@ -271,7 +271,7 @@ export async function getDailyQuizSessionAction(): Promise<DailyQuizSessionResul
       const newOptionsOrder: Record<string, ('A' | 'B' | 'C' | 'D')[]> = {};
       const defaultKeys: ('A' | 'B' | 'C' | 'D')[] = ['A', 'B', 'C', 'D'];
       for (const q of freshQuestions) {
-        newOptionsOrder[q.id] = shuffleArray(defaultKeys);
+        newOptionsOrder[q.id] = ['A', 'B', 'C', 'D'];
       }
       await adminClient
         .from('quiz_attempts')
@@ -608,7 +608,7 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
       .from('xp_events')
       .select('xp_amount')
       .eq('reference_id', quizRef)
-      .eq('voided', false)
+      .eq('status', 'valid')
       .maybeSingle();
     if (pastEvent) {
       xpAwarded = pastEvent.xp_amount;

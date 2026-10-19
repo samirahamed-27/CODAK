@@ -86,14 +86,31 @@ export async function getStudentDashboardDataAction(): Promise<StudentDashboardR
       totalXp = 0;
     }
 
-    // 4. Fetch Streak Data
+    // 4. Fetch Streak Data (with active decay evaluation)
     const { data: streakRow } = await adminClient
       .from('student_streaks')
-      .select('current_streak, longest_streak')
+      .select('current_streak, longest_streak, last_quiz_date, freeze_days_used_this_month, freeze_days_month')
       .eq('student_id', user.id)
       .maybeSingle();
 
-    const currentStreak = streakRow?.current_streak ?? 0;
+    const todayDate = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+    }).format(new Date());
+
+    let currentStreak = streakRow?.current_streak ?? 0;
+    if (streakRow?.last_quiz_date && streakRow.last_quiz_date !== todayDate) {
+      const d1 = new Date(`${streakRow.last_quiz_date}T00:00:00Z`);
+      const d2 = new Date(`${todayDate}T00:00:00Z`);
+      const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays > 1) {
+        const currentMonth = todayDate.substring(0, 7);
+        const freezeUsed = streakRow.freeze_days_month === currentMonth ? (streakRow.freeze_days_used_this_month ?? 0) : 0;
+        const freezesRemaining = Math.max(0, 2 - freezeUsed);
+        if (diffDays - 1 > freezesRemaining) {
+          currentStreak = 0;
+        }
+      }
+    }
 
     // 5. Fetch Activity Heatmap (last 31 days of XP events in IST)
     const activityCalendar: Record<string, number> = {};
