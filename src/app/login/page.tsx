@@ -26,7 +26,7 @@ function LoginPageContent() {
   // Student Signup Fields
   const [fullName, setFullName] = useState('');
   const [rollNo, setRollNo] = useState('');
-  const [department, setDepartment] = useState('Computer Science');
+  const [department, setDepartment] = useState('COMPUTER SCIENCE CORE');
   const [campuses, setCampuses] = useState<{ id: string; name: string; city: string; is_other: boolean }[]>([]);
   const [selectedCampusId, setSelectedCampusId] = useState('');
   const [campusOtherName, setCampusOtherName] = useState('');
@@ -364,12 +364,10 @@ function LoginPageContent() {
               <select
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white text-xs focus:outline-none focus:border-sky-400"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white text-xs focus:outline-none focus:border-white transition-colors"
               >
-                <option value="Computer Science">Computer Science</option>
-                <option value="Information Tech">Information Tech</option>
-                <option value="Electronics & Comm">Electronics & Comm</option>
-                <option value="Mechanical">Mechanical</option>
+                <option value="COMPUTER SCIENCE CORE">COMPUTER SCIENCE CORE</option>
+                <option value="COMPUTER SCIENCE AI/ML">COMPUTER SCIENCE AI/ML</option>
               </select>
             </div>
           </div>

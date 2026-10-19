@@ -23,16 +23,8 @@ import {
 import { createClient } from '@/lib/supabase/client';
 
 const DEPARTMENTS = [
-  'Computer Science & Engineering',
-  'Information Technology',
-  'Data Science & Artificial Intelligence',
-  'Electronics & Communication Engineering',
-  'Electrical & Electronics Engineering',
-  'Mechanical Engineering',
-  'Civil Engineering',
-  'Biotechnology & Biomedical',
-  'Business Administration & Management',
-  'General Studies',
+  'COMPUTER SCIENCE CORE',
+  'COMPUTER SCIENCE AI/ML',
 ];
 
 export default function SelectCampusPage() {
@@ -44,7 +36,7 @@ export default function SelectCampusPage() {
   const [otherName, setOtherName] = useState('');
   const [fullName, setFullName] = useState('');
   const [rollNo, setRollNo] = useState('');
-  const [department, setDepartment] = useState('Computer Science & Engineering');
+  const [department, setDepartment] = useState('COMPUTER SCIENCE CORE');
   const [customDepartment, setCustomDepartment] = useState('');
   const [yearOfStudy, setYearOfStudy] = useState(1);
   const [fetching, setFetching] = useState(true);
@@ -65,9 +57,14 @@ export default function SelectCampusPage() {
             if (res.user.department) {
               if (DEPARTMENTS.includes(res.user.department)) {
                 setDepartment(res.user.department);
+              } else if (
+                res.user.department.toUpperCase().includes('AI') ||
+                res.user.department.toUpperCase().includes('ML') ||
+                res.user.department.toUpperCase().includes('DATA')
+              ) {
+                setDepartment('COMPUTER SCIENCE AI/ML');
               } else {
-                setDepartment('Other');
-                setCustomDepartment(res.user.department);
+                setDepartment('COMPUTER SCIENCE CORE');
               }
             }
             if (res.user.yearOfStudy) setYearOfStudy(res.user.yearOfStudy);
@@ -269,26 +266,8 @@ export default function SelectCampusPage() {
                   {dept}
                 </option>
               ))}
-              <option value="Other">Other / Custom Major</option>
             </select>
           </div>
-
-          {department === 'Other' && (
-            <div>
-              <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                Specify Major / Discipline
-              </label>
-              <input
-                type="text"
-                required
-                maxLength={60}
-                placeholder="Enter your field of study"
-                value={customDepartment}
-                onChange={(e) => setCustomDepartment(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-white text-xs placeholder:text-zinc-500 focus:outline-none focus:border-white transition-colors"
-              />
-            </div>
-          )}
 
           {/* Campus Selector */}
           <div>
