@@ -230,33 +230,11 @@ const SignIn1 = ({
         </form>
       </div>
 
-      {/* Community proof & avatars */}
+      {/* Institutional platform footer */}
       <div className="relative z-10 mt-6 flex flex-col items-center text-center">
-        <p className="text-zinc-400 text-xs sm:text-sm mb-2">
-          Join <span className="font-semibold text-white">thousands</span> of students and faculty members across partner campuses.
+        <p className="text-zinc-500 text-xs text-center max-w-sm">
+          CODAK Academy Platform • Verified Academic Ledger & Battle Arena
         </p>
-        <div className="flex -space-x-2">
-          <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&h=80&q=80"
-            alt="Student user"
-            className="w-7 h-7 rounded-full border-2 border-black object-cover ring-1 ring-white/10"
-          />
-          <img
-            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&h=80&q=80"
-            alt="Faculty user"
-            className="w-7 h-7 rounded-full border-2 border-black object-cover ring-1 ring-white/10"
-          />
-          <img
-            src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&h=80&q=80"
-            alt="Student user"
-            className="w-7 h-7 rounded-full border-2 border-black object-cover ring-1 ring-white/10"
-          />
-          <img
-            src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=80&h=80&q=80"
-            alt="Admin user"
-            className="w-7 h-7 rounded-full border-2 border-black object-cover ring-1 ring-white/10"
-          />
-        </div>
       </div>
     </div>
   );

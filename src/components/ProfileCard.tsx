@@ -357,9 +357,18 @@ const ProfileCard = ({
             <span className="profile-card__holo-glow" />
             <span className="profile-card__holo-shift" />
           </span>
-          {avatarUrl && (
+          {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img className="profile-card__photo" src={avatarUrl} alt={name || ''} loading="lazy" draggable={false} />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center select-none pointer-events-none pb-12">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-4xl sm:text-5xl shadow-2xl backdrop-blur-md mb-2">
+                👨‍🎓
+              </div>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400">
+                CODAK Academy
+              </span>
+            </div>
           )}
           {(name || title) && (
             <>
@@ -375,10 +384,14 @@ const ProfileCard = ({
 
         {showUserInfo && (
           <div className="profile-card__footer">
-            {miniAvatarUrl && (
+            {miniAvatarUrl ? (
               <span className="profile-card__avatar">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={miniAvatarUrl} alt="" loading="lazy" draggable={false} />
+              </span>
+            ) : (
+              <span className="profile-card__avatar flex items-center justify-center text-xs font-bold text-white bg-white/10 border border-white/20">
+                {name ? name.slice(0, 2).toUpperCase() : 'ST'}
               </span>
             )}
             <div className="profile-card__meta">

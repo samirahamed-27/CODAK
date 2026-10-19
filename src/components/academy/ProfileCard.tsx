@@ -13,7 +13,6 @@ interface ProfileCardProps {
 }
 
 const STORAGE_KEY = 'academy_student_avatar';
-const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop';
 
 export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatarUrl);
@@ -77,7 +76,7 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
     onUpdateAvatar?.(null);
   };
 
-  const effectiveAvatar = avatarUrl || profile.avatarUrl || DEFAULT_AVATAR;
+  const effectiveAvatar = avatarUrl || profile.avatarUrl || '';
   const studentHandle = profile.name
     ? profile.name.toLowerCase().replace(/[^a-z0-9]/g, '')
     : 'student';
