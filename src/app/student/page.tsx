@@ -8,7 +8,7 @@ import { AcademyHeader } from '@/components/academy/AcademyHeader';
 import { ProfileCard } from '@/components/academy/ProfileCard';
 import { WorkReportCard } from '@/components/academy/WorkReportCard';
 import { CodemonCard } from '@/components/academy/CodemonCard';
-import { DeadlinesCard } from '@/components/academy/DeadlinesCard';
+import { PracticeCard } from '@/components/academy/PracticeCard';
 import { ScoreCard } from '@/components/academy/ScoreCard';
 import { initialStudentProfile, StudentProfile } from '@/data/studentDashboardData';
 import { getStudentStreakAction } from '@/app/actions/quiz';
@@ -229,9 +229,9 @@ export default function StudentDashboardPage() {
             aria-label="Coursework and Academic Performance"
             className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch pb-10"
           >
-            {/* Card 4: Summary/deadlines Card (Left, Narrower, 4 cols) */}
+            {/* Card 4: Curated Practice Problem Card (Left, Narrower, 4 cols) */}
             <div className="lg:col-span-4 flex flex-col">
-              <DeadlinesCard />
+              <PracticeCard />
             </div>
 
             {/* Card 5: Score Card (Right, Wider, 8 cols) */}
