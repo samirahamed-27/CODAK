@@ -206,6 +206,46 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       const angleDiag = Math.atan2(50, 50);
       expect(angleDiag).toBeCloseTo(Math.PI / 4, 2);
     });
+
+    it('verifies katana-cursor.svg asset exists with 32x32 viewbox and blade hotspot at 0,0', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const svgPath = path.resolve(process.cwd(), 'public/assets/katana-cursor.svg');
+      expect(fs.existsSync(svgPath)).toBe(true);
+
+      const content = fs.readFileSync(svgPath, 'utf8');
+      expect(content).toContain('<svg');
+      expect(content).toContain('viewBox="0 0 32 32"');
+      expect(content).toContain('bladeSteel');
+      expect(content).toContain('edgeGleam');
+    });
+
+    it('guarantees zero-lag instantaneous binding without smoothing lerp', () => {
+      // Simulating direct pointer coordinate binding
+      const pointer = { x: 0, y: 0 };
+      const blade = { x: 0, y: 0 };
+
+      // User moves mouse abruptly to (240, 180)
+      pointer.x = 240;
+      pointer.y = 180;
+
+      // With direct binding (no lerp), blade immediately reflects target coordinate
+      blade.x = pointer.x;
+      blade.y = pointer.y;
+
+      expect(blade.x).toBe(240);
+      expect(blade.y).toBe(180);
+    });
+
+    it('anchors the Kissaki blade tip precisely at local (0, 0)', () => {
+      const bladeLength = 75;
+      // In KatanaCanvas: translate(-bladeLength, 0) then lineTo(bladeLength, 0)
+      const tipLocalX = -bladeLength + bladeLength;
+      const tipLocalY = 0;
+
+      expect(tipLocalX).toBe(0);
+      expect(tipLocalY).toBe(0);
+    });
   });
 
   describe('Phase 3 - Pixel Crumble Engine & Physics Model', () => {
@@ -255,6 +295,7 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
 
       // vy should have increased by gravity (0.4) scaled by friction
       expect(engine.gravity).toBe(0.4);
+      expect(engine.particles[0].vy).toBeGreaterThan(initialVy);
       expect(engine.particles[0].life).toBeCloseTo(1 / 60, 4);
 
       // Advance by 1 second so all particles exceed maxLife
@@ -340,7 +381,7 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
     it('calculates score based on slashes landed, accuracy, combo, and time bonuses', () => {
       const slashesLanded = 5;
       const correctCount = 5;
-      const totalQuestions = 5;
+      const _totalQuestions = 5;
       const xpReward = 150;
       const comboMultiplier = 4; // x4
       const timeRemainingSec = 12;

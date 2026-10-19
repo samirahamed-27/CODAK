@@ -301,6 +301,7 @@ export function useKatanaBlade({
     container.addEventListener('pointermove', handlePointerMove);
     container.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
     container.addEventListener('pointerenter', handlePointerEnter);
     container.addEventListener('pointerleave', handlePointerLeave);
 
@@ -308,6 +309,7 @@ export function useKatanaBlade({
       container.removeEventListener('pointermove', handlePointerMove);
       container.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
       container.removeEventListener('pointerenter', handlePointerEnter);
       container.removeEventListener('pointerleave', handlePointerLeave);
     };
