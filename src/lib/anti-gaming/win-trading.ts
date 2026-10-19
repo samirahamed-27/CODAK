@@ -51,7 +51,7 @@ export async function runWinTradingDetection(
   const windowStart = options?.windowStart || defaultStart;
 
   // 2. Query completed duels in window
-  let query = adminClient
+  const query = adminClient
     .from('duels')
     .select(`
       id,

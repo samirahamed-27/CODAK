@@ -24,16 +24,25 @@ export default function AdminAuditPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchAudit = async () => {
-    setRefreshing(true);
+  const fetchAudit = async (manual = false) => {
+    if (manual) setRefreshing(true);
     const data = await getLedgerAuditReportAction();
     setReport(data);
-    setRefreshing(false);
+    if (manual) setRefreshing(false);
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchAudit();
+    let mounted = true;
+    getLedgerAuditReportAction().then((data) => {
+      if (mounted) {
+        setReport(data);
+        setLoading(false);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
@@ -52,7 +61,7 @@ export default function AdminAuditPage() {
           </Link>
 
           <button
-            onClick={fetchAudit}
+            onClick={() => fetchAudit(true)}
             disabled={refreshing}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-xs text-white font-semibold transition-all disabled:opacity-50"
           >

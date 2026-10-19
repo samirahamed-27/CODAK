@@ -26,12 +26,15 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
 
   // Hydrate avatar from localStorage on client mount
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) setAvatarUrl(saved);
-    } catch {
-      // Storage access blocked or unavailable
-    }
+    const timer = setTimeout(() => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) setAvatarUrl(saved);
+      } catch {
+        // Storage access blocked or unavailable
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -76,7 +76,7 @@ let mockDbAttempts: any[] = [];
 let mockDbAnswers: any[] = [];
 let mockDbStreaks: any[] = [];
 let mockDbStreakEvents: any[] = [];
-let mockDbExemptDates: any[] = [];
+const mockDbExemptDates: any[] = [];
 let mockAwardXpCalls: any[] = [];
 
 // Mock @/lib/supabase/server
@@ -95,7 +95,7 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn().mockImplementation(() => ({
     from: (table: string) => {
-      let filters: { field: string; op: string; val: any }[] = [];
+      const filters: { field: string; op: string; val: any }[] = [];
       let orClause: string | null = null;
       let currentInsertData: any = null;
       let currentUpdateData: any = null;

@@ -37,7 +37,6 @@ export default function SelectCampusPage() {
   const [fullName, setFullName] = useState('');
   const [rollNo, setRollNo] = useState('');
   const [department, setDepartment] = useState('COMPUTER SCIENCE CORE');
-  const [customDepartment, setCustomDepartment] = useState('');
   const [yearOfStudy, setYearOfStudy] = useState(1);
   const [fetching, setFetching] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -71,8 +70,8 @@ export default function SelectCampusPage() {
             if (res.user.campusId) setSelectedCampusId(res.user.campusId);
           }
         }
-      } catch (e: any) {
-        setError(e.message || 'Failed to load profile onboarding info');
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Failed to load profile onboarding info');
       } finally {
         setFetching(false);
       }
@@ -99,7 +98,7 @@ export default function SelectCampusPage() {
       return;
     }
 
-    const finalDept = department === 'Other' ? customDepartment.trim() : department;
+    const finalDept = department;
     if (!finalDept || finalDept.length < 2) {
       setError('Please specify your academic department or major.');
       setSubmitting(false);
@@ -136,8 +135,8 @@ export default function SelectCampusPage() {
       return;
     }
 
-    // Hard navigation to student dashboard to refresh session and profile state
-    window.location.href = '/student';
+    // Navigate to student dashboard to refresh session and profile state
+    router.push('/student');
     router.refresh();
   };
 

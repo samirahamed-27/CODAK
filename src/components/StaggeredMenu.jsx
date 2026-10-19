@@ -388,6 +388,7 @@ export const StaggeredMenu = ({
       <header className="staggered-menu-header" aria-label="Main navigation header">
         {logoUrl ? (
           <div className="sm-logo" aria-label="Logo">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={logoUrl}
               alt="Logo"

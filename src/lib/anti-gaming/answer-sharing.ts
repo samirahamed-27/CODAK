@@ -59,7 +59,7 @@ export async function runAnswerSharingDetection(
   const windowStart = options?.windowStart || defaultStart;
 
   // 2. Fetch quiz answers in window
-  let query = adminClient
+  const query = adminClient
     .from('quiz_answers')
     .select(`
       id,
@@ -108,7 +108,7 @@ export async function runAnswerSharingDetection(
   }
 
   const allStudentIds = Array.from(studentAnswersMap.keys());
-  let targetPairs: Array<[string, string]> = [];
+  const targetPairs: Array<[string, string]> = [];
 
   if (options?.studentId && options?.secondStudentId) {
     const s1 = options.studentId < options.secondStudentId ? options.studentId : options.secondStudentId;

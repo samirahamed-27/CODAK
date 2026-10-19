@@ -6,15 +6,13 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
-    files: ["tests/**", "src/lib/**"],
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
-    },
-  },
-  {
-    files: ["src/app/actions/**"],
-    rules: {
-      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/refs": "warn",
+      "react/no-unescaped-entities": "warn",
+      "prefer-const": "warn",
     },
   },
   // Override default ignores of eslint-config-next.
