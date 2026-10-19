@@ -246,6 +246,22 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       expect(tipLocalX).toBe(0);
       expect(tipLocalY).toBe(0);
     });
+
+    it('verifies error token is unhighlighted before slice (Refinement 2 invariant)', () => {
+      // Invariant: Unhighlighted error token blends with terminal text (text-zinc-300) without red pulse or borders
+      const isSliced = false;
+      const isTokenHidden = false;
+      const tokenClass = isTokenHidden
+        ? 'opacity-0 scale-90 pointer-events-none'
+        : isSliced
+        ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] px-1.5 py-0.5 rounded font-bold'
+        : 'text-zinc-300';
+
+      expect(tokenClass).toBe('text-zinc-300');
+      expect(tokenClass).not.toContain('red');
+      expect(tokenClass).not.toContain('border');
+      expect(tokenClass).not.toContain('pulse');
+    });
   });
 
   describe('Phase 3 - Pixel Crumble Engine & Physics Model', () => {

@@ -306,14 +306,14 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
                 <span className="text-zinc-300">{before}</span>
                 <span
                   ref={errorTokenRef}
-                  className={`relative inline-block px-1.5 py-0.5 rounded transition-all duration-300 font-bold ${
+                  data-syntax-target="error"
+                  className={`relative inline-block transition-all duration-300 ${
                     isTokenHidden
                       ? 'opacity-0 scale-90 pointer-events-none'
                       : isSliced
-                      ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)]'
-                      : 'bg-red-950/60 border border-dashed border-red-500/80 text-red-300 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.3)]'
+                      ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] px-1.5 py-0.5 rounded font-bold'
+                      : 'text-zinc-300'
                   }`}
-                  title="Flawed syntax wound: Drag katana across this token to slice!"
                 >
                   {bugged}
                   {/* Slash cut scar */}
@@ -340,14 +340,14 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
               <span className="font-mono text-sm tracking-wide flex-1 whitespace-pre">
                 <span
                   ref={errorTokenRef}
-                  className={`relative inline-block px-1.5 py-0.5 rounded transition-all duration-300 font-bold ${
+                  data-syntax-target="error"
+                  className={`relative inline-block transition-all duration-300 ${
                     isTokenHidden
                       ? 'opacity-0 scale-90 pointer-events-none'
                       : isSliced
-                      ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)]'
-                      : 'bg-red-950/60 border border-dashed border-red-500/80 text-red-300 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.3)]'
+                      ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] px-1.5 py-0.5 rounded font-bold'
+                      : 'text-zinc-300'
                   }`}
-                  title="Flawed syntax wound: Drag katana across this token to slice!"
                 >
                   {lineStr || question.errorToken || '/* syntax error */'}
                   {isSliced && (
