@@ -13,6 +13,18 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "www.alisamadii.com",
+      },
+    ],
+  },
 };
 
 export default nextConfig;
