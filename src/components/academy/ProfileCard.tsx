@@ -152,12 +152,6 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
             🏆 {profile.rank}
           </span>
         </div>
-
-        {/* Interactive Flip Hint */}
-        <div className="mt-3.5 pt-2 border-t border-white/5 flex items-center justify-center gap-1.5 text-[10px] font-mono text-zinc-500 hover:text-zinc-300 transition-colors">
-          <RotateCw className="w-3 h-3" />
-          <span>Click or drag to flip • Edit Profile</span>
-        </div>
       </div>
     </div>
   );
@@ -248,7 +242,7 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
       )}
 
       {/* Link to Full Academic Profile */}
-      <div className="space-y-2 pt-1">
+      <div className="pt-1">
         <Link
           href="/student/profile"
           onClick={(e) => e.stopPropagation()}
@@ -257,9 +251,6 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
           <span>Full Academic Profile</span>
           <ExternalLink className="w-3.5 h-3.5" />
         </Link>
-        <p className="text-[10px] text-zinc-500 text-center font-mono">
-          Click or drag card to flip back
-        </p>
       </div>
     </div>
   );
