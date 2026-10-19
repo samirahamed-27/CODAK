@@ -267,6 +267,58 @@ export async function approveQuestionAction(questionId: string) {
 }
 
 /**
+ * Approves multiple pending questions in batch.
+ * Can take specific questionIds or a topic, or approves all pending active questions.
+ */
+export async function approveAllQuestionsAction(params?: { questionIds?: string[]; topic?: string }) {
+  const auth = await authenticateFaculty();
+  if (auth.error || !auth.user) {
+    return { success: false, statusCode: auth.statusCode, error: auth.error, approvedCount: 0 };
+  }
+
+  const adminClient = getAdminClient();
+  const nowIso = new Date().toISOString();
+
+  let query = adminClient
+    .from('questions')
+    .update({
+      status: 'approved',
+      approved_at: nowIso,
+      reviewed_by: auth.user.id,
+      reviewed_at: nowIso,
+      rejection_reason: null,
+    })
+    .eq('status', 'pending')
+    .eq('is_active', true);
+
+  if (params?.questionIds && params.questionIds.length > 0) {
+    query = query.in('id', params.questionIds);
+  } else if (params?.topic && params.topic !== 'all') {
+    query = query.eq('topic', params.topic);
+  }
+
+  const { data, error } = await query.select('id');
+
+  if (error) {
+    return { success: false, statusCode: 500, error: error.message, approvedCount: 0 };
+  }
+
+  const approvedCount = data?.length || 0;
+
+  if (approvedCount > 0) {
+    await writeAuditLog({
+      actorId: auth.user.id,
+      action: 'approve_all_questions',
+      targetType: 'questions_batch',
+      targetId: 'batch',
+      reason: `Batch-approved ${approvedCount} question(s) for active pool`,
+    });
+  }
+
+  return { success: true, statusCode: 200, approvedCount };
+}
+
+/**
  * Rejects a question with a mandatory rejection reason.
  */
 export async function rejectQuestionAction(questionId: string, rejectionReason: string) {

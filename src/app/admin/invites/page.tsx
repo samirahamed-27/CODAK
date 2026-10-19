@@ -475,6 +475,29 @@ export default function AdminInvitesPage() {
                           <span>Expires: {new Date(inv.expires_at).toLocaleDateString()}</span>
                           <span>Created: {new Date(inv.created_at).toLocaleDateString()}</span>
                         </div>
+
+                        {/* Redeemed By Staff Members List */}
+                        {inv.redemptions && inv.redemptions.length > 0 && (
+                          <div className="pt-2.5 mt-2 border-t border-white/10 space-y-1.5">
+                            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 block">
+                              Accepted by {inv.redemptions.length} staff member{inv.redemptions.length > 1 ? 's' : ''}:
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              {inv.redemptions.map((red) => (
+                                <div
+                                  key={red.userId}
+                                  className="px-2.5 py-1 rounded-xl bg-black/60 border border-white/10 text-xs text-zinc-300 flex items-center gap-2"
+                                >
+                                  <span className="font-semibold text-white">{red.fullName}</span>
+                                  <span className="text-[11px] text-zinc-500 font-mono">({red.email})</span>
+                                  <span className="text-[10px] text-zinc-400">
+                                    • {new Date(red.redeemedAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Action Button */}

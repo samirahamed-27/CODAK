@@ -46,7 +46,7 @@ export default function StudentDashboardPage() {
       if (!mounted) return;
       if (res.success && res.authenticated) {
         setProfile(res.profile);
-        if (res.activityCalendar && Object.keys(res.activityCalendar).length > 0) {
+        if (res.activityCalendar !== undefined) {
           setActivityCalendar(res.activityCalendar);
         }
       } else {

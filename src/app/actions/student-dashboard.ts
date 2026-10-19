@@ -185,3 +185,80 @@ export async function getStudentDashboardDataAction(): Promise<StudentDashboardR
     };
   }
 }
+
+/**
+ * Server Action: Update student profile and academic details.
+ * Validates inputs, saves to profiles and students tables, and syncs auth user_metadata.
+ */
+export async function updateStudentProfileAction(input: {
+  fullName: string;
+  rollNo: string;
+  department: string;
+  yearOfStudy: number;
+}): Promise<{ success: boolean; error?: string }> {
+  const supabaseServer = await createServerClient();
+  const {
+    data: { user },
+  } = await supabaseServer.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Unauthorized: You must be logged in.' };
+  }
+
+  const trimmedName = (input.fullName || '').trim();
+  const trimmedRollNo = (input.rollNo || '').trim();
+  const trimmedDept = (input.department || '').trim();
+  const year = Number(input.yearOfStudy);
+
+  if (!trimmedName || trimmedName.length < 2) {
+    return { success: false, error: 'Please enter a valid full name (minimum 2 characters).' };
+  }
+  if (!trimmedRollNo || trimmedRollNo.length < 2) {
+    return { success: false, error: 'Please enter a valid roll number (minimum 2 characters).' };
+  }
+  if (!trimmedDept || trimmedDept.length < 2) {
+    return { success: false, error: 'Please enter a valid department (minimum 2 characters).' };
+  }
+  if (isNaN(year) || year < 1 || year > 6) {
+    return { success: false, error: 'Please enter a valid year of study (1 to 6).' };
+  }
+
+  const adminClient = getAdminClient();
+
+  // 1. Update profiles table
+  const { error: profErr } = await adminClient
+    .from('profiles')
+    .update({ full_name: trimmedName })
+    .eq('id', user.id);
+
+  if (profErr) {
+    console.error('Error updating profile full_name:', profErr);
+    return { success: false, error: 'Failed to update profile name.' };
+  }
+
+  // 2. Update students table
+  const { error: studErr } = await adminClient
+    .from('students')
+    .update({
+      roll_no: trimmedRollNo,
+      department: trimmedDept,
+      year_of_study: year,
+    })
+    .eq('id', user.id);
+
+  if (studErr) {
+    console.error('Error updating students record:', studErr);
+    return { success: false, error: 'Failed to update academic details.' };
+  }
+
+  // 3. Keep auth user_metadata in sync
+  try {
+    await adminClient.auth.admin.updateUserById(user.id, {
+      user_metadata: { full_name: trimmedName },
+    });
+  } catch (metaErr) {
+    console.warn('Could not update user metadata full_name:', metaErr);
+  }
+
+  return { success: true };
+}

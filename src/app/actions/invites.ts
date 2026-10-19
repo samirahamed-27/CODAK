@@ -27,6 +27,15 @@ async function getClientIp(): Promise<string> {
   return '127.0.0.1';
 }
 
+export interface StaffInviteRedemption {
+  userId: string;
+  fullName: string;
+  email: string;
+  role: string;
+  redeemedAt: string;
+  campusName?: string;
+}
+
 export interface StaffInviteItem {
   id: string;
   role: 'faculty' | 'admin';
@@ -42,6 +51,7 @@ export interface StaffInviteItem {
   status: 'active' | 'used up' | 'expired' | 'revoked';
   campuses?: { id: string; name: string; code?: string } | null;
   profiles?: { email: string; full_name: string } | null;
+  redemptions?: StaffInviteRedemption[];
 }
 
 /**
@@ -205,6 +215,45 @@ export async function getStaffInvitesAction(adminIdOverride?: string): Promise<{
     return { success: false, invites: [], error: 'Failed to fetch staff invites.' };
   }
 
+  // Fetch all redemptions linked to these invites
+  const inviteIds = rows.map((r: any) => r.id);
+  const redemptionsMap = new Map<string, StaffInviteRedemption[]>();
+
+  if (inviteIds.length > 0) {
+    try {
+      const { data: redemptionsRaw } = await adminClient
+        .from('staff_invite_redemptions')
+        .select('invite_id, user_id, role, redeemed_at, profiles:user_id(id, email, full_name, campus_id, campuses:campus_id(name, city))')
+        .in('invite_id', inviteIds)
+        .order('redeemed_at', { ascending: false });
+
+      if (redemptionsRaw) {
+        for (const red of redemptionsRaw) {
+          const prof = (red as any).profiles;
+          const campusObj = prof?.campuses;
+          const campusName = campusObj
+            ? campusObj.city
+              ? `${campusObj.name}, ${campusObj.city}`
+              : campusObj.name
+            : undefined;
+          const item: StaffInviteRedemption = {
+            userId: red.user_id,
+            fullName: prof?.full_name || 'Staff Member',
+            email: prof?.email || 'unknown',
+            role: red.role,
+            redeemedAt: red.redeemed_at,
+            campusName,
+          };
+          const list = redemptionsMap.get(red.invite_id) || [];
+          list.push(item);
+          redemptionsMap.set(red.invite_id, list);
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load staff invite redemptions:', e);
+    }
+  }
+
   const now = new Date();
 
   const invites: StaffInviteItem[] = rows.map((r: any) => {
@@ -232,6 +281,7 @@ export async function getStaffInvitesAction(adminIdOverride?: string): Promise<{
       status,
       campuses: r.campuses,
       profiles: r.profiles,
+      redemptions: redemptionsMap.get(r.id) || [],
     };
   });
 
@@ -483,7 +533,19 @@ export async function redeemInviteAction(
     }
   }
 
-  // 6. Audit log row for successful redemption (NEVER log the raw code)
+  // 6. Record redemption mapping in staff_invite_redemptions
+  try {
+    await adminClient.from('staff_invite_redemptions').upsert({
+      invite_id: invite.id,
+      user_id: user.id,
+      role: invite.role,
+      redeemed_at: new Date().toISOString(),
+    }, { onConflict: 'invite_id,user_id' });
+  } catch (redErr) {
+    console.warn('Error recording staff_invite_redemption:', redErr);
+  }
+
+  // 7. Audit log row for successful redemption (NEVER log the raw code)
   await adminClient.from('audit_logs').insert({
     actor_id: user.id,
     action: 'invite_redeemed',

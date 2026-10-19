@@ -152,11 +152,11 @@ export async function getDailyQuizSessionAction(): Promise<DailyQuizSessionResul
     const selectedQuestions = shuffleArray(approvedQuestions).slice(0, Math.min(questionsPerQuiz, approvedQuestions.length));
     const questionIds = selectedQuestions.map((q) => q.id);
 
-    // Generate randomized options order for each question
+    // Deterministic options order: strictly A, B, C, D
     const optionsOrder: Record<string, ('A' | 'B' | 'C' | 'D')[]> = {};
     const defaultKeys: ('A' | 'B' | 'C' | 'D')[] = ['A', 'B', 'C', 'D'];
     for (const q of selectedQuestions) {
-      optionsOrder[q.id] = shuffleArray(defaultKeys);
+      optionsOrder[q.id] = defaultKeys;
     }
 
     // Insert new attempt (concurrency safe with unique partial index)
@@ -222,9 +222,9 @@ export async function getDailyQuizSessionAction(): Promise<DailyQuizSessionResul
     const answer = answersMap.get(qId);
     const isAnswered = Boolean(answer);
 
-    // Apply stored option order
-    const order = optionsOrderMap[qId] || ['A', 'B', 'C', 'D'];
-    const options: QuizOptionItem[] = order.map((key) => {
+    // Always present options in strict alphabetical order: A, B, C, D
+    const defaultKeys: ('A' | 'B' | 'C' | 'D')[] = ['A', 'B', 'C', 'D'];
+    const options: QuizOptionItem[] = defaultKeys.map((key) => {
       const field = `option_${key.toLowerCase()}` as keyof typeof q;
       return {
         id: key,
@@ -786,8 +786,7 @@ export async function getPracticeQuizSessionAction() {
   const defaultKeys: ('A' | 'B' | 'C' | 'D')[] = ['A', 'B', 'C', 'D'];
 
   const questions = selected.map((q) => {
-    const order = shuffleArray(defaultKeys);
-    const options: QuizOptionItem[] = order.map((key) => ({
+    const options: QuizOptionItem[] = defaultKeys.map((key) => ({
       id: key,
       text: q[`option_${key.toLowerCase()}` as keyof typeof q] as string,
     }));

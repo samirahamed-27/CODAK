@@ -143,7 +143,7 @@ export default function AdminAuditPage() {
             <div className="text-[11px] text-zinc-300 flex items-center gap-2">
               <span>{report?.pendingFlagsCount || 0} pending review</span>
               <Link
-                href="/faculty/flags"
+                href="/admin/flags"
                 className="text-white underline hover:text-zinc-300 font-semibold"
               >
                 Inspect →
@@ -211,7 +211,7 @@ export default function AdminAuditPage() {
             </p>
           </div>
           <Link
-            href="/faculty/flags"
+            href="/admin/flags"
             className="px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold shadow-lg shadow-white/10 transition-all shrink-0"
           >
             Open Security Flags Hub →

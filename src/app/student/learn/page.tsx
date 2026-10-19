@@ -513,9 +513,12 @@ export default function StudentLearnPage() {
                     {currentDailyQuestion.questionText}
                   </h2>
 
-                  {/* 4 Choices */}
+                  {/* 4 Choices (Strict A, B, C, D order) */}
                   <div className="flex flex-col gap-2.5">
-                    {currentDailyQuestion.options.map((opt) => {
+                    {currentDailyQuestion.options
+                      .slice()
+                      .sort((a, b) => a.id.localeCompare(b.id))
+                      .map((opt) => {
                       const isSelected = selectedOption === opt.id;
                       const isAnswered = currentDailyQuestion.isAnswered;
                       const isStudentChoice = currentDailyQuestion.selectedOption === opt.id;
@@ -668,9 +671,12 @@ export default function StudentLearnPage() {
                     {practiceQuestions[practiceIndex].questionText}
                   </h2>
 
-                  {/* 4 Choices */}
+                  {/* 4 Choices (Strict A, B, C, D order) */}
                   <div className="flex flex-col gap-2.5">
-                    {practiceQuestions[practiceIndex].options.map((opt) => {
+                    {practiceQuestions[practiceIndex].options
+                      .slice()
+                      .sort((a, b) => a.id.localeCompare(b.id))
+                      .map((opt) => {
                       const hasAnswered = practiceAnswers[practiceIndex] !== undefined;
                       const isStudentChoice = practiceAnswers[practiceIndex] === opt.id;
                       const feedback = practiceFeedback[practiceIndex];

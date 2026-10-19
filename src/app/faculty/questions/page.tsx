@@ -8,6 +8,7 @@ import {
   addQuestionManualAction,
   uploadQuestionsCsvAction,
   approveQuestionAction,
+  approveAllQuestionsAction,
   rejectQuestionAction,
   editQuestionAction,
   QuestionRecord,
@@ -29,6 +30,7 @@ import {
   Edit3,
   ShieldAlert,
   MessageSquare,
+  CheckCheck,
 } from 'lucide-react';
 
 export default function FacultyQuestionsPage() {
@@ -84,6 +86,11 @@ export default function FacultyQuestionsPage() {
     errors?: { row: number; field: string; message: string }[];
   } | null>(null);
 
+  // Batch Approve State
+  const [approvingAll, setApprovingAll] = useState(false);
+  const [showApproveAllModal, setShowApproveAllModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   async function loadQuestions() {
     setLoading(true);
     setActionError(null);
@@ -111,6 +118,33 @@ export default function FacultyQuestionsPage() {
   const pendingCount = questions.filter((q) => q.status === 'pending').length;
   const approvedCount = questions.filter((q) => q.status === 'approved').length;
   const rejectedCount = questions.filter((q) => q.status === 'rejected').length;
+  const pendingInCurrentView = filteredQuestions.filter((q) => q.status === 'pending');
+
+  async function handleConfirmApproveAll() {
+    if (pendingInCurrentView.length === 0) return;
+    setApprovingAll(true);
+    setActionError(null);
+    const targetIds = pendingInCurrentView.map((q) => q.id);
+    const res = await approveAllQuestionsAction({ questionIds: targetIds });
+    setApprovingAll(false);
+    setShowApproveAllModal(false);
+
+    if (res.success) {
+      const approvedIds = new Set(targetIds);
+      const nowIso = new Date().toISOString();
+      setQuestions((prev) =>
+        prev.map((q) =>
+          approvedIds.has(q.id)
+            ? { ...q, status: 'approved', approved_at: nowIso, rejection_reason: null }
+            : q
+        )
+      );
+      setSuccessMessage(`Successfully approved ${res.approvedCount} question(s)!`);
+      setTimeout(() => setSuccessMessage(null), 4000);
+    } else {
+      setActionError(res.error || 'Failed to batch approve questions.');
+    }
+  }
 
   async function handleApprove(questionId: string) {
     const res = await approveQuestionAction(questionId);
@@ -254,7 +288,19 @@ export default function FacultyQuestionsPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2.5">
+              {pendingCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowApproveAllModal(true)}
+                  disabled={approvingAll || pendingInCurrentView.length === 0}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition-all shadow-sm disabled:opacity-50"
+                  title="Batch approve pending questions in the current view"
+                >
+                  <CheckCheck className="w-4 h-4 text-emerald-400" />
+                  <span>Approve All {pendingInCurrentView.length > 0 ? `(${pendingInCurrentView.length})` : ''}</span>
+                </button>
+              )}
               <button
                 onClick={() => setShowCsvModal(true)}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-white text-xs font-semibold transition-all shadow-sm"
@@ -272,6 +318,13 @@ export default function FacultyQuestionsPage() {
             </div>
           </div>
         </div>
+
+        {successMessage && (
+          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-3 animate-in fade-in">
+            <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+            <span className="font-bold">{successMessage}</span>
+          </div>
+        )}
 
         {actionError && (
           <div className="p-4 rounded-2xl bg-white/10 border border-white/20 text-zinc-200 text-xs flex items-start gap-3">
@@ -347,6 +400,28 @@ export default function FacultyQuestionsPage() {
             </select>
           </div>
         </div>
+
+        {/* Quick Batch Action Banner when viewing pending queue */}
+        {statusFilter === 'pending' && pendingInCurrentView.length > 0 && (
+          <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-emerald-300">
+              <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>
+                <strong>{pendingInCurrentView.length} questions</strong> currently awaiting faculty review
+                {topicFilter !== 'all' ? ` for topic "${topicFilter}"` : ''}.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowApproveAllModal(true)}
+              disabled={approvingAll}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs transition-all shadow-md shrink-0 flex items-center gap-1.5 disabled:opacity-50"
+            >
+              <CheckCheck className="w-3.5 h-3.5" />
+              <span>Approve All {pendingInCurrentView.length}</span>
+            </button>
+          </div>
+        )}
 
         {/* Question Cards Feed */}
         {loading ? (
@@ -884,6 +959,61 @@ export default function FacultyQuestionsPage() {
                   {csvSubmitting ? 'Validating CSV...' : 'Validate & Import to Queue'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Approve Confirmation Modal */}
+      {showApproveAllModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-2xl bg-[#0c0c0e] border border-white/20 p-6 shadow-2xl flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <CheckCheck className="w-5 h-5" />
+                <h3 className="text-base font-bold text-white">Batch Approve Questions</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowApproveAllModal(false)}
+                className="text-zinc-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-zinc-300 leading-relaxed">
+              Are you sure you want to approve all <strong>{pendingInCurrentView.length}</strong> pending question(s)
+              {topicFilter !== 'all' ? ` for topic "${topicFilter}"` : ''}?
+              Approved questions will immediately become available in the active daily quiz and practice sets.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setShowApproveAllModal(false)}
+                className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-semibold border border-white/10"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={approvingAll}
+                onClick={handleConfirmApproveAll}
+                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+              >
+                {approvingAll ? (
+                  <>
+                    <div className="w-3.5 h-3.5 rounded-full border-2 border-black border-t-transparent animate-spin" />
+                    <span>Approving...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCheck className="w-4 h-4" />
+                    <span>Confirm & Approve All</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

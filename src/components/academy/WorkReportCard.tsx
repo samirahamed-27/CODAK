@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Zap, Flame } from 'lucide-react';
-import { getHeatmapColorLevel, mockActivityCalendar } from '@/data/studentDashboardData';
+import { getHeatmapColorLevel } from '@/data/studentDashboardData';
 import { AnimatedCounter } from './AnimatedCounter';
 import Shuffle from '@/components/Shuffle';
 
@@ -17,15 +17,25 @@ const MONTH_NAMES = [
 
 const WEEKDAY_HEADERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-export function WorkReportCard({ activityData = mockActivityCalendar }: WorkReportCardProps) {
-  // Current real month/year from system (October 2026)
-  const [currentDate, setCurrentDate] = useState(() => new Date(2026, 9, 15)); // Month is 0-indexed (9 = Oct)
+export function WorkReportCard({ activityData = {} }: WorkReportCardProps) {
+  // Current real month/year from system, populated in useEffect for Next.js prerender compliance
+  const [currentDate, setCurrentDate] = useState<Date>(() => new Date(2026, 9, 1));
+  const [todayStr, setTodayStr] = useState<string>('');
   const [hoveredDay, setHoveredDay] = useState<{
     dateStr: string;
     dayNum: number;
     weekdayName: string;
     xp: number;
   } | null>(null);
+
+  useEffect(() => {
+    const now = new Date();
+    setCurrentDate(now);
+    const yr = now.getFullYear();
+    const mo = String(now.getMonth() + 1).padStart(2, '0');
+    const da = String(now.getDate()).padStart(2, '0');
+    setTodayStr(`${yr}-${mo}-${da}`);
+  }, []);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -91,8 +101,8 @@ export function WorkReportCard({ activityData = mockActivityCalendar }: WorkRepo
         currentStreak = 0;
       }
 
-      // Check if today (2026-10-15)
-      const isToday = year === 2026 && month === 9 && day === 15;
+      // Check if today matches todayStr
+      const isToday = dateStr === todayStr;
 
       cells.push({
         dayNum: day,

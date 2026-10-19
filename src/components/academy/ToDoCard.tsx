@@ -9,7 +9,7 @@ const STORAGE_KEY = 'academy_student_quests';
 const LEGACY_DAILY_XP_PREFIX = 'academy_student_tasks_daily_xp_';
 
 export function ToDoCard() {
-  const [quests, setQuests] = useState<QuestItem[]>(initialQuests);
+  const [quests, setQuests] = useState<QuestItem[]>([]);
   const [newTitle, setNewTitle] = useState('');
 
   // Hydrate personal planner tasks and purge legacy daily XP keys on mount

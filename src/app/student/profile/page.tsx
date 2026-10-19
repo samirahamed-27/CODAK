@@ -6,11 +6,12 @@ import { BottomNav } from '@/components/BottomNav';
 import { createClient } from '@/lib/supabase/client';
 import { levelFromXp, LevelProgress } from '@/lib/levels';
 import { XpEvent } from '@/types/database';
-import { ShieldCheck, EyeOff, Award, Sparkles, TrendingUp, History, Clock, LogOut } from 'lucide-react';
+import { ShieldCheck, EyeOff, Award, Sparkles, TrendingUp, History, Clock, LogOut, Edit3, X, CheckCircle2 } from 'lucide-react';
 import Aurora from '@/components/Aurora';
 import { BadgeTile } from '@/components/ui/game-elements';
 import { getStudentBadgesAction, StudentBadgeDisplay } from '@/app/actions/badges';
 import { updateAnonymousPreferenceAction } from '@/app/actions/leaderboard';
+import { updateStudentProfileAction } from '@/app/actions/student-dashboard';
 import { formatCampusDisplayName } from '@/lib/campus';
 import { RankChip } from '@/components/ranks/RankChip';
 import { RankProgressSection } from '@/components/ranks/RankProgressSection';
@@ -37,6 +38,16 @@ export default function StudentProfilePage() {
   const [badges, setBadges] = useState<StudentBadgeDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // Edit Profile Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editRollNo, setEditRollNo] = useState('');
+  const [editDepartment, setEditDepartment] = useState('');
+  const [editYear, setEditYear] = useState(1);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSuccessMessage, setEditSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchStudentData() {
@@ -166,6 +177,45 @@ export default function StudentProfilePage() {
     }
   };
 
+  const handleOpenEditModal = () => {
+    setEditName(studentName);
+    setEditRollNo(rollNo);
+    setEditDepartment(department);
+    setEditYear(yearOfStudy);
+    setEditError(null);
+    setEditSuccessMessage(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    setEditError(null);
+    setEditSuccessMessage(null);
+
+    const res = await updateStudentProfileAction({
+      fullName: editName,
+      rollNo: editRollNo,
+      department: editDepartment,
+      yearOfStudy: editYear,
+    });
+
+    if (res.success) {
+      setStudentName(editName.trim());
+      setRollNo(editRollNo.trim());
+      setDepartment(editDepartment.trim());
+      setYearOfStudy(editYear);
+      setEditSuccessMessage('Profile details updated successfully!');
+      setTimeout(() => {
+        setIsEditModalOpen(false);
+        setEditSuccessMessage(null);
+      }, 1000);
+    } else {
+      setEditError(res.error || 'Failed to update profile.');
+    }
+    setSavingProfile(false);
+  };
+
   const formatActionName = (action: string) => {
     return action
       .split('_')
@@ -245,10 +295,18 @@ export default function StudentProfilePage() {
               </div>
 
               {/* Quick Actions */}
-              <div className="shrink-0 flex items-center gap-3 self-center md:self-start">
+              <div className="shrink-0 flex items-center gap-2.5 self-center md:self-start">
+                <button
+                  type="button"
+                  onClick={handleOpenEditModal}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-all active:scale-[0.98] shadow-sm shadow-white/10"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Edit Profile</span>
+                </button>
                 <a
                   href="/api/auth/signout"
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700 hover:border-zinc-500 text-xs font-semibold transition-all active:scale-[0.98] shadow-sm cursor-target"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700 hover:border-zinc-500 text-xs font-semibold transition-all active:scale-[0.98] shadow-sm cursor-target"
                   data-cursor-label="Log out"
                 >
                   <LogOut className="w-3.5 h-3.5" />
@@ -494,6 +552,124 @@ export default function StudentProfilePage() {
               </div>
             </section>
           </div>
+
+          {/* Edit Profile Modal */}
+          {isEditModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+              <div className="w-full max-w-md rounded-3xl bg-[#0c0c0e] border border-white/20 p-6 sm:p-7 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="absolute top-5 right-5 p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                <div className="flex items-center gap-2.5 mb-1">
+                  <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white">
+                    <Edit3 className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white">Edit Student Profile</h3>
+                </div>
+                <p className="text-xs text-zinc-400 mb-5">
+                  Update your official full name, roll number, and academic department details.
+                </p>
+
+                {editError && (
+                  <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium">
+                    {editError}
+                  </div>
+                )}
+
+                {editSuccessMessage && (
+                  <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>{editSuccessMessage}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleSaveProfile} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-zinc-300">
+                      Full Name <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="e.g. Siddhant Gautam"
+                      className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/15 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-all font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-zinc-300">
+                      Roll Number <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editRollNo}
+                      onChange={(e) => setEditRollNo(e.target.value)}
+                      placeholder="e.g. 23BCSE101"
+                      className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/15 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-all font-mono"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-zinc-300">
+                        Department <span className="text-rose-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editDepartment}
+                        onChange={(e) => setEditDepartment(e.target.value)}
+                        placeholder="e.g. Computer Science"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/15 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-zinc-300">
+                        Year of Study
+                      </label>
+                      <select
+                        value={editYear}
+                        onChange={(e) => setEditYear(parseInt(e.target.value, 10))}
+                        className="w-full px-3 py-2.5 rounded-xl bg-black border border-white/15 text-xs text-white focus:outline-none focus:border-white"
+                      >
+                        <option value={1}>Year 1</option>
+                        <option value={2}>Year 2</option>
+                        <option value={3}>Year 3</option>
+                        <option value={4}>Year 4</option>
+                        <option value={5}>Year 5</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/10 mt-5">
+                    <button
+                      type="button"
+                      disabled={savingProfile}
+                      onClick={() => setIsEditModalOpen(false)}
+                      className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-semibold transition-all border border-white/10"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={savingProfile}
+                      className="px-5 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-all disabled:opacity-50 shadow-md shadow-white/10"
+                    >
+                      {savingProfile ? 'Saving...' : 'Save Changes'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </main>
 
         <BottomNav />
