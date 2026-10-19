@@ -60,6 +60,7 @@ export const TypewriterTransition: React.FC<TypewriterTransitionProps> = ({
 
   useEffect(() => {
     let currentLine = 0;
+    let settleTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const interval = setInterval(() => {
       currentLine++;
@@ -68,14 +69,17 @@ export const TypewriterTransition: React.FC<TypewriterTransitionProps> = ({
 
       if (currentLine >= lines.length) {
         clearInterval(interval);
-        // Small settle delay (40ms) then enable katana interaction
-        setTimeout(() => {
+        // Small settle delay (50ms) then enable katana interaction
+        settleTimeout = setTimeout(() => {
           onComplete();
         }, 50);
       }
     }, lineSpeedMs);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (settleTimeout) clearTimeout(settleTimeout);
+    };
   }, [codeSnippet, lineSpeedMs, lines.length, onComplete]);
 
   return (

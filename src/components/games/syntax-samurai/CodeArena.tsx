@@ -169,6 +169,13 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
           cutAngle = Math.atan2(cdy, cdx);
         }
 
+        // Match color of the sliced code token dynamically
+        let tokenColor = '#ef4444';
+        if (errorTokenRef.current && typeof window !== 'undefined') {
+          const compColor = window.getComputedStyle(errorTokenRef.current).color;
+          if (compColor) tokenColor = compColor;
+        }
+
         crumbleEngineRef.current.explode({
           x: e.token.x,
           y: e.token.y,
@@ -176,7 +183,14 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
           height: e.token.height,
           cutAngle,
           count: 65,
-          colors: ['#ef4444', '#f87171', '#f59e0b', '#ffffff', '#991b1b'],
+          colors: [
+            tokenColor,
+            '#ef4444',
+            '#f87171',
+            '#ffffff',
+            enemy.accentColor || '#f59e0b',
+            enemy.themeColor || '#10b981',
+          ],
         });
       }
 
@@ -187,7 +201,7 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
         key: Date.now(),
       });
     },
-    [isSliced, question.errorToken]
+    [enemy.accentColor, enemy.themeColor, isSliced, question.errorToken]
   );
 
   // Parry Handler (Deflect when slashing healthy code)
