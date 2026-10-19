@@ -38,7 +38,7 @@ export default function AdminAuditPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-black pb-12 text-zinc-100">
-      <Navbar role="admin" userName="Vikram Singh" />
+      <Navbar role="admin" />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8 flex flex-col gap-6">
         {/* Navigation Breadcrumb */}

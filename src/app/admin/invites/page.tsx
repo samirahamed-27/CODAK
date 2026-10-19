@@ -186,7 +186,7 @@ export default function AdminInvitesPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-black text-zinc-100 pb-20">
-      <Navbar role="admin" userName="System Administrator" />
+      <Navbar role="admin" />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8 flex flex-col gap-8">
         {/* Breadcrumb & Header */}

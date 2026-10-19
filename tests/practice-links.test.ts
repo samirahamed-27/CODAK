@@ -99,6 +99,23 @@ describe('Phase 3F: Practice Problem Links Directory Suite', () => {
       expect(searchRes[0].title).toBe('Two Sum');
       expect(searchRes[0].problem_id).toBe('leetcode:1');
     });
+
+    it('filters problems by platform / website (LeetCode, HackerRank, Codeforces)', () => {
+      const leetcodeLinks = filterPracticeLinks(SEED_PRACTICE_LINKS, { platform: 'LeetCode' });
+      expect(leetcodeLinks.length).toBeGreaterThan(0);
+      leetcodeLinks.forEach((l) => expect(l.platform).toBe('LeetCode'));
+
+      const hrLinks = filterPracticeLinks(SEED_PRACTICE_LINKS, { platform: 'HackerRank' });
+      expect(hrLinks.length).toBe(1);
+      expect(hrLinks[0].platform).toBe('HackerRank');
+
+      const cfLinks = filterPracticeLinks(SEED_PRACTICE_LINKS, { platform: 'Codeforces' });
+      expect(cfLinks.length).toBe(3);
+      cfLinks.forEach((l) => expect(l.platform).toBe('Codeforces'));
+
+      const allPlatforms = filterPracticeLinks(SEED_PRACTICE_LINKS, { platform: 'All' });
+      expect(allPlatforms.length).toBe(SEED_PRACTICE_LINKS.length);
+    });
   });
 
   describe('Grouping Helper', () => {

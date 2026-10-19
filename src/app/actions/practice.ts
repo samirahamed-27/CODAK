@@ -24,6 +24,7 @@ export async function getPracticeLinksAction(filter?: PracticeFilter): Promise<{
   success: boolean;
   links: PracticeLink[];
   topics: string[];
+  platforms: string[];
   completedLinkIds: string[];
   completions: Record<string, PracticeCompletionStatus>;
   userRole?: string;
@@ -39,6 +40,7 @@ export async function getPracticeLinksAction(filter?: PracticeFilter): Promise<{
       success: false,
       links: [],
       topics: [],
+      platforms: [],
       completedLinkIds: [],
       completions: {},
       error: 'Unauthorized',
@@ -52,6 +54,7 @@ export async function getPracticeLinksAction(filter?: PracticeFilter): Promise<{
         success: false,
         links: [],
         topics: [],
+        platforms: [],
         completedLinkIds: [],
         completions: {},
         error: rl.error,
@@ -119,12 +122,14 @@ export async function getPracticeLinksAction(filter?: PracticeFilter): Promise<{
   }
 
   const distinctTopics = Array.from(new Set(allLinks.map((l) => l.topic)));
+  const distinctPlatforms = Array.from(new Set(allLinks.map((l) => l.platform)));
   const filtered = filterPracticeLinks(allLinks, filter);
 
   return {
     success: true,
     links: filtered,
     topics: distinctTopics,
+    platforms: distinctPlatforms,
     completedLinkIds,
     completions: completionsMap,
     userRole,

@@ -43,6 +43,7 @@ function LoginPageContent() {
   }, []);
 
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -66,17 +67,25 @@ function LoginPageContent() {
         if (user && mounted) {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('role')
+            .select('role, campus_id')
             .eq('id', user.id)
             .maybeSingle();
 
           const role = (profile?.role as 'student' | 'faculty' | 'admin') || 'student';
           const nextParam = searchParams.get('next');
-          const destination = nextParam && nextParam.startsWith('/') ? nextParam : `/${role}`;
+          let destination = nextParam && nextParam.startsWith('/') ? nextParam : `/${role}`;
+          if (role === 'student' && !profile?.campus_id && destination === '/student') {
+            destination = '/select-campus';
+          }
           router.replace(destination);
+          return;
         }
       } catch {
         // Unauthenticated or offline; stay on login page
+      } finally {
+        if (mounted) {
+          setCheckingSession(false);
+        }
       }
     }
     checkExistingSession();
@@ -138,15 +147,6 @@ function LoginPageContent() {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    // Instantly launch the stairs transition animation to completely eliminate perceived lag!
-    startPreload({
-      role: selectedRole,
-      destination: `/${selectedRole}`,
-      text: `Welcome to CODAK • Entering ${selectedRole.toUpperCase()} Hub`,
-      subtext: 'Initializing XP ledger, course velocity & battle arena...',
-      duration: 1000,
-    });
-
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: targetEmail,
@@ -154,7 +154,6 @@ function LoginPageContent() {
       });
 
       if (error) {
-        cancelPreload();
         setErrorMessage(error.message);
         setLoading(false);
         return;
@@ -163,14 +162,27 @@ function LoginPageContent() {
       if (data.user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, campus_id')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle();
 
         const actualRole = (profile?.role as 'student' | 'faculty' | 'admin') || selectedRole;
-        if (actualRole !== selectedRole) {
-          router.push(`/${actualRole}`);
+        const nextParam = searchParams.get('next');
+        let destination = nextParam && nextParam.startsWith('/') ? nextParam : `/${actualRole}`;
+
+        if (actualRole === 'student' && !profile?.campus_id && destination === '/student') {
+          destination = '/select-campus';
         }
+
+        startPreload({
+          role: actualRole,
+          destination,
+          text: `Welcome to CODAK • Entering ${actualRole.toUpperCase()} Hub`,
+          subtext: 'Initializing XP ledger, course velocity & battle arena...',
+          duration: 1000,
+        });
+
+        router.push(destination);
       }
     } catch (err: any) {
       cancelPreload();
@@ -245,6 +257,15 @@ function LoginPageContent() {
       setLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
+        <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin mb-3" />
+        <p className="text-xs font-mono text-zinc-400">Verifying session...</p>
+      </div>
+    );
+  }
 
   return (
     <div

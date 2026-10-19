@@ -13,5 +13,10 @@ export function createClient() {
       autoRefreshToken: true,
       detectSessionInUrl: true,
     },
+    cookieOptions: {
+      maxAge: 60 * 60 * 24 * 365, // 1 year persistence across browser restarts
+      sameSite: 'lax',
+      path: '/',
+    },
   });
 }

@@ -29,6 +29,7 @@ export default function RedeemInvitePage() {
   const [loading, setLoading] = useState(true);
 
   // Form State
+  const [fullName, setFullName] = useState('');
   const [code, setCode] = useState('');
   const [department, setDepartment] = useState('Computer Science');
   const [designation, setDesignation] = useState('Assistant Professor');
@@ -60,6 +61,12 @@ export default function RedeemInvitePage() {
         .maybeSingle();
 
       setProfile(prof);
+
+      if (prof?.full_name && prof.full_name !== 'Student User') {
+        setFullName(prof.full_name);
+      } else if (authUser?.user_metadata?.full_name || authUser?.user_metadata?.name) {
+        setFullName(authUser.user_metadata.full_name || authUser.user_metadata.name);
+      }
 
       // If user is already faculty or admin, redirect them directly
       if (prof?.role === 'faculty') {
@@ -93,12 +100,17 @@ export default function RedeemInvitePage() {
       setErrorMessage('Please enter your staff invite code.');
       return;
     }
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      setErrorMessage('Please enter your official full name (at least 2 characters).');
+      return;
+    }
 
     setSubmitting(true);
     setErrorMessage(null);
 
     const res = await redeemInviteAction({
       code: code.trim(),
+      fullName: fullName.trim(),
       department: department.trim() || undefined,
       designation: designation.trim() || undefined,
       campusId: campusId || undefined,
@@ -200,6 +212,22 @@ export default function RedeemInvitePage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="w-full space-y-4">
+            {/* Full Name Input */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-zinc-300 flex items-center justify-between">
+                <span>Full Name <span className="text-rose-400">*</span></span>
+                <span className="text-[10px] text-zinc-500">Official name</span>
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g., Dr. Jane Doe"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-black border border-white/15 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-purple-500 transition-all font-medium"
+              />
+            </div>
+
             {/* Invite Code Input */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-zinc-300 flex items-center justify-between">

@@ -6,7 +6,7 @@ import { ShieldCheck, Sliders, Database, KeyRound } from 'lucide-react';
 export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen flex flex-col bg-black pb-12">
-      <Navbar role="admin" userName="Vikram Singh" />
+      <Navbar role="admin" />
 
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-8 flex flex-col gap-8">
         {/* Header */}

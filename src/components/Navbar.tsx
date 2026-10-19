@@ -15,18 +15,32 @@ interface NavbarProps {
   userName?: string;
 }
 
+function isGenericPlaceholder(name?: string): boolean {
+  if (!name) return true;
+  const placeholders = [
+    'aarav sharma',
+    'faculty staff',
+    'vikram singh',
+    'vikram singh (admin)',
+    'system administrator',
+    'student user',
+    'student',
+  ];
+  return placeholders.includes(name.trim().toLowerCase());
+}
+
 export function Navbar({ role = 'student', userName }: NavbarProps) {
   const router = useRouter();
   const supabase = createClient();
   const [mounted, setMounted] = useState(false);
   const [displayName, setDisplayName] = useState<string | undefined>(
-    userName && userName !== 'Aarav Sharma' ? userName : undefined
+    !isGenericPlaceholder(userName) ? userName : undefined
   );
 
   useEffect(() => {
     setMounted(true);
 
-    if (userName && userName !== 'Aarav Sharma') {
+    if (!isGenericPlaceholder(userName)) {
       setDisplayName(userName);
       return;
     }
@@ -43,7 +57,7 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
             .eq('id', user.id)
             .maybeSingle();
 
-          if (profile?.full_name && profile.full_name !== 'Student User') {
+          if (profile?.full_name && !isGenericPlaceholder(profile.full_name)) {
             setDisplayName(profile.full_name);
           } else if (user.user_metadata?.full_name || user.user_metadata?.name) {
             setDisplayName(user.user_metadata.full_name || user.user_metadata.name);

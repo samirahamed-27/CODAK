@@ -97,7 +97,7 @@ export default function AdminRulesPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-black pb-16 text-zinc-100">
-      <Navbar role="admin" userName="Vikram Singh (Admin)" />
+      <Navbar role="admin" />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8">
         <div className="flex items-center gap-2 mb-6">

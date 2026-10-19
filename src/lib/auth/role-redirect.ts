@@ -56,7 +56,7 @@ export function computeRouteRedirect({
 
   // Rule 2: Campus onboarding enforcement for authenticated student accounts without a campus
   if (role === 'student' && hasCampus === false) {
-    if (pathname.startsWith('/api')) {
+    if (pathname.startsWith('/api') || pathname === '/redeem-invite') {
       return null;
     }
     if (pathname !== '/select-campus') {
@@ -70,8 +70,11 @@ export function computeRouteRedirect({
     return getDashboardForRole(role);
   }
 
-  // Rule 6: Logged-in users landing on root / or /login go straight to their dashboard
+  // Rule 6: Logged-in users landing on root / or /login go straight to their dashboard (or /select-campus if student lacks campus)
   if (pathname === '/' || pathname === '/login') {
+    if (role === 'student' && hasCampus === false) {
+      return '/select-campus';
+    }
     return getDashboardForRole(role);
   }
 

@@ -35,11 +35,13 @@ import Aurora from '@/components/Aurora';
 export default function StudentPracticePage() {
   const [links, setLinks] = useState<PracticeLink[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
+  const [platforms, setPlatforms] = useState<string[]>(['LeetCode', 'HackerRank', 'Codeforces']);
   const [completedLinkIds, setCompletedLinkIds] = useState<string[]>([]);
   const [completions, setCompletions] = useState<Record<string, PracticeCompletionStatus>>({});
   const [userRole, setUserRole] = useState<string>('student');
   const [selectedTopic, setSelectedTopic] = useState<string>('All');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
+  const [selectedPlatform, setSelectedPlatform] = useState<string>('All');
   const [selectedType, setSelectedType] = useState<'all' | 'problems' | 'competitions'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
@@ -62,6 +64,7 @@ export default function StudentPracticePage() {
         const res = await getPracticeLinksAction({
           topic: selectedTopic,
           difficulty: selectedDifficulty,
+          platform: selectedPlatform,
           search: searchQuery,
           isCompetition:
             selectedType === 'competitions'
@@ -78,6 +81,9 @@ export default function StudentPracticePage() {
           if (res.topics.length > 0) {
             setTopics((prev) => (prev.length === 0 ? res.topics : prev));
           }
+          if (res.platforms && res.platforms.length > 0) {
+            setPlatforms((prev) => Array.from(new Set([...prev, ...(res.platforms || [])])));
+          }
         }
       } catch (err) {
         console.error('Error fetching practice links:', err);
@@ -86,7 +92,7 @@ export default function StudentPracticePage() {
       }
     }
     loadLinks();
-  }, [selectedTopic, selectedDifficulty, searchQuery, selectedType]);
+  }, [selectedTopic, selectedDifficulty, selectedPlatform, searchQuery, selectedType]);
 
   const handleOpenClaimModal = (problem: PracticeLink) => {
     setSelectedProblem(problem);
@@ -309,6 +315,29 @@ export default function StudentPracticePage() {
                     )}
                   >
                     {diff}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Platform / Website Filter Pills */}
+            <div className="space-y-2 pt-2 border-t border-zinc-800/80">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
+                Filter by Platform / Website
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {['All', ...platforms].map((plat) => (
+                  <button
+                    key={plat}
+                    onClick={() => setSelectedPlatform(plat)}
+                    className={clsx(
+                      'px-3.5 py-1.5 rounded-xl text-xs font-mono transition-all border',
+                      selectedPlatform === plat
+                        ? 'bg-white text-black font-bold border-white shadow-md shadow-white/10'
+                        : 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+                    )}
+                  >
+                    {plat}
                   </button>
                 ))}
               </div>

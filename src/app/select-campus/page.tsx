@@ -136,8 +136,8 @@ export default function SelectCampusPage() {
       return;
     }
 
-    // Refresh and navigate to student dashboard
-    router.push('/student');
+    // Hard navigation to student dashboard to refresh session and profile state
+    window.location.href = '/student';
     router.refresh();
   };
 

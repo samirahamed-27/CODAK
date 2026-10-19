@@ -214,5 +214,33 @@ describe('Route Protection & Middleware Redirection Logic', () => {
       });
       expect(redirect).toBe('/faculty');
     });
+
+    it('allows newly registered users without a campus to visit /redeem-invite to become staff', () => {
+      const redirect = computeRouteRedirect({
+        pathname: '/redeem-invite',
+        isAuthenticated: true,
+        role: 'student',
+        hasCampus: false,
+      });
+      expect(redirect).toBeNull();
+    });
+
+    it('redirects student without campus from /login or / directly to /select-campus', () => {
+      const redirectLogin = computeRouteRedirect({
+        pathname: '/login',
+        isAuthenticated: true,
+        role: 'student',
+        hasCampus: false,
+      });
+      expect(redirectLogin).toBe('/select-campus');
+
+      const redirectRoot = computeRouteRedirect({
+        pathname: '/',
+        isAuthenticated: true,
+        role: 'student',
+        hasCampus: false,
+      });
+      expect(redirectRoot).toBe('/select-campus');
+    });
   });
 });

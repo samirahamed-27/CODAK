@@ -126,7 +126,7 @@ export default function FacultyCompetitionsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 pb-20">
-      <Navbar role="faculty" userName="Faculty Staff" />
+      <Navbar role="faculty" />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8 flex flex-col gap-8">
         {/* Top Header & Breadcrumbs */}

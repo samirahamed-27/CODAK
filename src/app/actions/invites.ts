@@ -313,6 +313,7 @@ export async function revokeStaffInviteAction(
 export async function redeemInviteAction(
   input: {
     code: string;
+    fullName?: string;
     department?: string;
     designation?: string;
     campusId?: string;
@@ -465,7 +466,24 @@ export async function redeemInviteAction(
     return { success: false, error: genericError, statusCode: 400 };
   }
 
-  // 5. Audit log row for successful redemption (NEVER log the raw code)
+  // 5. Update full_name in profile and auth metadata if provided
+  if (input.fullName && input.fullName.trim()) {
+    const trimmedName = input.fullName.trim();
+    await adminClient
+      .from('profiles')
+      .update({ full_name: trimmedName })
+      .eq('id', user.id);
+
+    try {
+      await adminClient.auth.admin.updateUserById(user.id, {
+        user_metadata: { full_name: trimmedName },
+      });
+    } catch (metaErr) {
+      console.warn('Could not update auth user metadata full_name:', metaErr);
+    }
+  }
+
+  // 6. Audit log row for successful redemption (NEVER log the raw code)
   await adminClient.from('audit_logs').insert({
     actor_id: user.id,
     action: 'invite_redeemed',
@@ -477,6 +495,7 @@ export async function redeemInviteAction(
       role: invite.role,
       invite_id: invite.id,
       campus_id: invite.campus_id || input.campusId || null,
+      full_name: input.fullName?.trim() || null,
     },
   });
 

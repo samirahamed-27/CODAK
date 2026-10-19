@@ -28,7 +28,12 @@ export async function middleware(request: NextRequest) {
             request,
           });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              maxAge: options?.maxAge ?? 60 * 60 * 24 * 365,
+              sameSite: options?.sameSite ?? 'lax',
+              path: options?.path ?? '/',
+            })
           );
         },
       },

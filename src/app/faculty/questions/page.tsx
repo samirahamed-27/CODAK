@@ -227,7 +227,7 @@ export default function FacultyQuestionsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 pb-16 text-slate-100">
-      <Navbar role="faculty" userName="Faculty Staff" />
+      <Navbar role="faculty" />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8 flex flex-col gap-6">
         {/* Back Link & Header */}
