@@ -91,6 +91,7 @@ export function useKatanaBlade({
   });
   const trailRef = useRef<SlashPoint[]>([]);
   const sparksRef = useRef<BladeSpark[]>([]);
+  const strokeStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
 
   // Hit cooldowns to avoid duplicate hits on a single swipe
   const lastHitTimeRef = useRef<number>(0);
@@ -196,18 +197,30 @@ export function useKatanaBlade({
     [initAudio, soundEnabled]
   );
 
-  // Spawn spark burst
+  // Spawn spark burst oriented along cut angle
   const spawnSparks = useCallback(
     (
       x: number,
       y: number,
       count: number,
       baseColor: string,
-      velocityScale = 6
+      velocityScale = 6,
+      cutAngle?: number
     ) => {
       const newSparks: BladeSpark[] = [];
       for (let i = 0; i < count; i++) {
-        const angle = Math.random() * Math.PI * 2;
+        let angle: number;
+        if (cutAngle !== undefined) {
+          // Orient along the slash angle with a forward/perpendicular spray cone
+          // 75% spray forward along cut line (+- 0.6 rad), 25% spray perpendicular (+- 1.2 rad)
+          const spread =
+            Math.random() < 0.75
+              ? (Math.random() - 0.5) * 1.2
+              : (Math.random() - 0.5) * 2.4;
+          angle = cutAngle + spread;
+        } else {
+          angle = Math.random() * Math.PI * 2;
+        }
         const speed = (Math.random() * 0.7 + 0.3) * velocityScale;
         newSparks.push({
           x,
@@ -239,6 +252,7 @@ export function useKatanaBlade({
       const rect = container.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
+      const now = performance.now();
 
       const prevX = pointerPos.current.x >= 0 ? pointerPos.current.x : x;
       const prevY = pointerPos.current.y >= 0 ? pointerPos.current.y : y;
@@ -252,11 +266,17 @@ export function useKatanaBlade({
       bladeState.current.x = x;
       bladeState.current.y = y;
 
-      if (Math.hypot(dx, dy) > 2) {
+      const moveDist = Math.hypot(dx, dy);
+      if (moveDist > 2) {
         bladeState.current.angle = Math.atan2(dy, dx);
       }
 
       if (!isInside) setIsInside(true);
+
+      // If dragging and stroke start wasn't captured yet, record origin
+      if (pointerPos.current.isDown && !strokeStartRef.current) {
+        strokeStartRef.current = { x: prevX, y: prevY, time: now };
+      }
     };
 
     const handlePointerDown = (e: PointerEvent) => {
@@ -265,12 +285,26 @@ export function useKatanaBlade({
       const rect = container.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
+      const now = performance.now();
+
       pointerPos.current.x = x;
       pointerPos.current.y = y;
       bladeState.current.x = x;
       bladeState.current.y = y;
       bladeState.current.isSlashing = true;
       setIsSlashing(true);
+
+      // Initialize stroke start point and trajectory
+      strokeStartRef.current = { x, y, time: now };
+      trailRef.current = [
+        {
+          x,
+          y,
+          time: now,
+          timestamp: now,
+          speed: 0,
+        },
+      ];
     };
 
     const handlePointerUp = () => {
@@ -360,20 +394,29 @@ export function useKatanaBlade({
         playSfx('swoosh');
       }
 
-      // 3. Add point to Trail
+      // 3. Add point to Trail along stroke trajectory
       if (ptr.x >= 0 && ptr.y >= 0) {
-        trailRef.current.push({
-          x: b.x,
-          y: b.y,
-          time: currentTime,
-          speed,
-        });
+        if (slashingNow) {
+          if (!strokeStartRef.current) {
+            strokeStartRef.current = { x: b.x, y: b.y, time: currentTime };
+          }
+          trailRef.current.push({
+            x: b.x,
+            y: b.y,
+            time: currentTime,
+            timestamp: currentTime,
+            speed,
+          });
+        }
       }
 
       // 4. Prune old trail points (max 220ms lifetime)
       const trailExpiry = currentTime - 220;
       while (trailRef.current.length > 0 && trailRef.current[0].time < trailExpiry) {
         trailRef.current.shift();
+      }
+      if (trailRef.current.length === 0 && !ptr.isDown) {
+        strokeStartRef.current = null;
       }
 
       // 5. Update Sparks Physics
@@ -394,6 +437,18 @@ export function useKatanaBlade({
         const p1 = trailRef.current[len - 2];
         const p2 = trailRef.current[len - 1];
 
+        // Compute stroke vector: dx = currentX - startX, dy = currentY - startY
+        const startPt = strokeStartRef.current || trailRef.current[0];
+        let strokeDx = p2.x - startPt.x;
+        let strokeDy = p2.y - startPt.y;
+
+        // Fallback to immediate segment if start and current point are too close
+        if (Math.hypot(strokeDx, strokeDy) < 4) {
+          strokeDx = p2.x - p1.x;
+          strokeDy = p2.y - p1.y;
+        }
+        const slashAngle = Math.atan2(strokeDy, strokeDx);
+
         // Check targets
         for (const target of targets) {
           if (segmentIntersectsBox(p1, p2, target)) {
@@ -402,12 +457,14 @@ export function useKatanaBlade({
               if (currentTime - lastHitTimeRef.current > 400) {
                 lastHitTimeRef.current = currentTime;
                 playSfx('hit');
-                spawnSparks(p2.x, p2.y, 28, themeColor, 8);
+                spawnSparks(p2.x, p2.y, 28, themeColor, 8, slashAngle);
                 onHit?.({
                   type: 'critical_slash',
                   token: target,
                   point: { x: p2.x, y: p2.y },
                   cutSegment: { p1, p2 },
+                  slashAngle,
+                  strokeVector: { dx: strokeDx, dy: strokeDy },
                   timestamp: currentTime,
                 });
               }
@@ -419,12 +476,14 @@ export function useKatanaBlade({
               ) {
                 lastParryTimeRef.current = currentTime;
                 playSfx('parry');
-                spawnSparks(p2.x, p2.y, 14, '#38bdf8', 5);
+                spawnSparks(p2.x, p2.y, 14, '#38bdf8', 5, slashAngle);
                 onParry?.({
                   type: 'parry_deflect',
                   token: target,
                   point: { x: p2.x, y: p2.y },
                   cutSegment: { p1, p2 },
+                  slashAngle,
+                  strokeVector: { dx: strokeDx, dy: strokeDy },
                   timestamp: currentTime,
                 });
               }

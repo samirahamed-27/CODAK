@@ -55,6 +55,7 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
 
   // Game battle states
   const [isSliced, setIsSliced] = useState<boolean>(false);
+  const [slashCutAngle, setSlashCutAngle] = useState<number>(-Math.PI / 4);
   const [selectedFix, setSelectedFix] = useState<string | null>(null);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
   const [combo, setCombo] = useState<number>(0);
@@ -173,12 +174,16 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
 
       // Spawn 65 pixel crumble particles erupting along cut vector
       if (crumbleEngineRef.current && e.token) {
-        let cutAngle = -Math.PI / 4;
-        if (e.cutSegment) {
+        let cutAngle = e.slashAngle;
+        if (cutAngle === undefined && e.cutSegment) {
           const cdx = e.cutSegment.p2.x - e.cutSegment.p1.x;
           const cdy = e.cutSegment.p2.y - e.cutSegment.p1.y;
           cutAngle = Math.atan2(cdy, cdx);
         }
+        if (cutAngle === undefined) {
+          cutAngle = -Math.PI / 4;
+        }
+        setSlashCutAngle(cutAngle);
 
         // Match color of the sliced code token dynamically
         let tokenColor = '#ef4444';
@@ -319,7 +324,10 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
                   {/* Slash cut scar */}
                   {isSliced && (
                     <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <span className="w-[120%] h-0.5 bg-white shadow-[0_0_8px_#ffffff] rotate-[-25deg]" />
+                      <span
+                        className="w-[130%] h-0.5 bg-white shadow-[0_0_10px_#ffffff]"
+                        style={{ transform: `rotate(${slashCutAngle}rad)` }}
+                      />
                     </span>
                   )}
                 </span>
@@ -352,7 +360,10 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
                   {lineStr || question.errorToken || '/* syntax error */'}
                   {isSliced && (
                     <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <span className="w-[120%] h-0.5 bg-white shadow-[0_0_8px_#ffffff] rotate-[-25deg]" />
+                      <span
+                        className="w-[130%] h-0.5 bg-white shadow-[0_0_10px_#ffffff]"
+                        style={{ transform: `rotate(${slashCutAngle}rad)` }}
+                      />
                     </span>
                   )}
                 </span>

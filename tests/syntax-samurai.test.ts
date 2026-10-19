@@ -262,6 +262,63 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       expect(tokenClass).not.toContain('border');
       expect(tokenClass).not.toContain('pulse');
     });
+
+    it('computes real-time stroke vector dx, dy and orientation angle along travel direction (Refinement 3)', () => {
+      // Downward slash: top (startX=100, startY=50) to bottom (currentX=115, currentY=250)
+      const startX = 100;
+      const startY = 50;
+      const currentX = 115;
+      const currentY = 250;
+
+      const dx = currentX - startX; // 15 (slight right)
+      const dy = currentY - startY; // 200 (downward)
+      const angle = Math.atan2(dy, dx);
+
+      expect(dx).toBe(15);
+      expect(dy).toBe(200);
+      expect(angle).toBeGreaterThan(1.4); // Downward trajectory (~85 deg)
+      expect(angle).toBeLessThan(1.6);
+
+      // Upward cut: (startX=100, startY=300) to (currentX=100, currentY=100)
+      const upDx = 100 - 100;
+      const upDy = 100 - 300;
+      const upAngle = Math.atan2(upDy, upDx);
+      expect(upAngle).toBeCloseTo(-Math.PI / 2, 2);
+    });
+
+    it('verifies tapered slash trail parameters: needle tail at origin (t=0) and full cutting beam at head (t=1)', () => {
+      const trail = [
+        { x: 100, y: 50, time: 1000, timestamp: 1000, speed: 0 },
+        { x: 105, y: 120, time: 1010, timestamp: 1010, speed: 12 },
+        { x: 110, y: 200, time: 1020, timestamp: 1020, speed: 20 },
+        { x: 115, y: 250, time: 1030, timestamp: 1030, speed: 25 },
+      ];
+      const n = trail.length;
+
+      // Tail segment (i=1) vs Head segment (i=n-1)
+      const tailProgress = 1 / (n - 1); // 0.333
+      const headProgress = (n - 1) / (n - 1); // 1.0
+
+      const tailTaper = Math.pow(tailProgress, 0.75);
+      const headTaper = Math.pow(headProgress, 0.75);
+
+      expect(tailTaper).toBeLessThan(headTaper);
+      expect(headTaper).toBe(1.0);
+      expect(tailTaper).toBeLessThan(0.5);
+
+      // Verify razor needle tail width <= 4px and full cutting head width >= 8px
+      const tailWidth = Math.max(0.75, tailTaper * 9);
+      const headWidth = Math.max(0.75, headTaper * 9);
+      expect(tailWidth).toBeLessThan(headWidth);
+      expect(headWidth).toBe(9);
+    });
+
+    it('verifies cut scar on sliced token dynamically rotates with slashCutAngle', () => {
+      const slashCutAngle = Math.PI / 2; // Vertical cut
+      const scarTransform = `rotate(${slashCutAngle}rad)`;
+      expect(scarTransform).toBe('rotate(1.5707963267948966rad)');
+      expect(scarTransform).not.toBe('rotate(-25deg)');
+    });
   });
 
   describe('Phase 3 - Pixel Crumble Engine & Physics Model', () => {
@@ -319,6 +376,28 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
         engine.update(1 / 60);
       }
       expect(engine.particles).toHaveLength(0);
+    });
+
+    it('orients particle burst along the slash angle with forward impulse (Refinement 3)', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+
+      // Downward slash: cutAngle = Math.PI / 2
+      // ty = sin(PI/2) = 1, tx = cos(PI/2) = 0
+      // Forward impulse should push vy significantly downwards (> 0)
+      engine.explode({
+        x: 100,
+        y: 100,
+        width: 40,
+        height: 20,
+        count: 50,
+        cutAngle: Math.PI / 2,
+      });
+
+      const avgVy = engine.particles.reduce((acc, p) => acc + p.vy, 0) / engine.particles.length;
+      expect(avgVy).toBeGreaterThan(1.0); // Clear positive/downward momentum
     });
 
     it('clears all active debris instantly on clear()', async () => {

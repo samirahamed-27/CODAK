@@ -80,6 +80,7 @@ export interface SlashPoint {
   x: number;
   y: number;
   time: number;
+  timestamp?: number;
   speed: number;
 }
 
@@ -101,6 +102,8 @@ export interface SlashHitEvent {
   token?: TokenBoundingBox;
   point: { x: number; y: number };
   cutSegment?: { p1: { x: number; y: number }; p2: { x: number; y: number } };
+  slashAngle?: number;
+  strokeVector?: { dx: number; dy: number };
   timestamp: number;
 }
 

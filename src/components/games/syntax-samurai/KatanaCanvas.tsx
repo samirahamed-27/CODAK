@@ -181,29 +181,35 @@ export const KatanaCanvas: React.FC<KatanaCanvasProps> = ({
       ctx.restore();
     };
 
-    // Draw dynamic glowing slash trail
+    // Draw dynamic glowing slash trail strictly along travel direction from (startX, startY) to (currentX, currentY)
     const drawTrail = (trail: SlashPoint[]) => {
-      if (trail.length < 2) return;
+      const n = trail.length;
+      if (n < 2) return;
 
       const now = performance.now();
 
-      // 1. Outer Neon Glow Pass
+      // 1. Outer Neon Glow Pass (Tapered from needle tail to wide cutting head)
       ctx.save();
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.shadowColor = themeColor;
       ctx.shadowBlur = 18;
 
-      for (let i = 1; i < trail.length; i++) {
+      for (let i = 1; i < n; i++) {
         const p1 = trail[i - 1];
         const p2 = trail[i];
         const age = now - p2.time;
-        const progress = Math.max(0, 1 - age / 220); // 1 = newest, 0 = oldest
-        if (progress <= 0) continue;
+        const ageFactor = Math.max(0, 1 - age / 220); // 1 = newest, 0 = oldest
+        if (ageFactor <= 0) continue;
+
+        // Position along stroke travel: 0 = startX/startY (tail), 1 = currentX/currentY (cutting head)
+        const strokeProgress = i / (n - 1);
+        const taper = Math.pow(strokeProgress, 0.75) * ageFactor;
 
         ctx.strokeStyle = themeColor;
-        ctx.lineWidth = Math.max(1, progress * 8);
-        ctx.globalAlpha = progress * 0.85;
+        // Razor thin at tail, thick neon core at cutting head
+        ctx.lineWidth = Math.max(0.75, taper * 9);
+        ctx.globalAlpha = Math.max(0.04, Math.pow(strokeProgress, 0.6) * 0.9 * ageFactor);
 
         ctx.beginPath();
         ctx.moveTo(p1.x, p1.y);
@@ -212,21 +218,24 @@ export const KatanaCanvas: React.FC<KatanaCanvasProps> = ({
       }
       ctx.restore();
 
-      // 2. Inner Razor-White Core Pass
+      // 2. Inner Razor-White Core Pass (Sharp tapered blade edge)
       ctx.save();
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
-      for (let i = 1; i < trail.length; i++) {
+      for (let i = 1; i < n; i++) {
         const p1 = trail[i - 1];
         const p2 = trail[i];
         const age = now - p2.time;
-        const progress = Math.max(0, 1 - age / 180);
-        if (progress <= 0) continue;
+        const ageFactor = Math.max(0, 1 - age / 180);
+        if (ageFactor <= 0) continue;
+
+        const strokeProgress = i / (n - 1);
+        const coreTaper = Math.pow(strokeProgress, 0.85) * ageFactor;
 
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = Math.max(0.5, progress * 2.8);
-        ctx.globalAlpha = progress;
+        ctx.lineWidth = Math.max(0.4, coreTaper * 3.2);
+        ctx.globalAlpha = Math.max(0.08, Math.pow(strokeProgress, 0.6) * ageFactor);
 
         ctx.beginPath();
         ctx.moveTo(p1.x, p1.y);
@@ -234,6 +243,22 @@ export const KatanaCanvas: React.FC<KatanaCanvasProps> = ({
         ctx.stroke();
       }
       ctx.restore();
+
+      // 3. Leading Cutting Head Gleam at the sword edge (currentX, currentY)
+      const head = trail[n - 1];
+      const headAge = now - head.time;
+      if (headAge < 100) {
+        const headIntensity = Math.max(0, 1 - headAge / 100);
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = accentColor;
+        ctx.shadowBlur = 14 * headIntensity;
+        ctx.globalAlpha = headIntensity;
+        ctx.beginPath();
+        ctx.arc(head.x, head.y, 2.5 * headIntensity, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
     };
 
     // Draw active sparks
