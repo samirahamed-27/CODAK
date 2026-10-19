@@ -4,7 +4,17 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LobbyScreen } from '@/components/games/syntax-samurai/LobbyScreen';
 import { CodeArena } from '@/components/games/syntax-samurai/CodeArena';
-import { LobbySelection, SyntaxQuestion } from '@/types/syntaxSamurai';
+import {
+  VictoryScreen,
+  calculateSamuraiRank,
+} from '@/components/games/syntax-samurai/VictoryScreen';
+import {
+  LobbySelection,
+  SyntaxQuestion,
+  QuestionReviewItem,
+  QuestionResultMeta,
+  VictoryStats,
+} from '@/types/syntaxSamurai';
 import {
   getEnemyProfile,
   getDifficultyConfig,
@@ -20,6 +30,14 @@ export default function SyntaxSamuraiPage() {
   const [score, setScore] = useState<number>(0);
   const [correctCount, setCorrectCount] = useState<number>(0);
 
+  // Phase 5: Tracking Session Metrics & Review Items
+  const [reviewItems, setReviewItems] = useState<QuestionReviewItem[]>([]);
+  const [maxCombo, setMaxCombo] = useState<number>(0);
+  const [slashesLandedCount, setSlashesLandedCount] = useState<number>(0);
+  const [timeBonusTotal, setTimeBonusTotal] = useState<number>(0);
+  const [comboBonusTotal, setComboBonusTotal] = useState<number>(0);
+  const [baseXpTotal, setBaseXpTotal] = useState<number>(0);
+
   const handleStartGame = (selection: LobbySelection) => {
     setBattleConfig(selection);
     const questions = getRandomQuestions(selection.enemy, selection.difficulty);
@@ -27,6 +45,12 @@ export default function SyntaxSamuraiPage() {
     setQuestionIndex(0);
     setScore(0);
     setCorrectCount(0);
+    setReviewItems([]);
+    setMaxCombo(0);
+    setSlashesLandedCount(0);
+    setTimeBonusTotal(0);
+    setComboBonusTotal(0);
+    setBaseXpTotal(0);
     setGameState('battle');
   };
 
@@ -34,10 +58,45 @@ export default function SyntaxSamuraiPage() {
     setGameState('lobby');
   };
 
-  const handleQuestionCompleted = (isCorrect: boolean, xpGained: number) => {
-    if (isCorrect) {
-      setScore((prev) => prev + xpGained);
-      setCorrectCount((prev) => prev + 1);
+  const handleQuestionCompleted = (
+    isCorrect: boolean,
+    xpGained: number,
+    meta?: QuestionResultMeta
+  ) => {
+    const currentQ = battleQuestions[questionIndex];
+    const diff = battleConfig ? getDifficultyConfig(battleConfig.difficulty) : null;
+
+    if (currentQ) {
+      const wasSliced = meta?.wasSliced ?? false;
+      const timeBonus = meta?.timeBonus ?? 0;
+      const combo = meta?.combo ?? 0;
+
+      if (wasSliced) {
+        setSlashesLandedCount((prev) => prev + 1);
+      }
+      if (combo > maxCombo) {
+        setMaxCombo(combo);
+      }
+      if (isCorrect && diff) {
+        setCorrectCount((prev) => prev + 1);
+        setScore((prev) => prev + xpGained);
+        setBaseXpTotal((prev) => prev + diff.xpReward);
+        setTimeBonusTotal((prev) => prev + timeBonus);
+        setComboBonusTotal((prev) => prev + Math.round(diff.xpReward * (combo * 0.1)));
+      }
+
+      setReviewItems((prev) => [
+        ...prev,
+        {
+          question: currentQ,
+          wasSliced,
+          selectedFix: meta?.selectedFix ?? null,
+          isCorrect,
+          timeRemainingSec: meta?.timeRemainingSec ?? 0,
+          timeBonus,
+          xpEarned: xpGained,
+        },
+      ]);
     }
 
     if (questionIndex + 1 < battleQuestions.length) {
@@ -59,85 +118,39 @@ export default function SyntaxSamuraiPage() {
   const enemy = getEnemyProfile(battleConfig.enemy);
   const diff = getDifficultyConfig(battleConfig.difficulty);
 
-  // Victory / Battle Results View
+  // Victory / Performance Hub & Code Review View
   if (gameState === 'victory') {
+    const accuracyPercent =
+      battleQuestions.length > 0
+        ? Math.round((correctCount / battleQuestions.length) * 100)
+        : 0;
+
+    const rankDetails = calculateSamuraiRank(accuracyPercent, diff.id);
+
+    const victoryStats: VictoryStats = {
+      enemy,
+      difficulty: diff,
+      slashesLanded: slashesLandedCount,
+      totalQuestions: battleQuestions.length,
+      correctCount,
+      accuracyPercent,
+      maxCombo,
+      baseXp: baseXpTotal,
+      accuracyBonusXp: correctCount * diff.xpReward,
+      comboBonusXp: comboBonusTotal,
+      timeBonusXp: timeBonusTotal,
+      totalScore: score,
+      rank: rankDetails.rank,
+      reviewItems,
+    };
+
     return (
-      <div className="min-h-screen bg-[#07070b] text-white flex flex-col justify-between p-6 font-mono select-none">
-        <header className="flex items-center justify-between border-b border-zinc-800 pb-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleBackToLobby}
-              className="px-3 py-1.5 rounded bg-zinc-900 border border-zinc-700 text-xs text-zinc-300 hover:text-white hover:border-zinc-500"
-            >
-              ← RETURN TO DOJO LOBBY
-            </button>
-            <span className="text-sm font-bold text-amber-400">
-              SYNTAX SAMURAI // BATTLE DECREE
-            </span>
-          </div>
-          <div className="text-xs text-zinc-400">
-            {enemy.name.toUpperCase()} ({enemy.alias}) • {diff.label}
-          </div>
-        </header>
-
-        <main className="flex-1 flex flex-col items-center justify-center text-center max-w-xl mx-auto my-8 p-8 rounded-2xl bg-zinc-950/90 border border-zinc-800 shadow-2xl">
-          <div
-            className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl mb-4 border"
-            style={{
-              backgroundColor: `${enemy.themeColor}20`,
-              borderColor: enemy.themeColor,
-              boxShadow: `0 0 30px ${enemy.themeColor}40`,
-            }}
-          >
-            <span>🏆</span>
-          </div>
-
-          <h2 className="text-2xl sm:text-3xl font-black tracking-wider text-white mb-2">
-            DOJO TRIAL COMPLETE!
-          </h2>
-          <p className="text-xs sm:text-sm text-zinc-400 mb-6">
-            The {enemy.alias} scrolls have been tested against your katana blade.
-          </p>
-
-          <div className="w-full grid grid-cols-3 gap-3 mb-6 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 text-xs">
-            <div>
-              <div className="text-zinc-500 text-[10px]">ACCURACY</div>
-              <div className="font-bold text-base text-emerald-400">
-                {correctCount} / {battleQuestions.length}
-              </div>
-            </div>
-            <div>
-              <div className="text-zinc-500 text-[10px]">DIFFICULTY</div>
-              <div className="font-bold text-base" style={{ color: diff.badgeColor }}>
-                {diff.label}
-              </div>
-            </div>
-            <div>
-              <div className="text-zinc-500 text-[10px]">TOTAL BOUNTY</div>
-              <div className="font-bold text-base text-amber-400">+{score} XP</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 w-full">
-            <button
-              onClick={() => handleStartGame(battleConfig)}
-              className="flex-1 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider bg-white text-black hover:bg-zinc-200 transition-colors"
-            >
-              Play Again
-            </button>
-            <button
-              onClick={handleBackToLobby}
-              className="flex-1 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider bg-zinc-900 border border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 transition-colors"
-            >
-              Choose New Dojo
-            </button>
-          </div>
-        </main>
-
-        <footer className="text-center text-xs text-zinc-600 border-t border-zinc-900 pt-4">
-          SYNTAX SAMURAI • BATTLE ENGINE VERIFIED
-        </footer>
-      </div>
+      <VictoryScreen
+        stats={victoryStats}
+        onPlayAgain={() => handleStartGame(battleConfig)}
+        onChangeEnemy={handleBackToLobby}
+        onReturnToDojo={() => router.push('/student/play')}
+      />
     );
   }
 
@@ -182,7 +195,7 @@ export default function SyntaxSamuraiPage() {
       </main>
 
       <footer className="text-center text-[11px] text-zinc-600 border-t border-zinc-900 pt-3 mt-4">
-        SYNTAX SAMURAI • PHASE 3: PIXEL PARTICLE CRUMBLE FX & TYPEWRITER CODE TRANSITIONS ACTIVE
+        SYNTAX SAMURAI • PHASE 5: VICTORY DOJO, PERFORMANCE STATS & CODE REVIEW ACTIVE
       </footer>
     </div>
   );

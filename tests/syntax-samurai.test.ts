@@ -275,5 +275,88 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       expect(engine.particles.length).toBe(0);
     });
   });
+
+  describe('Phase 5 - Victory Dojo, Samurai Ranks & Performance Scoring', () => {
+    it('awards SHOGUN rank exclusively for 95%+ accuracy on Codemare difficulty', async () => {
+      const { calculateSamuraiRank } = await import(
+        '@/components/games/syntax-samurai/VictoryScreen'
+      );
+
+      const codemare100 = calculateSamuraiRank(100, 'codemare');
+      expect(codemare100.rank).toBe('SHOGUN');
+      expect(codemare100.kanji).toBe('将軍');
+      expect(codemare100.requiresCodemare).toBe(true);
+
+      const codemare95 = calculateSamuraiRank(95, 'codemare');
+      expect(codemare95.rank).toBe('SHOGUN');
+
+      // 95%+ on hard or normal difficulty receives DAIMYO (only Codemare achieves Shogun!)
+      const hard100 = calculateSamuraiRank(100, 'hard');
+      expect(hard100.rank).toBe('DAIMYO');
+      expect(hard100.kanji).toBe('大名');
+
+      const easy95 = calculateSamuraiRank(95, 'easy');
+      expect(easy95.rank).toBe('DAIMYO');
+    });
+
+    it('awards DAIMYO rank for 80% to 94% accuracy', async () => {
+      const { calculateSamuraiRank } = await import(
+        '@/components/games/syntax-samurai/VictoryScreen'
+      );
+
+      const codemare85 = calculateSamuraiRank(85, 'codemare');
+      expect(codemare85.rank).toBe('DAIMYO');
+
+      const normal80 = calculateSamuraiRank(80, 'normal');
+      expect(normal80.rank).toBe('DAIMYO');
+    });
+
+    it('awards SAMURAI rank for 60% to 79% accuracy', async () => {
+      const { calculateSamuraiRank } = await import(
+        '@/components/games/syntax-samurai/VictoryScreen'
+      );
+
+      const rank75 = calculateSamuraiRank(75, 'normal');
+      expect(rank75.rank).toBe('SAMURAI');
+      expect(rank75.kanji).toBe('侍');
+
+      const rank60 = calculateSamuraiRank(60, 'hard');
+      expect(rank60.rank).toBe('SAMURAI');
+    });
+
+    it('awards RONIN rank for under 60% accuracy', async () => {
+      const { calculateSamuraiRank } = await import(
+        '@/components/games/syntax-samurai/VictoryScreen'
+      );
+
+      const rank59 = calculateSamuraiRank(59, 'easy');
+      expect(rank59.rank).toBe('RONIN');
+      expect(rank59.kanji).toBe('浪人');
+
+      const rank0 = calculateSamuraiRank(0, 'codemare');
+      expect(rank0.rank).toBe('RONIN');
+    });
+
+    it('calculates score based on slashes landed, accuracy, combo, and time bonuses', () => {
+      const slashesLanded = 5;
+      const correctCount = 5;
+      const totalQuestions = 5;
+      const xpReward = 150;
+      const comboMultiplier = 4; // x4
+      const timeRemainingSec = 12;
+
+      const slashBonus = slashesLanded * 50;
+      const accuracyBonus = correctCount * xpReward;
+      const comboBonus = Math.round(xpReward * (comboMultiplier * 0.1));
+      const timeBonus = timeRemainingSec * 2;
+      const totalScore = slashBonus + accuracyBonus + comboBonus + timeBonus;
+
+      expect(slashBonus).toBe(250);
+      expect(accuracyBonus).toBe(750);
+      expect(comboBonus).toBe(60);
+      expect(timeBonus).toBe(24);
+      expect(totalScore).toBe(1084);
+    });
+  });
 });
 

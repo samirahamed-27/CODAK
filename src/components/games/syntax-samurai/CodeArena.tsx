@@ -7,6 +7,7 @@ import {
   DifficultyConfig,
   TokenBoundingBox,
   SlashHitEvent,
+  QuestionResultMeta,
 } from '@/types/syntaxSamurai';
 import { useKatanaBlade } from '@/hooks/useKatanaBlade';
 import { KatanaCanvas } from '@/components/games/syntax-samurai/KatanaCanvas';
@@ -20,7 +21,11 @@ export interface CodeArenaProps {
   questionIndex: number;
   totalQuestions: number;
   score: number;
-  onQuestionCompleted?: (isCorrect: boolean, xpGained: number) => void;
+  onQuestionCompleted?: (
+    isCorrect: boolean,
+    xpGained: number,
+    meta?: QuestionResultMeta
+  ) => void;
   onForfeit?: () => void;
 }
 
@@ -136,7 +141,13 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
         if (prev <= 1) {
           clearInterval(timer);
           // Time expired
-          onQuestionCompleted?.(false, 0);
+          onQuestionCompleted?.(false, 0, {
+            wasSliced: isSliced,
+            selectedFix: null,
+            timeRemainingSec: 0,
+            combo: 0,
+            timeBonus: 0,
+          });
           return 0;
         }
         return prev - 1;
@@ -247,10 +258,20 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
     const correct = option === question.correctReplacement;
     setIsAnswerCorrect(correct);
 
-    const xp = correct ? Math.round(difficulty.xpReward * (1 + combo * 0.1)) : 0;
+    const baseReward = correct ? difficulty.xpReward : 0;
+    const comboBonus = correct ? Math.round(difficulty.xpReward * (combo * 0.1)) : 0;
+    const timeBonus = correct ? Math.round(timeLeft * 2) : 0;
+    const slashBonus = isSliced ? 50 : 0;
+    const xp = baseReward + comboBonus + timeBonus + (correct ? slashBonus : 0);
 
     setTimeout(() => {
-      onQuestionCompleted?.(correct, xp);
+      onQuestionCompleted?.(correct, xp, {
+        wasSliced: isSliced,
+        selectedFix: option,
+        timeRemainingSec: timeLeft,
+        combo,
+        timeBonus,
+      });
     }, 1600);
   };
 
