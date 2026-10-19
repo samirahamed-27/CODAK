@@ -587,6 +587,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.updateChipInventoryBar) {
           window.updateChipInventoryBar();
         }
+        if (window.snapCanvasPixelScale) {
+          requestAnimationFrame(() => {
+            window.snapCanvasPixelScale();
+          });
+        }
       } else {
         dialogueOverlay.classList.remove('active');
       }
@@ -3530,13 +3535,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (savedColWidth && gamePanel) {
           gamePanel.style.width = savedColWidth;
         }
-        const savedPickerHeight = localStorage.getItem('codemons_picker_height');
+        let savedPickerHeight = localStorage.getItem('codemons_picker_height');
         if (savedPickerHeight && questionPickerSec) {
+          if (savedPickerHeight.endsWith('px')) {
+            savedPickerHeight = (parseFloat(savedPickerHeight) / 16).toFixed(4) + 'rem';
+          }
           questionPickerSec.style.height = savedPickerHeight;
           questionPickerSec.style.flex = `0 0 ${savedPickerHeight}`;
         }
-        const savedConsoleHeight = localStorage.getItem('codemons_console_height');
+        let savedConsoleHeight = localStorage.getItem('codemons_console_height');
         if (savedConsoleHeight && outputConsoleSec) {
+          if (savedConsoleHeight.endsWith('px')) {
+            savedConsoleHeight = (parseFloat(savedConsoleHeight) / 16).toFixed(4) + 'rem';
+          }
           outputConsoleSec.style.height = savedConsoleHeight;
           outputConsoleSec.style.flex = `0 0 ${savedConsoleHeight}`;
         }
@@ -3585,9 +3596,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (newH < minH) newH = minH;
           if (newH > maxH) newH = maxH;
 
-          const hPx = Math.round(newH) + 'px';
-          gamePanel.style.setProperty('--game-panel-height', hPx);
-          gamePanel.style.height = hPx;
+          const hRem = (newH / 16).toFixed(4) + 'rem';
+          gamePanel.style.setProperty('--game-panel-height', hRem);
+          gamePanel.style.height = hRem;
         }
 
         window.dispatchEvent(new Event('resize'));
@@ -3607,7 +3618,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Double-click resets back to default 55% / 45%
       panelResizerCol.addEventListener('dblclick', () => {
-        gamePanel.style.width = '55%';
+        gamePanel.style.width = '51%';
         gamePanel.style.height = '';
         gamePanel.style.removeProperty('--game-panel-height');
         try {
@@ -3642,11 +3653,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (newH < 100) newH = 100;
         if (newH > containerH - 240) newH = containerH - 240;
 
-        const hPx = Math.round(newH) + 'px';
-        questionPickerSec.style.height = hPx;
-        questionPickerSec.style.flex = `0 0 ${hPx}`;
+        const hRem = (newH / 16).toFixed(4) + 'rem';
+        questionPickerSec.style.height = hRem;
+        questionPickerSec.style.flex = `0 0 ${hRem}`;
         try {
-          localStorage.setItem('codemons_picker_height', hPx);
+          localStorage.setItem('codemons_picker_height', hRem);
         } catch (_) {}
       }
 
@@ -3695,11 +3706,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (newH < 80) newH = 80;
         if (newH > containerH - 240) newH = containerH - 240;
 
-        const hPx = Math.round(newH) + 'px';
-        outputConsoleSec.style.height = hPx;
-        outputConsoleSec.style.flex = `0 0 ${hPx}`;
+        const hRem = (newH / 16).toFixed(4) + 'rem';
+        outputConsoleSec.style.height = hRem;
+        outputConsoleSec.style.flex = `0 0 ${hRem}`;
         try {
-          localStorage.setItem('codemons_console_height', hPx);
+          localStorage.setItem('codemons_console_height', hRem);
         } catch (_) {}
       }
 
