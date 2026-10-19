@@ -36,13 +36,13 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
   const [displayName, setDisplayName] = useState<string | undefined>(
     !isGenericPlaceholder(userName) ? userName : undefined
   );
+  const [actualRole, setActualRole] = useState<UserRole>(role);
 
   useEffect(() => {
     setMounted(true);
 
     if (!isGenericPlaceholder(userName)) {
       setDisplayName(userName);
-      return;
     }
 
     async function loadUser() {
@@ -53,9 +53,13 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
         if (user) {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('full_name')
+            .select('full_name, role')
             .eq('id', user.id)
             .maybeSingle();
+
+          if (profile?.role) {
+            setActualRole(profile.role as UserRole);
+          }
 
           if (profile?.full_name && !isGenericPlaceholder(profile.full_name)) {
             setDisplayName(profile.full_name);
@@ -73,15 +77,18 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
     loadUser();
   }, [userName, supabase]);
 
+  const isUserAdmin = actualRole === 'admin' || role === 'admin';
+
   const getRoleBadge = () => {
+    if (isUserAdmin) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-900 border border-white/20 text-zinc-300">
+          <ShieldAlert className="w-3.5 h-3.5 text-white" />
+          {role === 'faculty' ? 'Admin · Faculty' : 'Admin'}
+        </span>
+      );
+    }
     switch (role) {
-      case 'admin':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-900 border border-white/20 text-zinc-300">
-            <ShieldAlert className="w-3.5 h-3.5 text-white" />
-            Admin
-          </span>
-        );
       case 'faculty':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/10 border border-white/20 text-white">
@@ -100,28 +107,33 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
     }
   };
 
-  const menuItems: StaggeredMenuItem[] =
-    role === 'faculty'
-      ? [
-          { label: 'Dashboard', ariaLabel: 'Go to Faculty Dashboard', link: '/faculty' },
-          { label: 'Competitions', ariaLabel: 'Manage HackerRank Competitions', link: '/faculty/competitions' },
-          { label: 'Questions', ariaLabel: 'Manage Question Bank', link: '/faculty/questions' },
-          { label: 'Student View', ariaLabel: 'Switch to Student View', link: '/student' },
-        ]
-      : role === 'admin'
-      ? [
-          { label: 'Admin Hub', ariaLabel: 'Go to Admin Hub', link: '/admin' },
-          { label: 'Staff Invites', ariaLabel: 'Manage Staff Invites', link: '/admin/invites' },
-          { label: 'XP Rules', ariaLabel: 'Manage XP Rules', link: '/admin/rules' },
-          { label: 'Ledger Audit', ariaLabel: 'Inspect Ledger Audit', link: '/admin/audit' },
-        ]
-      : [
-          { label: 'Dashboard', ariaLabel: 'Go to student dashboard', link: '/student' },
-          { label: 'Learn', ariaLabel: 'Daily quiz, practice mode & concepts', link: '/student/learn' },
-          { label: 'Play', ariaLabel: 'Codemons retro cyber arcade arena', link: '/student/play' },
-          { label: 'Compete', ariaLabel: 'League tables and duels', link: '/student/compete' },
-          { label: 'Profile', ariaLabel: 'View student profile and settings', link: '/student/profile' },
-        ];
+  const menuItems: StaggeredMenuItem[] = isUserAdmin
+    ? [
+        { label: 'Admin Hub', ariaLabel: 'Go to Admin Hub', link: '/admin' },
+        { label: 'Faculty Hub', ariaLabel: 'Go to Faculty Dashboard', link: '/faculty' },
+        { label: 'Competitions', ariaLabel: 'Manage HackerRank Competitions', link: '/faculty/competitions' },
+        { label: 'Questions', ariaLabel: 'Manage Question Bank', link: '/faculty/questions' },
+        { label: 'Staff Invites', ariaLabel: 'Manage Staff Invites', link: '/admin/invites' },
+        { label: 'XP Rules', ariaLabel: 'Manage XP Rules', link: '/admin/rules' },
+        { label: 'Ledger Audit', ariaLabel: 'Inspect Ledger Audit', link: '/admin/audit' },
+        { label: 'Security Flags', ariaLabel: 'Anti-Gaming and Integrity Flags', link: '/admin/flags' },
+        { label: 'Student View', ariaLabel: 'Switch to Student View', link: '/student' },
+      ]
+    : role === 'faculty'
+    ? [
+        { label: 'Dashboard', ariaLabel: 'Go to Faculty Dashboard', link: '/faculty' },
+        { label: 'Competitions', ariaLabel: 'Manage HackerRank Competitions', link: '/faculty/competitions' },
+        { label: 'Questions', ariaLabel: 'Manage Question Bank', link: '/faculty/questions' },
+        { label: 'Security Flags', ariaLabel: 'Integrity Flags Hub', link: '/faculty/flags' },
+        { label: 'Student View', ariaLabel: 'Switch to Student View', link: '/student' },
+      ]
+    : [
+        { label: 'Dashboard', ariaLabel: 'Go to student dashboard', link: '/student' },
+        { label: 'Learn', ariaLabel: 'Daily quiz, practice mode & concepts', link: '/student/learn' },
+        { label: 'Play', ariaLabel: 'Codemons retro cyber arcade arena', link: '/student/play' },
+        { label: 'Compete', ariaLabel: 'League tables and duels', link: '/student/compete' },
+        { label: 'Profile', ariaLabel: 'View student profile and settings', link: '/student/profile' },
+      ];
 
   const socialLinks = [
     { label: 'Leaderboard', link: '/student#leaderboard' },
@@ -132,7 +144,7 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
   return (
     <header className="sticky top-0 z-[100] w-full border-b border-white/10 bg-black/90 backdrop-blur-md">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href={`/${role}`} className="flex items-center gap-2.5 group">
+        <Link href={isUserAdmin ? '/admin' : `/${role}`} className="flex items-center gap-2.5 group">
           <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-white/20 flex items-center justify-center text-white shadow-none group-hover:scale-105 transition-transform">
             🎮
           </div>
