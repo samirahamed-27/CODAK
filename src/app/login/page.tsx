@@ -54,6 +54,37 @@ function LoginPageContent() {
     }
   }, [searchParams]);
 
+  // If already authenticated when visiting /login, immediately navigate to role dashboard
+  useEffect(() => {
+    let mounted = true;
+    async function checkExistingSession() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user && mounted) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          const role = (profile?.role as 'student' | 'faculty' | 'admin') || 'student';
+          const nextParam = searchParams.get('next');
+          const destination = nextParam && nextParam.startsWith('/') ? nextParam : `/${role}`;
+          router.replace(destination);
+        }
+      } catch {
+        // Unauthenticated or offline; stay on login page
+      }
+    }
+    checkExistingSession();
+    return () => {
+      mounted = false;
+    };
+  }, [router, searchParams, supabase]);
+
   // Global React Bits Pro Stairs Preloader
   const { startPreload, cancelPreload, isPreloading } = usePreloader();
 

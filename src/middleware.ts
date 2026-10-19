@@ -69,7 +69,12 @@ export async function middleware(request: NextRequest) {
     if (redirectPath && redirectPath !== request.nextUrl.pathname) {
       const url = request.nextUrl.clone();
       url.pathname = redirectPath;
-      return NextResponse.redirect(url);
+      const redirectResponse = NextResponse.redirect(url);
+      // Crucial: preserve refreshed auth session tokens across redirect responses
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+      });
+      return redirectResponse;
     }
 
     // Attach strict no-store cache control headers for protected paths to prevent browser bfcache back-navigation exposure

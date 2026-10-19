@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { computeRouteRedirect, getDashboardForRole } from '@/lib/auth/role-redirect';
 import { GET as getLeaderboard } from '@/app/api/leaderboard/route';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -172,4 +172,48 @@ describe('H10: Authentication Sign Out & Session Security Suite', () => {
       await client.auth.signOut();
     });
   });
+
+  describe('4. Cookie & Session Retention Across Redirects', () => {
+    it('preserves all auth session cookies and options onto the redirect response', () => {
+      // Simulate supabaseResponse holding refreshed session tokens
+      const mockReq = new NextRequest('http://localhost:3000/');
+      const supabaseResponse = NextResponse.next({ request: mockReq });
+
+      supabaseResponse.cookies.set('sb-project-ref-auth-token.0', 'chunked-token-part-1', {
+        path: '/',
+        sameSite: 'lax',
+        maxAge: 34560000,
+        httpOnly: false,
+      });
+      supabaseResponse.cookies.set('sb-project-ref-auth-token.1', 'chunked-token-part-2', {
+        path: '/',
+        sameSite: 'lax',
+        maxAge: 34560000,
+        httpOnly: false,
+      });
+
+      // Construct redirect response using our middleware pattern
+      const url = new URL('/student', 'http://localhost:3000');
+      const redirectResponse = NextResponse.redirect(url);
+
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+      });
+
+      // Verify cookies are not dropped on redirect
+      const c0 = redirectResponse.cookies.get('sb-project-ref-auth-token.0');
+      const c1 = redirectResponse.cookies.get('sb-project-ref-auth-token.1');
+
+      expect(c0).toBeDefined();
+      expect(c0?.value).toBe('chunked-token-part-1');
+      expect(c0?.path).toBe('/');
+      expect(c0?.maxAge).toBe(34560000);
+
+      expect(c1).toBeDefined();
+      expect(c1?.value).toBe('chunked-token-part-2');
+      expect(c1?.path).toBe('/');
+      expect(c1?.maxAge).toBe(34560000);
+    });
+  });
 });
+
