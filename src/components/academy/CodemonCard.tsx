@@ -34,10 +34,6 @@ export function CodemonCard() {
           <Gamepad2 className="w-3.5 h-3.5 text-white" />
           <span>Arcade Arena</span>
         </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[10px] font-mono text-zinc-200 shadow-md">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>Live Game</span>
-        </div>
       </div>
 
       {/* Center Sprite & Holographic Monster Showcase */}
