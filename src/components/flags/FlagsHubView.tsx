@@ -174,7 +174,7 @@ export function FlagsHubView({ role }: FlagsHubViewProps) {
             </div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-zinc-900 border border-zinc-800 text-zinc-300 mb-2">
               <ShieldAlert className="w-3.5 h-3.5 text-white" />
-              Academic Integrity System (Phase 5)
+              Academic Integrity System
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
               Anti-Gaming & Integrity Flags
