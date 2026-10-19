@@ -3,20 +3,69 @@
 import * as React from 'react';
 import { useState } from 'react';
 
+export type UserPortalRole = 'student' | 'faculty' | 'admin';
+
 export interface SignIn1Props {
   onSignInSuccess?: (email: string, password?: string) => void;
   onGoogleSignIn?: () => void;
   isLoading?: boolean;
   isGoogleLoading?: boolean;
   externalError?: string | null;
+  initialRole?: UserPortalRole;
   demoAccounts?: Array<{
     role: string;
     email: string;
     password: string;
     title: string;
+    name?: string;
   }>;
   onQuickDemoSelect?: (email: string, password: string) => void;
 }
+
+const PORTAL_META: Record<
+  UserPortalRole,
+  {
+    icon: string;
+    label: string;
+    title: string;
+    subtitle: string;
+    placeholderEmail: string;
+    defaultDemoEmail: string;
+    defaultDemoName: string;
+    demoNote: string;
+  }
+> = {
+  student: {
+    icon: '🎓',
+    label: 'Student',
+    title: 'Student Portal',
+    subtitle: 'Sign in to your learning, quests & duel arena',
+    placeholderEmail: 'student@institution.edu',
+    defaultDemoEmail: 'student@demo.edu',
+    defaultDemoName: 'Aarav Sharma',
+    demoNote: 'Standard academic learner account',
+  },
+  faculty: {
+    icon: '👨‍🏫',
+    label: 'Faculty',
+    title: 'Faculty Portal',
+    subtitle: 'Curriculum oversight, question review & analytics',
+    placeholderEmail: 'faculty@institution.edu',
+    defaultDemoEmail: 'faculty@demo.edu',
+    defaultDemoName: 'Dr. Priya Raman',
+    demoNote: 'Course instructor & curriculum reviewer',
+  },
+  admin: {
+    icon: '🛡️',
+    label: 'Admin',
+    title: 'Platform Admin',
+    subtitle: 'XP rule engine, ledger audit & campus governance',
+    placeholderEmail: 'admin@institution.edu',
+    defaultDemoEmail: 'admin@demo.edu',
+    defaultDemoName: 'Vikram Singh',
+    demoNote: 'Super-admin platform console',
+  },
+};
 
 const SignIn1 = ({
   onSignInSuccess,
@@ -24,12 +73,16 @@ const SignIn1 = ({
   isLoading = false,
   isGoogleLoading = false,
   externalError = null,
+  initialRole = 'student',
   demoAccounts,
   onQuickDemoSelect,
 }: SignIn1Props) => {
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [error, setError] = React.useState('');
+  const [selectedRole, setSelectedRole] = useState<UserPortalRole>(initialRole);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const currentMeta = PORTAL_META[selectedRole];
 
   const validateEmail = (val: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
@@ -50,8 +103,15 @@ const SignIn1 = ({
     if (onSignInSuccess) {
       onSignInSuccess(email, password);
     } else {
-      alert('Sign in successful! (Demo)');
+      alert(`Sign in successful as ${selectedRole}! (Demo)`);
     }
+  };
+
+  const handleQuickAutofill = (targetEmail: string, targetPassword = 'Password123!') => {
+    setEmail(targetEmail);
+    setPassword(targetPassword);
+    setError('');
+    onQuickDemoSelect?.(targetEmail, targetPassword);
   };
 
   const displayError = externalError || error;
@@ -63,35 +123,51 @@ const SignIn1 = ({
       <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Centered glass card */}
-      <div className="relative z-10 w-full max-w-sm rounded-3xl bg-[#0c0c0e]/90 backdrop-blur-md border border-white/15 shadow-2xl p-7 sm:p-8 flex flex-col items-center">
-        {/* Logo */}
-        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/10 mb-5 shadow-lg border border-white/20">
-          <svg
-            className="w-6 h-6 text-white"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="m8 3 4 8 5-5 5 15H2L8 3z" />
-          </svg>
+      <div className="relative z-10 w-full max-w-md rounded-3xl bg-[#0c0c0e]/90 backdrop-blur-md border border-white/15 shadow-2xl p-6 sm:p-8 flex flex-col items-center">
+        {/* Brand / Logo */}
+        <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 mb-4 shadow-lg border border-white/20 text-2xl">
+          {currentMeta.icon}
         </div>
 
-        {/* Title */}
-        <h2 className="text-2xl font-semibold text-white mb-2 text-center tracking-tight">
-          Welcome Back
+        {/* Role Portal Selector Tabs */}
+        <div className="flex w-full p-1 rounded-2xl bg-white/5 border border-white/10 mb-5">
+          {(['student', 'faculty', 'admin'] as UserPortalRole[]).map((r) => {
+            const meta = PORTAL_META[r];
+            const active = selectedRole === r;
+            return (
+              <button
+                key={r}
+                type="button"
+                onClick={() => {
+                  setSelectedRole(r);
+                  setError('');
+                }}
+                className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                  active
+                    ? 'bg-white text-black shadow-md shadow-white/10'
+                    : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span>{meta.icon}</span>
+                <span>{meta.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Portal Title & Subtitle */}
+        <h2 className="text-2xl font-bold text-white mb-1.5 text-center tracking-tight">
+          {currentMeta.title}
         </h2>
-        <p className="text-xs text-zinc-400 mb-6 text-center">
-          Sign in to your learning & progression account
+        <p className="text-xs text-zinc-400 mb-5 text-center leading-relaxed">
+          {currentMeta.subtitle}
         </p>
 
         {/* Form */}
         <form onSubmit={handleSignIn} className="flex flex-col w-full gap-4">
           <div className="w-full flex flex-col gap-3">
             <input
-              placeholder="Email"
+              placeholder={currentMeta.placeholderEmail}
               type="email"
               value={email}
               autoComplete="email"
@@ -106,11 +182,31 @@ const SignIn1 = ({
               className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 text-white placeholder-zinc-500 text-sm focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-white transition-all"
               onChange={(e) => setPassword(e.target.value)}
             />
+
             {displayError && (
-              <div className="text-xs text-zinc-300 bg-white/10 border-l-2 border-white px-2 py-1 text-left font-medium">
+              <div className="text-xs text-rose-300 bg-rose-500/10 border-l-2 border-rose-400 px-3 py-2 rounded-r-lg text-left font-medium">
                 {displayError}
               </div>
             )}
+          </div>
+
+          {/* Quick Demo Evaluation Autofill Card */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.04] border border-white/10 text-xs">
+            <div className="flex flex-col text-left">
+              <span className="text-[11px] font-semibold text-zinc-200">
+                {currentMeta.defaultDemoName}
+              </span>
+              <span className="text-[10px] text-zinc-400 font-mono">
+                {currentMeta.defaultDemoEmail}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleQuickAutofill(currentMeta.defaultDemoEmail, 'Password123!')}
+              className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-semibold transition border border-white/10 shadow-sm active:scale-95"
+            >
+              Auto-Fill Credentials
+            </button>
           </div>
 
           <hr className="opacity-10 border-white" />
@@ -121,7 +217,7 @@ const SignIn1 = ({
               disabled={isLoading}
               className="w-full bg-white hover:bg-zinc-200 text-black font-bold px-5 py-3 rounded-full shadow-lg border border-white transition mb-3 text-sm active:scale-95 disabled:opacity-50"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? 'Signing in...' : `Sign in to ${currentMeta.label} Hub`}
             </button>
 
             {/* Google Sign In - duotone */}
@@ -154,72 +250,55 @@ const SignIn1 = ({
               <span>{isGoogleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
             </button>
 
-            {/* Quick Demo Access Pills */}
-            {demoAccounts && demoAccounts.length > 0 && (
-              <div className="mt-4 pt-3 border-t border-white/10">
-                <span className="text-[10px] text-zinc-400 uppercase font-mono block mb-2 text-center">
-                  Quick Demo Access:
-                </span>
-                <div className="flex justify-center gap-1.5 flex-wrap">
-                  {demoAccounts.map((demo) => (
-                    <button
-                      key={demo.role}
-                      type="button"
-                      onClick={() => {
-                        setEmail(demo.email);
-                        setPassword(demo.password);
-                        onQuickDemoSelect?.(demo.email, demo.password);
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 text-[11px] text-zinc-300 hover:text-white capitalize transition-all"
-                    >
-                      {demo.role}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
+            {/* Role-specific footnote / signup prompt */}
             <div className="w-full text-center mt-3">
-              <span className="text-xs text-zinc-400">
-                Don&apos;t have an account?{' '}
-                <a
-                  href="/login?mode=signup"
-                  className="underline text-white hover:text-zinc-300"
-                >
-                  Sign up, it&apos;s free!
-                </a>
-              </span>
+              {selectedRole === 'student' ? (
+                <span className="text-xs text-zinc-400">
+                  Don&apos;t have an account?{' '}
+                  <a
+                    href="/login?mode=signup"
+                    className="underline text-white hover:text-zinc-300 font-medium"
+                  >
+                    Sign up as a student
+                  </a>
+                </span>
+              ) : (
+                <span className="text-[11px] text-zinc-500">
+                  {selectedRole === 'faculty'
+                    ? 'Faculty accounts are provisioned by institution department chairs.'
+                    : 'Administrator accounts are restricted to platform supervisors.'}
+                </span>
+              )}
             </div>
           </div>
         </form>
       </div>
 
-      {/* User count and avatars */}
-      <div className="relative z-10 mt-8 flex flex-col items-center text-center">
+      {/* Community proof & avatars */}
+      <div className="relative z-10 mt-6 flex flex-col items-center text-center">
         <p className="text-zinc-400 text-xs sm:text-sm mb-2">
-          Join <span className="font-semibold text-white">thousands</span> of students and faculty members already learning.
+          Join <span className="font-semibold text-white">thousands</span> of students and faculty members across partner campuses.
         </p>
         <div className="flex -space-x-2">
-          {/* Unsplash avatars */}
           <img
             src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&h=80&q=80"
             alt="Student user"
-            className="w-8 h-8 rounded-full border-2 border-black object-cover ring-1 ring-white/10"
+            className="w-7 h-7 rounded-full border-2 border-black object-cover ring-1 ring-white/10"
           />
           <img
             src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&h=80&q=80"
-            alt="Student user"
-            className="w-8 h-8 rounded-full border-2 border-black object-cover ring-1 ring-white/10"
+            alt="Faculty user"
+            className="w-7 h-7 rounded-full border-2 border-black object-cover ring-1 ring-white/10"
           />
           <img
             src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&h=80&q=80"
             alt="Student user"
-            className="w-8 h-8 rounded-full border-2 border-black object-cover ring-1 ring-white/10"
+            className="w-7 h-7 rounded-full border-2 border-black object-cover ring-1 ring-white/10"
           />
           <img
             src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=80&h=80&q=80"
-            alt="Student user"
-            className="w-8 h-8 rounded-full border-2 border-black object-cover ring-1 ring-white/10"
+            alt="Admin user"
+            className="w-7 h-7 rounded-full border-2 border-black object-cover ring-1 ring-white/10"
           />
         </div>
       </div>

@@ -163,4 +163,56 @@ describe('Route Protection & Middleware Redirection Logic', () => {
       expect(redirectLearn).toBeNull();
     });
   });
+
+  describe('Campus Onboarding & Non-Student Exemption', () => {
+    it('redirects students without an assigned campus to /select-campus', () => {
+      const redirect = computeRouteRedirect({
+        pathname: '/student',
+        isAuthenticated: true,
+        role: 'student',
+        hasCampus: false,
+      });
+      expect(redirect).toBe('/select-campus');
+    });
+
+    it('redirects students who already have a campus away from /select-campus to /student', () => {
+      const redirect = computeRouteRedirect({
+        pathname: '/select-campus',
+        isAuthenticated: true,
+        role: 'student',
+        hasCampus: true,
+      });
+      expect(redirect).toBe('/student');
+    });
+
+    it('allows faculty without a campus to directly access /faculty without being sent to /select-campus', () => {
+      const redirect = computeRouteRedirect({
+        pathname: '/faculty',
+        isAuthenticated: true,
+        role: 'faculty',
+        hasCampus: false,
+      });
+      expect(redirect).toBeNull();
+    });
+
+    it('allows admin without a campus to directly access /admin without being sent to /select-campus', () => {
+      const redirect = computeRouteRedirect({
+        pathname: '/admin',
+        isAuthenticated: true,
+        role: 'admin',
+        hasCampus: false,
+      });
+      expect(redirect).toBeNull();
+    });
+
+    it('redirects faculty away from /select-campus to /faculty', () => {
+      const redirect = computeRouteRedirect({
+        pathname: '/select-campus',
+        isAuthenticated: true,
+        role: 'faculty',
+        hasCampus: false,
+      });
+      expect(redirect).toBe('/faculty');
+    });
+  });
 });

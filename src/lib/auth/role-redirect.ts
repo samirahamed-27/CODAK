@@ -54,8 +54,8 @@ export function computeRouteRedirect({
     return null;
   }
 
-  // Rule 2: Campus onboarding enforcement for authenticated accounts without a campus
-  if (hasCampus === false) {
+  // Rule 2: Campus onboarding enforcement for authenticated student accounts without a campus
+  if (role === 'student' && hasCampus === false) {
     if (pathname.startsWith('/api')) {
       return null;
     }
@@ -65,8 +65,8 @@ export function computeRouteRedirect({
     return null;
   }
 
-  // Rule 3: Authenticated users who already have a campus shouldn't stay on /select-campus
-  if (hasCampus === true && pathname === '/select-campus') {
+  // Rule 3: Non-students or students who already have a campus shouldn't stay on /select-campus
+  if (pathname === '/select-campus') {
     return getDashboardForRole(role);
   }
 

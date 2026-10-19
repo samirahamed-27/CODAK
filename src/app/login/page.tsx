@@ -57,6 +57,8 @@ function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
+  const portalParam = (searchParams.get('portal') || searchParams.get('role')) as 'student' | 'faculty' | 'admin' | null;
+  const initialRole = portalParam && ['student', 'faculty', 'admin'].includes(portalParam) ? portalParam : 'student';
   const supabase = createClient();
 
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
@@ -297,7 +299,8 @@ function LoginPageContent() {
             isLoading={loading}
             isGoogleLoading={googleLoading}
             externalError={errorMessage}
-            demoAccounts={IS_DEMO_MODE ? DEMO_ACCOUNTS : []}
+            initialRole={initialRole}
+            demoAccounts={DEMO_ACCOUNTS}
             onQuickDemoSelect={handleAuthSubmit}
           />
         </div>

@@ -25,12 +25,20 @@ export default function HomePage() {
               style={{ fontSize: '1.25rem', letterSpacing: '0.06em' }}
             />
           </div>
-          <Link
-            href="/login"
-            className="text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl bg-[#10131E] border border-[#1D2233] text-slate-200 hover:text-white hover:border-sky-400/50 hover:bg-[#141826] transition-all shadow-sm"
-          >
-            Sign In
-          </Link>
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/login?portal=faculty"
+              className="hidden sm:inline-flex text-xs font-medium px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-zinc-300 hover:text-white hover:bg-white/10 transition-all"
+            >
+              Faculty Portal
+            </Link>
+            <Link
+              href="/login"
+              className="text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl bg-[#10131E] border border-[#1D2233] text-slate-200 hover:text-white hover:border-sky-400/50 hover:bg-[#141826] transition-all shadow-sm"
+            >
+              Sign In
+            </Link>
+          </div>
         </header>
 
         {/* Hero Content */}
@@ -165,8 +173,21 @@ export default function HomePage() {
         </div>
 
         {/* Footer */}
-        <footer className="text-center py-6 border-t border-[#1D2233]/60 text-xs text-slate-500">
-          CODAK Learning Platform • Timezone: Asia/Kolkata • Ledger-backed XP Engine
+        <footer className="flex flex-col sm:flex-row items-center justify-between gap-3 py-6 border-t border-[#1D2233]/60 text-xs text-slate-500">
+          <span>CODAK Learning Platform • Timezone: Asia/Kolkata • Ledger-backed XP Engine</span>
+          <div className="flex items-center gap-3">
+            <Link href="/login?portal=student" className="hover:text-zinc-300 transition-colors">
+              Student Sign In
+            </Link>
+            <span>•</span>
+            <Link href="/login?portal=faculty" className="hover:text-zinc-300 transition-colors">
+              Faculty Portal
+            </Link>
+            <span>•</span>
+            <Link href="/login?portal=admin" className="hover:text-zinc-300 transition-colors">
+              Admin Console
+            </Link>
+          </div>
         </footer>
       </main>
     </div>
