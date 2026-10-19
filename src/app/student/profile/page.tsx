@@ -18,7 +18,6 @@ import { getMyRankProgressAction, getRankTiersAction } from '@/app/actions/ranks
 import { RankTier } from '@/types/database';
 import { RankProgress } from '@/lib/ranks';
 import { CelebrationManager } from '@/components/animations/CelebrationManager';
-import { TelegramHeader } from '@/components/ui/telegram-profile-header';
 
 export default function StudentProfilePage() {
   const supabase = createClient();
@@ -38,7 +37,6 @@ export default function StudentProfilePage() {
   const [badges, setBadges] = useState<StudentBadgeDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [headerExpanded, setHeaderExpanded] = useState(true);
 
   useEffect(() => {
     async function fetchStudentData() {
@@ -201,34 +199,63 @@ export default function StudentProfilePage() {
         <Navbar role="student" userName={studentName} />
 
         <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
-          {/* Telegram-style Expanding Hero Profile Section */}
-          <section aria-label="Student profile overview" className="w-full">
-            <TelegramHeader
-              avatar={avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop'}
-              name={studentName}
-              phone={`Roll No: ${rollNo}`}
-              username={`Year ${yearOfStudy} • ${department}`}
-              actionButton={{
-                text: 'Log out',
-                onClick: () => { window.location.href = '/api/auth/signout'; },
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              }}
-              expanded={headerExpanded}
-              onExpandChange={setHeaderExpanded}
-              className="bg-zinc-900/80 border border-zinc-800 shadow-2xl backdrop-blur-xl"
-            >
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 pt-1 text-xs">
-                <RankChip rank={rankProgress?.currentRank} level={levelInfo.level} size="sm" showLevel />
-                <div className="px-3 py-1.5 rounded-xl bg-black/60 border border-zinc-800 text-zinc-300 backdrop-blur-md flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500">Campus</span>
-                  <span className="text-white font-medium truncate max-w-[200px]" title={campusName}>{campusName}</span>
+          {/* Wide & Clean Profile Overview Card */}
+          <section
+            aria-label="Student profile overview"
+            className="p-6 sm:p-8 rounded-3xl bg-zinc-900/60 border border-zinc-800 shadow-2xl backdrop-blur-xl relative overflow-hidden"
+          >
+            <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6 sm:gap-8">
+              {/* Avatar & Student Details */}
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6 text-center sm:text-left">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-tr from-zinc-700 via-zinc-800 to-zinc-950 border border-zinc-600/80 p-1 shadow-2xl shadow-black/60 flex items-center justify-center text-4xl shrink-0 overflow-hidden">
+                  <div className="w-full h-full rounded-2xl bg-zinc-900/90 flex items-center justify-center overflow-hidden">
+                    {avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={avatarUrl}
+                        alt={`${studentName}'s avatar`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      '👨‍🎓'
+                    )}
+                  </div>
                 </div>
-                <div className="px-3 py-1.5 rounded-xl bg-black/60 border border-zinc-800 text-zinc-300 backdrop-blur-md flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500">Timezone</span>
-                  <span className="text-zinc-300 font-medium">Asia/Kolkata</span>
+
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                    <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">{studentName}</h1>
+                    <RankChip rank={rankProgress?.currentRank} level={levelInfo.level} size="sm" showLevel />
+                  </div>
+                  <p className="text-xs font-mono text-zinc-400">
+                    Roll No: <span className="text-white font-medium">{rollNo}</span> • Year {yearOfStudy} • {department}
+                  </p>
+
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2 text-xs text-zinc-400">
+                    <div className="px-3 py-1.5 rounded-xl bg-black/50 border border-zinc-800 flex items-center gap-2">
+                      <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500">Campus</span>
+                      <span className="text-white font-medium truncate max-w-[220px]" title={campusName}>{campusName}</span>
+                    </div>
+                    <div className="px-3 py-1.5 rounded-xl bg-black/50 border border-zinc-800 flex items-center gap-2">
+                      <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500">Timezone</span>
+                      <span className="text-zinc-300 font-medium">Asia/Kolkata</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </TelegramHeader>
+
+              {/* Quick Actions */}
+              <div className="shrink-0 flex items-center gap-3 self-center md:self-start">
+                <a
+                  href="/api/auth/signout"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700 hover:border-zinc-500 text-xs font-semibold transition-all active:scale-[0.98] shadow-sm cursor-target"
+                  data-cursor-label="Log out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Log out</span>
+                </a>
+              </div>
+            </div>
           </section>
 
           {/* Rank Progression Section (Lifetime Rank Ladder & Max Rank Progress) */}
