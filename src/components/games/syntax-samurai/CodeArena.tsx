@@ -239,6 +239,36 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
               </span>
             </div>
           );
+        } else {
+          // Fallback: If exact token substring wasn't located on line, treat line content as target
+          return (
+            <div
+              key={lineIdx}
+              className="flex items-center hover:bg-white/[0.02] px-2 py-0.5 rounded transition-colors"
+            >
+              <span className="w-8 select-none text-right pr-4 text-zinc-600 font-mono text-xs">
+                {lineIdx + 1}
+              </span>
+              <span className="font-mono text-sm tracking-wide flex-1 whitespace-pre">
+                <span
+                  ref={errorTokenRef}
+                  className={`relative inline-block px-1.5 py-0.5 rounded transition-all duration-300 font-bold ${
+                    isSliced
+                      ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)]'
+                      : 'bg-red-950/60 border border-dashed border-red-500/80 text-red-300 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.3)]'
+                  }`}
+                  title="Flawed syntax wound: Drag katana across this token to slice!"
+                >
+                  {lineStr || question.errorToken || '/* syntax error */'}
+                  {isSliced && (
+                    <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <span className="w-[120%] h-0.5 bg-white shadow-[0_0_8px_#ffffff] rotate-[-25deg]" />
+                    </span>
+                  )}
+                </span>
+              </span>
+            </div>
+          );
         }
       }
 
