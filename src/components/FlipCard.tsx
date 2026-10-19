@@ -159,8 +159,17 @@ export default function FlipCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [disabled]);
 
+  const isInteractiveElement = (target: EventTarget | null): boolean => {
+    if (!target || !(target instanceof Element) || !rootRef.current) return false;
+    const interactive = target.closest(
+      'button, a, input, select, textarea, label, [data-no-flip], [role="button"], [role="link"]'
+    );
+    return Boolean(interactive && interactive !== rootRef.current);
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (disabled || e.button !== 0 || grip.current) return;
+    if (isInteractiveElement(e.target)) return;
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {}
@@ -233,10 +242,12 @@ export default function FlipCard({
   };
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (disabled || (e.key !== 'Enter' && e.key !== ' ')) return;
+    if (isInteractiveElement(e.target)) return;
     e.preventDefault();
     if (!e.repeat) flip(true);
   };
   const onClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isInteractiveElement(e.target)) return;
     if (!disabled && e.detail === 0) flip(true);
   };
 

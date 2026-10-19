@@ -2,11 +2,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Camera, Trash2, ExternalLink, RotateCw, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { StudentProfile } from '@/data/studentDashboardData';
 import Shuffle from '@/components/Shuffle';
 import { RankChip } from '@/components/ranks/RankChip';
 import FlipCard from '@/components/FlipCard';
+import { createClient } from '@/lib/supabase/client';
 
 interface ProfileCardProps {
   profile: StudentProfile;
@@ -16,6 +18,7 @@ interface ProfileCardProps {
 const STORAGE_KEY = 'academy_student_avatar';
 
 export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
+  const router = useRouter();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile.avatarUrl);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -51,7 +54,7 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
     }
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const result = event.target?.result as string;
       setAvatarUrl(result);
       try {
@@ -60,11 +63,29 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
         console.warn('LocalStorage limit reached for avatar image.');
       }
       onUpdateAvatar?.(result);
+
+      // Persist to Supabase profiles table if authenticated
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from('profiles')
+            .update({ avatar_url: result })
+            .eq('id', user.id);
+        }
+      } catch (err) {
+        console.warn('Supabase profile avatar update failed:', err);
+      }
     };
     reader.readAsDataURL(file);
+    // Reset input value so re-selecting the same file triggers onChange
+    e.target.value = '';
   };
 
-  const handleRemoveAvatar = (e: React.MouseEvent) => {
+  const handleRemoveAvatar = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setErrorMsg(null);
     setAvatarUrl(null);
@@ -77,6 +98,22 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
       fileInputRef.current.value = '';
     }
     onUpdateAvatar?.(null);
+
+    // Persist removal to Supabase profiles table if authenticated
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({ avatar_url: null })
+          .eq('id', user.id);
+      }
+    } catch (err) {
+      console.warn('Supabase profile avatar clear failed:', err);
+    }
   };
 
   // Front Face: Clean player card without upload button, showing user's set avatar
@@ -169,6 +206,8 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
         </div>
         <button
           type="button"
+          data-no-flip
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             setIsFlipped(false);
@@ -183,30 +222,47 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
 
       {/* Avatar Preview & Photo Editing Controls */}
       <div className="py-2.5 flex items-center gap-3 bg-white/[0.02] border border-white/5 rounded-2xl p-3">
-        <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 bg-zinc-950 shrink-0 flex items-center justify-center">
+        <label
+          htmlFor="profile-photo-upload"
+          data-no-flip
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          className="w-14 h-14 rounded-full overflow-hidden border-2 border-white/20 hover:border-white/50 bg-zinc-950 shrink-0 flex items-center justify-center cursor-pointer group transition-all"
+          title="Click to select new photo"
+        >
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt="Avatar preview" className="w-full h-full object-cover" />
+            <img src={avatarUrl} alt="Avatar preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
           ) : (
             <span className="text-2xl">👨‍🎓</span>
           )}
-        </div>
+        </label>
         <div className="flex-1 min-w-0 space-y-1.5">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              fileInputRef.current?.click();
+          <label
+            htmlFor="profile-photo-upload"
+            data-no-flip
+            role="button"
+            tabIndex={0}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }
             }}
-            className="w-full py-1.5 px-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+            className="w-full py-1.5 px-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer select-none"
           >
             <Camera className="w-3.5 h-3.5 text-zinc-300" />
             <span>{avatarUrl ? 'Change Photo' : 'Upload Photo'}</span>
-          </button>
+          </label>
 
           {avatarUrl && (
             <button
               type="button"
+              data-no-flip
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={handleRemoveAvatar}
               className="w-full py-1 px-2 rounded-lg text-[10px] text-zinc-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors flex items-center justify-center gap-1 cursor-pointer"
             >
@@ -245,8 +301,13 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
       <div className="pt-1">
         <Link
           href="/student/profile"
-          onClick={(e) => e.stopPropagation()}
-          className="w-full py-2 px-3 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
+          data-no-flip
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            router.push('/student/profile');
+          }}
+          className="w-full py-2 px-3 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer select-none"
         >
           <span>Full Academic Profile</span>
           <ExternalLink className="w-3.5 h-3.5" />
