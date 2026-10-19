@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { DemoRoleSwitch } from '@/components/DemoRoleSwitch';
 import Aurora from '@/components/Aurora';
+import TargetCursor from '@/components/ui/TargetCursor';
 import { PreloaderProvider } from '@/components/ui/PreloaderContext';
 
 const geistSans = Geist({
@@ -71,6 +72,14 @@ export default function RootLayout({
         <React.Suspense fallback={null}>
           <DemoRoleSwitch />
         </React.Suspense>
+        <TargetCursor
+          spinDuration={3}
+          hideDefaultCursor={true}
+          parallaxOn={true}
+          cursorColor="#ffffff"
+          cursorColorOnTarget="#ffffff"
+          blendMode="normal"
+        />
         <PreloaderProvider>
           <div className="relative z-10 flex-1 flex flex-col w-full">
             {children}

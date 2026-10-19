@@ -58,7 +58,7 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
   padding = 6,
   matchRadius = true,
   dotSize = 4,
-  blendMode = 'difference',
+  blendMode = 'normal',
   showLabel = true,
   clickEffect = true,
   container,
@@ -93,11 +93,7 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
   settingsRef.current = settings;
 
   useEffect(() => {
-    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
-    const update = () => setHost(finePointer.matches ? document.body : null);
-    update();
-    finePointer.addEventListener('change', update);
-    return () => finePointer.removeEventListener('change', update);
+    setHost(document.body);
   }, []);
 
   useEffect(() => {
@@ -223,10 +219,10 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
 
       if (locked) {
         spring(turn, quarter * QUARTER, snapK, snapC, dt);
+        spinSpeed = 0;
       } else {
-        const speed = s.spinDuration > 0 && !reduce ? (Math.PI * 2) / s.spinDuration : 0;
-        spinSpeed += (speed - spinSpeed) * (1 - Math.exp(-dt * 3));
-        turn.v = spinSpeed;
+        const speed = s.spinDuration > 0 ? (Math.PI * 2) / s.spinDuration : 0;
+        spinSpeed = speed;
         turn.x += spinSpeed * dt;
       }
 
@@ -284,7 +280,7 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
         root.style.setProperty('--target-cursor-color', color);
         lastColor = color;
       }
-      root.style.opacity = Math.max(0, Math.min(1, presence.x)).toFixed(3);
+      root.style.opacity = pointer.inside ? Math.max(0.1, Math.min(1, presence.x)).toFixed(3) : '0';
 
       const resting =
         !pointer.inside &&
@@ -292,7 +288,7 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
         Math.abs(presence.v) < 0.002 &&
         Math.abs(lock.x) < 0.002 &&
         Math.abs(press.x) < 0.002;
-      const spinning = pointer.inside && !locked && spinSpeed > 0.0001;
+      const spinning = pointer.inside && !locked && s.spinDuration > 0;
       const moving =
         Math.abs(centerX.v) + Math.abs(centerY.v) + Math.abs(halfW.v) + Math.abs(halfH.v) + Math.abs(turn.v) > 0.01 ||
         Math.abs(goalX - centerX.x) + Math.abs(goalY - centerY.x) > 0.05 ||
@@ -318,8 +314,8 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
       return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
     };
 
-    const onPointerMove = (event: PointerEvent) => {
-      if (event.pointerType && event.pointerType !== 'mouse') return;
+    const onPointerMove = (event: PointerEvent | MouseEvent) => {
+      if ('pointerType' in event && event.pointerType === 'touch') return;
       pointer.x = event.clientX;
       pointer.y = event.clientY;
       const inside = insideScope(pointer.x, pointer.y, event.target as Element);
@@ -331,8 +327,8 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
       wake();
     };
 
-    const onPointerDown = (event: PointerEvent) => {
-      if (event.pointerType && event.pointerType !== 'mouse') return;
+    const onPointerDown = (event: PointerEvent | MouseEvent) => {
+      if ('pointerType' in event && event.pointerType === 'touch') return;
       pointer.pressed = true;
       wake();
     };
@@ -357,20 +353,28 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
     };
 
     window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('mousemove', onPointerMove, { passive: true });
     window.addEventListener('pointerdown', onPointerDown, { passive: true });
+    window.addEventListener('mousedown', onPointerDown, { passive: true });
     window.addEventListener('pointerup', onPointerUp, { passive: true });
+    window.addEventListener('mouseup', onPointerUp, { passive: true });
     window.addEventListener('scroll', onScroll, { passive: true, capture: true });
     document.documentElement.addEventListener('pointerleave', onLeave);
+    document.documentElement.addEventListener('mouseleave', onLeave);
     window.addEventListener('blur', onLeave);
 
     return () => {
       cancelAnimationFrame(raf);
       wakeRef.current = null;
       window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('mousemove', onPointerMove);
       window.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('mousedown', onPointerDown);
       window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('mouseup', onPointerUp);
       window.removeEventListener('scroll', onScroll, { capture: true });
       document.documentElement.removeEventListener('pointerleave', onLeave);
+      document.documentElement.removeEventListener('mouseleave', onLeave);
       window.removeEventListener('blur', onLeave);
       lastScope?.removeAttribute('data-target-cursor-scope');
       style.remove();
@@ -387,7 +391,7 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
     <div
       ref={rootRef}
       className="target-cursor"
-      style={{ mixBlendMode: blendMode, opacity: 0 }}
+      style={{ mixBlendMode: blendMode }}
       aria-hidden="true"
     >
       {CORNER_ANGLES.map((angle, i) => (
