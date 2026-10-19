@@ -374,71 +374,71 @@ export default function StudentCompetePage() {
 
         <Navbar role="student" />
 
-        <main className="flex-1 max-w-lg w-full mx-auto px-4 py-6 flex flex-col gap-5">
+        <main className="flex-1 max-w-xl w-full mx-auto px-4 py-6 flex flex-col gap-5">
           {/* Top navigation tabs */}
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#0c0c0e] border border-white/15 backdrop-blur-xl">
+          <div className="w-full overflow-x-auto scrollbar-none flex items-center gap-1 p-1 rounded-2xl bg-[#0c0c0e] border border-white/15 backdrop-blur-xl">
             <button
               onClick={() => setActiveTab('league')}
               className={clsx(
-                'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5',
+                'flex-1 min-w-[65px] py-1.5 sm:py-2 px-2 sm:px-3 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap',
                 activeTab === 'league'
                   ? 'bg-white text-black font-bold shadow-md'
                   : 'text-zinc-400 hover:text-white'
               )}
             >
-              <Shield className="w-3.5 h-3.5" />
-              <span>Weekly League</span>
+              <Shield className="w-3.5 h-3.5 shrink-0" />
+              <span>League</span>
             </button>
 
             <button
               onClick={() => setActiveTab('leaderboard')}
               className={clsx(
-                'flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1',
+                'flex-1 min-w-[85px] py-1.5 sm:py-2 px-2 sm:px-3 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap',
                 activeTab === 'leaderboard'
                   ? 'bg-white text-black font-bold shadow-md'
                   : 'text-zinc-400 hover:text-white'
               )}
             >
-              <Trophy className="w-3.5 h-3.5" />
-              <span>Leaderboards</span>
+              <Trophy className="w-3.5 h-3.5 shrink-0" />
+              <span>Leaderboard</span>
             </button>
 
             <button
               onClick={() => setActiveTab('standings')}
               className={clsx(
-                'flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1',
+                'flex-1 min-w-[70px] py-1.5 sm:py-2 px-2 sm:px-3 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap',
                 activeTab === 'standings'
                   ? 'bg-white text-black font-bold shadow-md'
                   : 'text-zinc-400 hover:text-white'
               )}
             >
-              <Building2 className="w-3.5 h-3.5" />
+              <Building2 className="w-3.5 h-3.5 shrink-0" />
               <span>Standings</span>
             </button>
 
             <button
               onClick={() => setActiveTab('duels')}
               className={clsx(
-                'flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1',
+                'flex-1 min-w-[60px] py-1.5 sm:py-2 px-2 sm:px-3 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap',
                 activeTab === 'duels'
                   ? 'bg-white text-black font-bold shadow-md'
                   : 'text-zinc-400 hover:text-white'
               )}
             >
-              <Swords className="w-3.5 h-3.5" />
+              <Swords className="w-3.5 h-3.5 shrink-0" />
               <span>Duels</span>
             </button>
 
             <button
               onClick={() => setActiveTab('battles')}
               className={clsx(
-                'flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5',
+                'flex-1 min-w-[65px] py-1.5 sm:py-2 px-2 sm:px-3 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap',
                 activeTab === 'battles'
                   ? 'bg-white text-black font-bold shadow-md'
                   : 'text-zinc-400 hover:text-white'
               )}
             >
-              <Zap className="w-3.5 h-3.5" />
+              <Zap className="w-3.5 h-3.5 shrink-0" />
               <span>Battles</span>
             </button>
           </div>
