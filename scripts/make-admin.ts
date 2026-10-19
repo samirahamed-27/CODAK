@@ -68,7 +68,7 @@ async function run() {
     adminClient.from('xp_events').select('id', { count: 'exact', head: true }).eq('student_id', profile.id),
     adminClient.from('quiz_attempts').select('id', { count: 'exact', head: true }).eq('student_id', profile.id),
     adminClient.from('duels').select('id', { count: 'exact', head: true }).or(`challenger_id.eq.${profile.id},challenged_id.eq.${profile.id}`),
-    adminClient.from('battle_participants').select('id', { count: 'exact', head: true }).eq('student_id', profile.id),
+    adminClient.from('battle_team_members').select('id', { count: 'exact', head: true }).eq('student_id', profile.id),
     adminClient.from('student_practice_completions').select('id', { count: 'exact', head: true }).eq('student_id', profile.id),
   ]);
 

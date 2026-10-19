@@ -134,7 +134,7 @@ describe('Security Definer Grant Regression Guard (Automated DB Audit)', () => {
 
       // Explicit positive verification of critical functions:
       // MUST NOT be executable by anon, authenticated, or PUBLIC
-      const criticalFunctions = ['award_xp', 'void_xp', 'submit_battle_answer'];
+      const criticalFunctions = ['award_xp', 'void_xp', 'submit_battle_answer', 'promote_to_staff'];
       for (const fn of criticalFunctions) {
         const row = res.rows.find((r) => r.function_name === fn);
         expect(row, `Function ${fn} must exist as SECURITY DEFINER`).toBeDefined();

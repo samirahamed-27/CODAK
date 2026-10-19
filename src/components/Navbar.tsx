@@ -97,8 +97,9 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
       : role === 'admin'
       ? [
           { label: 'Admin Hub', ariaLabel: 'Go to Admin Hub', link: '/admin' },
+          { label: 'Staff Invites', ariaLabel: 'Manage Staff Invites', link: '/admin/invites' },
           { label: 'XP Rules', ariaLabel: 'Manage XP Rules', link: '/admin/rules' },
-          { label: 'Student View', ariaLabel: 'Switch to Student View', link: '/student' },
+          { label: 'Ledger Audit', ariaLabel: 'Inspect Ledger Audit', link: '/admin/audit' },
         ]
       : [
           { label: 'Dashboard', ariaLabel: 'Go to student dashboard', link: '/student' },
