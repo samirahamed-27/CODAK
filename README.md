@@ -237,7 +237,12 @@ SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 # Direct Postgres Connection URI (Local .env.local only, NEVER in hosting/Vercel env)
 DATABASE_URL="postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres"
 CRON_SECRET="your-cron-secret-token"
-NEXT_PUBLIC_DEMO_MODE="true"
+
+# Server-Only Judge & Evaluator Credentials (NEVER use NEXT_PUBLIC prefix)
+JUDGE_ACCESS_CODE="your-secure-judge-access-code"
+DEMO_STUDENT_PASSWORD="your-strong-student-password"
+DEMO_FACULTY_PASSWORD="your-strong-faculty-password"
+DEMO_ADMIN_PASSWORD="your-strong-admin-password"
 ```
 
 ### 3. Database Migration & Seed
@@ -260,15 +265,51 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ---
 
-## 🧪 Demo Accounts
+## 🛡️ Judge & Evaluator Access (`/judge`)
 
-When `NEXT_PUBLIC_DEMO_MODE="true"`, use the floating **Role Switcher** widget or log in with any seeded demo account (Password: `Password123!`):
+For evaluation and grading, access to pre-seeded role accounts (Student, Faculty, Admin) is managed via a dedicated, unlinked, and unindexed evaluation portal:
 
-| Role | Email | Password | Landing Route | Focus Area |
-|:---|:---|:---|:---|:---|
-| 🧑‍🎓 **Student** | `student@demo.edu` | `Password123!` | `/student` | Daily Quests, Hero Profile, Quiz Arena, Leagues |
-| 🧑‍🏫 **Faculty** | `faculty@demo.edu` | `Password123!` | `/faculty` | Question Bank Queue, Flagged XP Review |
-| 🛡️ **Admin** | `admin@demo.edu` | `Password123!` | `/admin` | Rule Configurator, Ledger Audit, System Controls |
+- **Portal URL**: `/judge` (protected by `robots: noindex, nofollow`, unlinked from public navigation).
+- **Authentication**: Evaluators select their target role (`student`, `faculty`, or `admin`) and provide the secret access code.
+- **Server Verification**: The code is evaluated via constant-time comparison (`crypto.timingSafeEqual`) to prevent timing side-channel attacks.
+- **Fail-Closed Architecture**: If `JUDGE_ACCESS_CODE` or any role-specific password environment variable is unset, access fails closed immediately (503 Service Unavailable).
+- **IP Rate Limiting**: The endpoint is guarded by a PostgreSQL-backed IP rate limiter (5 attempts per 10 minutes per IP).
+- **Audit Trails**: Every successful judge login writes an immutable record to `audit_logs` tracking the authenticated user ID, role, client IP, and timestamp.
+- **Client Bundle Zero-Leak**: No demo emails, fallback passwords, or judge environment variable names are embedded into client JavaScript bundles.
+
+| Role | Target Route | Purpose |
+|:---|:---|:---|
+| 🧑‍🎓 **Student** | `/student` | Quests, XP ledger, quiz arena, concept match, duels, battles |
+| 🧑‍🏫 **Faculty** | `/faculty` | Question bank approval queue, practice review queue, analytics |
+| 🛡️ **Admin** | `/admin` | XP rule engine, audit logs, system controls, campus governance |
+
+---
+
+## 👥 Faculty and admin accounts
+
+CODAK enforces a strict **zero-trust role model**: there is no public "choose your role" sign-up. Every new account begins as a `student` via database triggers, and client-side requests can never set or elevate user roles. Faculty and Administrator access is managed entirely via cryptographically secure single-use/multi-use invite codes or service-role bootstrapping.
+
+### 1. How Invites Work
+- **Invite Generation (`/admin/invites`)**: Administrators can create staff invites for either `faculty` or `admin` roles, specifying an optional campus, expiration window (default 7 days), and maximum allowed redemptions (default 1 for admin, 25 for faculty; admin-configurable).
+- **Cryptographic Single-Display Token**: Invite codes are generated using cryptographically secure random bytes (32 characters base64url). The raw token is displayed **once** to the admin in a secure copy box with a clear warning. The server stores only the SHA-256 code hash (`code_hash`) in the `staff_invites` table.
+- **Zero Client RLS Access**: The `staff_invites` table has Row Level Security enabled with no client access (`authenticated` and `anon` have zero SELECT/INSERT/UPDATE permissions). All operations are executed exclusively through trusted server actions using the service role.
+- **Redemption Portal (`/redeem-invite`)**: Prospective faculty and administrators register a standard account via email or Google OAuth (linked directly from the login tabs via *"Sign up (invite code required)"*), verify their email, and input their invite code on `/redeem-invite`.
+- **Rate Limiting & Timing Safety**: Redemptions are rate-limited to 5 attempts per 10 minutes per user and IP via the database rate limiter. Lookup is performed using constant-time hash verification. Any invalid, expired, revoked, or exhausted code returns a single generic error (*"Invalid or expired code"*) to prevent oracle enumeration.
+- **Atomic State Transition (`promote_to_staff`)**: A single transactional `SECURITY DEFINER` function atomically locks the invite row, checks validity, increments `used_count`, updates `profiles.role`, inserts the `faculty` profile (with optional department, designation, and campus), and safely removes the idle `students` placeholder record only if the user has zero activity (no XP events, quiz attempts, duels, or battles). If activity exists, promotion is safely rejected.
+- **Immutable Audit Logging**: Full audit trails are recorded in `audit_logs` for invite creation, redemption, revocation, and rate-limit bursts, never recording plain-text codes.
+
+### 2. Bootstrapping the First Administrator
+To establish the initial administrator account without an existing invite:
+```bash
+# Bootstrap an existing signed-up account to admin
+npx tsx scripts/make-admin.ts <email>
+```
+*Note: The target user must already have created an account and verified their email. The script connects using the service role from `.env.local`, verifies account existence, elevates the profile to `admin`, cleans any idle student row, and logs a `STAFF_ADMIN_BOOTSTRAP` event in `audit_logs` without printing secrets.*
+
+### 3. Security Notes
+- **Zero-Trust Role Guard**: Trigger `prevent_role_change` prevents any non-service-role update to `profiles.role`.
+- **Grant Guard Verification**: `promote_to_staff` execution privileges are strictly revoked from `PUBLIC`, `anon`, and `authenticated`, and granted solely to `service_role`.
+- **Aggregation Isolation**: Promoted faculty and admin accounts are completely excluded from public leaderboards, weekly league standings, and campus performance aggregations.
 
 ---
 

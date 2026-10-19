@@ -55,6 +55,7 @@ export async function createOrJoinAutoMatchAction(): Promise<{
   duelId?: string;
   isNew?: boolean;
   error?: string;
+  statusCode?: number;
 }> {
   const supabaseServer = await createServerClient();
   const {
@@ -74,6 +75,16 @@ export async function createOrJoinAutoMatchAction(): Promise<{
 
   if (!studentId) {
     return { success: false, error: 'Unauthorized: Student session required' };
+  }
+
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', studentId)
+    .maybeSingle();
+
+  if (!profile || profile.role !== 'student') {
+    return { success: false, error: 'Forbidden: Only students can participate in duels.', statusCode: 403 };
   }
 
   const rl = await checkRateLimit(studentId, 'duel_action');
@@ -193,6 +204,7 @@ export async function challengeDirectStudentAction(targetStudentId: string): Pro
   success: boolean;
   duelId?: string;
   error?: string;
+  statusCode?: number;
 }> {
   const supabaseServer = await createServerClient();
   const {
@@ -206,6 +218,16 @@ export async function challengeDirectStudentAction(targetStudentId: string): Pro
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
   if (!studentId) return { success: false, error: 'Unauthorized: Student session required' };
+
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', studentId)
+    .maybeSingle();
+
+  if (!profile || profile.role !== 'student') {
+    return { success: false, error: 'Forbidden: Only students can participate in duels.', statusCode: 403 };
+  }
 
   const rl = await checkRateLimit(studentId, 'duel_action');
   if (!rl.allowed) {
@@ -346,6 +368,7 @@ export async function submitDuelAnswersAction(input: DuelSubmissionInput): Promi
   isWinner?: boolean;
   isDraw?: boolean;
   error?: string;
+  statusCode?: number;
 }> {
   const supabaseServer = await createServerClient();
   const {
@@ -359,6 +382,16 @@ export async function submitDuelAnswersAction(input: DuelSubmissionInput): Promi
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
   if (!studentId) return { success: false, error: 'Unauthorized: Student session required' };
+
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', studentId)
+    .maybeSingle();
+
+  if (!profile || profile.role !== 'student') {
+    return { success: false, error: 'Forbidden: Only students can participate in duels.', statusCode: 403 };
+  }
 
   const rl = await checkRateLimit(studentId, 'duel_action');
   if (!rl.allowed) {

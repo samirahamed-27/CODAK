@@ -40,3 +40,18 @@ This document records all audits, identified issues, root-cause analyses, archit
 - [x] Added 5 unit tests in `tests/role-redirect.test.ts` to assert student campus onboarding and faculty/admin exemption (24/24 passed).
 - [x] Ran `npx tsc --noEmit` (0 errors).
 - [x] Ran `npm run build` (30/30 routes compiled successfully).
+
+---
+
+## 3. Staff Sign-Up Architecture: Faculty and Admin via Invite Codes (2026-10-19)
+
+### 3.1 Architecture & Threat Modeling
+- **Zero-Trust Sign-Up Retention**: Maintained base sign-up trigger assigning `role = 'student'` on all new accounts. Client-side requests cannot specify or mutate roles (guarded by `prevent_role_change` trigger).
+- **Cryptographic Staff Invites**: Generated 32-character base64url random invite codes. Displayed once to admins at `/admin/invites`, stored exclusively as SHA-256 hashes (`code_hash`) in `public.staff_invites`.
+- **Zero-Access RLS**: `staff_invites` table RLS enabled with zero client policies. Touched exclusively via server actions with `supabaseAdmin` service role.
+- **Redemption & Atomicity**: Server action `redeemInviteAction` requires email verification, enforces IP/user rate limiting (5 attempts per 10m), performs constant-time hash verification, and calls `SECURITY DEFINER` function `promote_to_staff`.
+- **Single-Use Concurrency**: Row-level locking (`FOR UPDATE`) within `promote_to_staff` guarantees that concurrent redemptions of a single-use code produce exactly one success.
+- **Student Data Clean-Up**: If a user has zero activity (no XP events, quiz attempts, duels, or battles), the initial placeholder student row is deleted. If activity exists, promotion is safely refused.
+- **Grant Guard Compliance**: `promote_to_staff` has execute permissions explicitly revoked from `PUBLIC`, `anon`, and `authenticated`, and granted solely to `service_role`.
+- **Admin Bootstrap**: Created `scripts/make-admin.ts <email>` using service role with audit logging (`STAFF_ADMIN_BOOTSTRAP`) to promote an initial existing user.
+- **Exclusion From Student Aggregations**: Promoted faculty and admin profiles are omitted from public leaderboards, weekly leagues, and campus student standings.

@@ -6,7 +6,7 @@ import { writeAuditLog } from '@/lib/audit-logs';
 
 export interface FlagItem {
   id: string;
-  kind: 'spike' | 'answer_sharing' | 'win_trading' | 'rate_limit';
+  kind: 'spike' | 'answer_sharing' | 'win_trading' | 'rate_limit' | 'duplicate_proof' | 'practice_velocity';
   severity: 'low' | 'medium' | 'high' | 'critical';
   studentId: string;
   studentName?: string;

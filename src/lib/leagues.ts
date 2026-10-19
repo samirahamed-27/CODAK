@@ -224,6 +224,17 @@ export async function assignStudentToWeeklyLeague(
 }> {
   const { periodKey: weekKey } = getIstWeekDetails(customDate);
 
+  // 0. Verify student role
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', studentId)
+    .maybeSingle();
+
+  if (!profile || profile.role !== 'student') {
+    throw new Error('Forbidden: Only students can be assigned to weekly leagues.');
+  }
+
   // 1. Check if student already has a group for this week
   const { data: existingMember } = await adminClient
     .from('league_members')

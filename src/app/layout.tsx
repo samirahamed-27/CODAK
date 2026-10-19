@@ -2,9 +2,9 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import { DemoRoleSwitch } from '@/components/DemoRoleSwitch';
 import Aurora from '@/components/Aurora';
 import TargetCursor from '@/components/ui/TargetCursor';
+import { DemoRoleSwitch } from '@/components/DemoRoleSwitch';
 import { PreloaderProvider } from '@/components/ui/PreloaderContext';
 
 const geistSans = Geist({
@@ -80,6 +80,7 @@ export default function RootLayout({
           cursorColorOnTarget="#ffffff"
           blendMode="normal"
         />
+
         <PreloaderProvider>
           <div className="relative z-10 flex-1 flex flex-col w-full">
             {children}

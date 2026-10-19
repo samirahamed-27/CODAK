@@ -4,7 +4,11 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { BottomNav } from '@/components/BottomNav';
-import { getPracticeLinksAction, claimPracticeProblemAction } from '@/app/actions/practice';
+import {
+  getPracticeLinksAction,
+  claimPracticeProblemAction,
+  PracticeCompletionStatus,
+} from '@/app/actions/practice';
 import { PracticeLink } from '@/lib/practice';
 import {
   ExternalLink,
@@ -22,6 +26,8 @@ import {
   PlusCircle,
   Loader2,
   Award,
+  Clock,
+  AlertCircle,
 } from 'lucide-react';
 import clsx from 'clsx';
 import Aurora from '@/components/Aurora';
@@ -30,6 +36,7 @@ export default function StudentPracticePage() {
   const [links, setLinks] = useState<PracticeLink[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
   const [completedLinkIds, setCompletedLinkIds] = useState<string[]>([]);
+  const [completions, setCompletions] = useState<Record<string, PracticeCompletionStatus>>({});
   const [userRole, setUserRole] = useState<string>('student');
   const [selectedTopic, setSelectedTopic] = useState<string>('All');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
@@ -66,6 +73,7 @@ export default function StudentPracticePage() {
         if (res.success) {
           setLinks(res.links);
           setCompletedLinkIds(res.completedLinkIds || []);
+          if (res.completions) setCompletions(res.completions);
           if (res.userRole) setUserRole(res.userRole);
           if (res.topics.length > 0) {
             setTopics((prev) => (prev.length === 0 ? res.topics : prev));
@@ -97,16 +105,26 @@ export default function StudentPracticePage() {
     try {
       const res = await claimPracticeProblemAction({
         practiceLinkId: selectedProblem.id,
-        submissionProof: submissionProof.trim() || undefined,
+        submissionProof: submissionProof.trim(),
       });
 
       if (res.success) {
         setClaimFeedback({
           type: 'success',
-          message: `Great job! You claimed +${res.xpAwarded} XP!`,
-          xpAwarded: res.xpAwarded,
+          message: res.message || 'Solution submitted! Your claim is pending faculty review.',
+          xpAwarded: 0,
         });
         setCompletedLinkIds((prev) => [...prev, selectedProblem.id]);
+        if (res.claimId) {
+          setCompletions((prev) => ({
+            ...prev,
+            [selectedProblem.id]: {
+              id: res.claimId!,
+              status: 'pending',
+              xpAwarded: 0,
+            },
+          }));
+        }
         setTimeout(() => {
           setClaimModalOpen(false);
           setClaimFeedback(null);
@@ -114,13 +132,13 @@ export default function StudentPracticePage() {
       } else {
         setClaimFeedback({
           type: 'error',
-          message: res.error || 'Failed to claim XP. Please try again.',
+          message: res.error || 'Failed to submit claim. Please try again.',
         });
       }
     } catch (err: any) {
       setClaimFeedback({
         type: 'error',
-        message: err.message || 'An unexpected error occurred.',
+        message: err.message || 'Unexpected network error.',
       });
     } finally {
       setIsClaiming(false);
@@ -318,6 +336,7 @@ export default function StudentPracticePage() {
                 {links.map((link) => {
                   const isSolved = completedLinkIds.includes(link.id);
                   const isComp = Boolean(link.is_competition);
+                  const completion = completions[link.id];
 
                   return (
                     <div
@@ -399,10 +418,20 @@ export default function StudentPracticePage() {
                           <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                         </a>
 
-                        {isSolved ? (
-                          <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-white/10 text-white border border-white/20 shadow-sm">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                            <span>Solved • XP Claimed</span>
+                        {completion?.status === 'approved' ? (
+                          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 shadow-sm">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Approved +{completion.xpAwarded} XP</span>
+                          </span>
+                        ) : completion?.status === 'pending' ? (
+                          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/30 shadow-sm">
+                            <Clock className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Pending review</span>
+                          </span>
+                        ) : completion?.status === 'rejected' ? (
+                          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-rose-500/10 text-rose-300 border border-rose-500/30 shadow-sm">
+                            <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                            <span>Not approved: {completion.rejectionReason || 'Rejected by reviewer'}</span>
                           </span>
                         ) : (
                           <button
@@ -410,7 +439,16 @@ export default function StudentPracticePage() {
                             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-white text-black hover:bg-zinc-200 border border-white transition-all shadow-md active:scale-95"
                           >
                             <Sparkles className="w-3.5 h-3.5" />
-                            <span>Claim {isComp ? '+25 XP' : '+10 XP'}</span>
+                            <span>
+                              Claim{' '}
+                              {isComp
+                                ? '+25 XP'
+                                : link.difficulty === 'Hard'
+                                ? '+40 XP'
+                                : link.difficulty === 'Medium'
+                                ? '+20 XP'
+                                : '+10 XP'}
+                            </span>
                           </button>
                         )}
                       </div>
@@ -468,20 +506,19 @@ export default function StudentPracticePage() {
             <form onSubmit={handleClaimSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-zinc-300 flex items-center justify-between">
-                  <span>Solution URL / Profile Handle</span>
+                  <span>Verified Solution Proof URL</span>
                   <span className="text-[10px] text-zinc-400 font-mono">(Required)</span>
                 </label>
                 <input
-                  type="text"
+                  type="url"
                   required
-                  minLength={3}
-                  placeholder="e.g., https://leetcode.com/submissions/... or handle"
+                  placeholder="https://leetcode.com/submissions/... or github.com/..."
                   value={submissionProof}
                   onChange={(e) => setSubmissionProof(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white transition-all font-mono"
                 />
                 <p className="text-[10px] text-zinc-400 leading-relaxed">
-                  Verifiable ledger recording: provide your submission link or profile handle. Daily rate limits apply (5 practice, 2 competitions).
+                  Provide an official solution link (LeetCode, HackerRank, Codeforces, GitHub). Once submitted, your solution enters the faculty approval queue.
                 </p>
               </div>
 

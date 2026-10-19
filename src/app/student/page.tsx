@@ -105,21 +105,6 @@ export default function StudentDashboardPage() {
     };
   }, []);
 
-  // Dynamic XP reward handler (e.g. completing a quest adds +10 XP)
-  const handleQuestCompleted = (xpEarned: number) => {
-    setProfile((prev) => {
-      const newTotalXp = prev.totalXp + xpEarned;
-      const newLevel = levelFromXp(newTotalXp).level;
-      return {
-        ...prev,
-        totalXp: newTotalXp,
-        level: newLevel,
-      };
-    });
-    // Check celebration after quest XP
-    triggerCelebrationCheck();
-  };
-
   const handleUpdateAvatar = (newUrl: string | null) => {
     setProfile((prev) => ({
       ...prev,
@@ -236,7 +221,7 @@ export default function StudentDashboardPage() {
 
             {/* Card 3: To do Card (Right, 4 cols) */}
             <div className="md:col-span-2 lg:col-span-4 flex flex-col">
-              <ToDoCard onQuestCompleted={handleQuestCompleted} />
+              <ToDoCard />
             </div>
           </section>
 

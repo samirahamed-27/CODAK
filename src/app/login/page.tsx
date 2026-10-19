@@ -11,48 +11,6 @@ import { getCampusesAction } from '@/app/actions/campus';
 import { formatCampusDisplayName } from '@/lib/campus';
 import { IS_DEMO_MODE } from '@/lib/config';
 
-const DEMO_ACCOUNTS = [
-  {
-    role: 'student' as const,
-    title: 'Student Account',
-    name: 'Aarav Sharma',
-    email: 'student@demo.edu',
-    password: 'Password123!',
-    tag: 'CS Student (Lvl 1)',
-    avatar: '🎓',
-    badgeClass: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
-    cardBorder: 'hover:border-emerald-500/60',
-    btnBg: 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/40',
-    path: '/student',
-  },
-  {
-    role: 'faculty' as const,
-    title: 'Faculty Account',
-    name: 'Dr. Priya Raman',
-    email: 'faculty@demo.edu',
-    password: 'Password123!',
-    tag: 'CS Faculty & Reviewer',
-    avatar: '👨‍🏫',
-    badgeClass: 'text-purple-400 bg-purple-500/10 border-purple-500/30',
-    cardBorder: 'hover:border-purple-500/60',
-    btnBg: 'bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border-purple-500/40',
-    path: '/faculty',
-  },
-  {
-    role: 'admin' as const,
-    title: 'Administrator',
-    name: 'Vikram Singh',
-    email: 'admin@demo.edu',
-    password: 'Password123!',
-    tag: 'Campus Super Admin',
-    avatar: '🛡️',
-    badgeClass: 'text-rose-400 bg-rose-500/10 border-rose-500/30',
-    cardBorder: 'hover:border-rose-500/60',
-    btnBg: 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border-rose-500/40',
-    path: '/admin',
-  },
-];
-
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -104,10 +62,15 @@ function LoginPageContent() {
     setErrorMessage(null);
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const nextParam = searchParams.get('next');
+      const callbackUrl = nextParam
+        ? `${origin}/auth/callback?next=${encodeURIComponent(nextParam)}`
+        : `${origin}/auth/callback`;
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${origin}/auth/callback`,
+          redirectTo: callbackUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -131,12 +94,13 @@ function LoginPageContent() {
     setSuccessMessage(null);
 
     const targetEmail = inputEmail.trim();
-    const targetPassword = inputPassword || 'Password123!';
-    const demo = DEMO_ACCOUNTS.find((d) => d.email.toLowerCase() === targetEmail.toLowerCase());
-    const isPlaceholderSupabase =
-      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-project-id') ||
-      process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder');
+    const targetPassword = inputPassword?.trim() || '';
+
+    if (!targetPassword) {
+      setErrorMessage('Please enter your password.');
+      setLoading(false);
+      return;
+    }
 
     try {
       try {
@@ -151,19 +115,6 @@ function LoginPageContent() {
       });
 
       if (error) {
-        // Fallback for demo accounts or offline/placeholder Supabase
-        if (demo || isPlaceholderSupabase) {
-          const targetRole = demo ? demo.role : 'student';
-          setSuccessMessage(`Demo access verified for ${targetEmail}!`);
-          startPreload({
-            role: targetRole,
-            destination: `/${targetRole}`,
-            text: `Welcome to CODAK • Entering ${targetRole.toUpperCase()} Hub`,
-            subtext: 'Initializing XP ledger, course velocity & battle arena...',
-          });
-          return;
-        }
-
         setErrorMessage(error.message);
         setLoading(false);
         return;
@@ -186,17 +137,6 @@ function LoginPageContent() {
         });
       }
     } catch (err: any) {
-      if (demo || isPlaceholderSupabase) {
-        const targetRole = demo ? demo.role : 'student';
-        setSuccessMessage(`Demo access verified for ${targetEmail}!`);
-        startPreload({
-          role: targetRole,
-          destination: `/${targetRole}`,
-          text: `Welcome to CODAK • Entering ${targetRole.toUpperCase()} Hub`,
-          subtext: 'Initializing XP ledger, course velocity & battle arena...',
-        });
-        return;
-      }
       setErrorMessage(err.message || 'An unexpected error occurred.');
       setLoading(false);
     }
@@ -244,14 +184,23 @@ function LoginPageContent() {
 
       if (data.session) {
         setSuccessMessage('Account created successfully!');
+        const nextParam = searchParams.get('next');
+        const targetDest = nextParam && nextParam.startsWith('/') ? nextParam : '/student';
         startPreload({
           role: 'student',
-          destination: '/student',
-          text: 'Welcome to CODAK • Entering STUDENT Hub',
-          subtext: 'Initializing XP ledger, course velocity & battle arena...',
+          destination: targetDest,
+          text: targetDest.includes('redeem-invite')
+            ? 'Welcome to CODAK • Proceeding to Staff Invite Redemption'
+            : 'Welcome to CODAK • Entering STUDENT Hub',
+          subtext: 'Initializing account credentials & security policies...',
         });
       } else {
-        setSuccessMessage('Account created! Please check your email to verify your account.');
+        const nextParam = searchParams.get('next');
+        setSuccessMessage(
+          nextParam && nextParam.includes('redeem-invite')
+            ? 'Account created! Please check your email to verify your address, then proceed to redeem your invite code.'
+            : 'Account created! Please check your email to verify your account.'
+        );
         setLoading(false);
       }
     } catch (err: any) {
@@ -300,8 +249,6 @@ function LoginPageContent() {
             isGoogleLoading={googleLoading}
             externalError={errorMessage}
             initialRole={initialRole}
-            demoAccounts={DEMO_ACCOUNTS}
-            onQuickDemoSelect={handleAuthSubmit}
           />
         </div>
       ) : (
@@ -463,7 +410,7 @@ function LoginPageContent() {
             <input
               type="email"
               required
-              placeholder="student@demo.edu"
+              placeholder="student@institution.edu"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-white/10 border border-white/10 text-white text-xs placeholder:text-zinc-500 focus:outline-none focus:border-sky-400"

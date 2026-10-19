@@ -12,14 +12,6 @@ export interface SignIn1Props {
   isGoogleLoading?: boolean;
   externalError?: string | null;
   initialRole?: UserPortalRole;
-  demoAccounts?: Array<{
-    role: string;
-    email: string;
-    password: string;
-    title: string;
-    name?: string;
-  }>;
-  onQuickDemoSelect?: (email: string, password: string) => void;
 }
 
 const PORTAL_META: Record<
@@ -30,9 +22,6 @@ const PORTAL_META: Record<
     title: string;
     subtitle: string;
     placeholderEmail: string;
-    defaultDemoEmail: string;
-    defaultDemoName: string;
-    demoNote: string;
   }
 > = {
   student: {
@@ -41,9 +30,6 @@ const PORTAL_META: Record<
     title: 'Student Portal',
     subtitle: 'Sign in to your learning, quests & duel arena',
     placeholderEmail: 'student@institution.edu',
-    defaultDemoEmail: 'student@demo.edu',
-    defaultDemoName: 'Aarav Sharma',
-    demoNote: 'Standard academic learner account',
   },
   faculty: {
     icon: '👨‍🏫',
@@ -51,9 +37,6 @@ const PORTAL_META: Record<
     title: 'Faculty Portal',
     subtitle: 'Curriculum oversight, question review & analytics',
     placeholderEmail: 'faculty@institution.edu',
-    defaultDemoEmail: 'faculty@demo.edu',
-    defaultDemoName: 'Dr. Priya Raman',
-    demoNote: 'Course instructor & curriculum reviewer',
   },
   admin: {
     icon: '🛡️',
@@ -61,9 +44,6 @@ const PORTAL_META: Record<
     title: 'Platform Admin',
     subtitle: 'XP rule engine, ledger audit & campus governance',
     placeholderEmail: 'admin@institution.edu',
-    defaultDemoEmail: 'admin@demo.edu',
-    defaultDemoName: 'Vikram Singh',
-    demoNote: 'Super-admin platform console',
   },
 };
 
@@ -74,8 +54,6 @@ const SignIn1 = ({
   isGoogleLoading = false,
   externalError = null,
   initialRole = 'student',
-  demoAccounts,
-  onQuickDemoSelect,
 }: SignIn1Props) => {
   const [selectedRole, setSelectedRole] = useState<UserPortalRole>(initialRole);
   const [email, setEmail] = useState('');
@@ -102,16 +80,7 @@ const SignIn1 = ({
 
     if (onSignInSuccess) {
       onSignInSuccess(email, password);
-    } else {
-      alert(`Sign in successful as ${selectedRole}! (Demo)`);
     }
-  };
-
-  const handleQuickAutofill = (targetEmail: string, targetPassword = 'Password123!') => {
-    setEmail(targetEmail);
-    setPassword(targetPassword);
-    setError('');
-    onQuickDemoSelect?.(targetEmail, targetPassword);
   };
 
   const displayError = externalError || error;
@@ -190,25 +159,6 @@ const SignIn1 = ({
             )}
           </div>
 
-          {/* Quick Demo Evaluation Autofill Card */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.04] border border-white/10 text-xs">
-            <div className="flex flex-col text-left">
-              <span className="text-[11px] font-semibold text-zinc-200">
-                {currentMeta.defaultDemoName}
-              </span>
-              <span className="text-[10px] text-zinc-400 font-mono">
-                {currentMeta.defaultDemoEmail}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleQuickAutofill(currentMeta.defaultDemoEmail, 'Password123!')}
-              className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-semibold transition border border-white/10 shadow-sm active:scale-95"
-            >
-              Auto-Fill Credentials
-            </button>
-          </div>
-
           <hr className="opacity-10 border-white" />
 
           <div>
@@ -263,11 +213,17 @@ const SignIn1 = ({
                   </a>
                 </span>
               ) : (
-                <span className="text-[11px] text-zinc-500">
-                  {selectedRole === 'faculty'
-                    ? 'Faculty accounts are provisioned by institution department chairs.'
-                    : 'Administrator accounts are restricted to platform supervisors.'}
-                </span>
+                <div className="flex flex-col items-center gap-1.5">
+                  <a
+                    href="/login?mode=signup&next=/redeem-invite"
+                    className="text-xs text-white underline hover:text-zinc-300 font-medium"
+                  >
+                    Sign up (invite code required)
+                  </a>
+                  <span className="text-[11px] text-zinc-500">
+                    Faculty and admin accounts need an invite code from an administrator.
+                  </span>
+                </div>
               )}
             </div>
           </div>

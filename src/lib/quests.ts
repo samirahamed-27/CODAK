@@ -120,6 +120,17 @@ export async function evaluateStudentQuests(
 }> {
   const { weekStart, weekEnd, periodKey: weeklyPeriodKey } = getIstWeekDetails(customDate);
 
+  // 0. Verify student role
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', studentId)
+    .maybeSingle();
+
+  if (!profile || profile.role !== 'student') {
+    return { quests: [], newlyCompleted: [], rewardsPaid: 0 };
+  }
+
   // 1. Fetch active quests with their tasks
   const { data: questsData, error: questsErr } = await adminClient
     .from('quests')

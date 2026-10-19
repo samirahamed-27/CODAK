@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
-import { ShieldCheck, Sliders, Database } from 'lucide-react';
+import { ShieldCheck, Sliders, Database, KeyRound } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   return (
@@ -25,6 +25,13 @@ export default function AdminDashboardPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <Link
+                href="/admin/invites"
+                className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-white text-xs font-semibold transition-all shrink-0"
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>Staff Invites</span>
+              </Link>
               <Link
                 href="/faculty/award-xp"
                 className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-white text-xs font-semibold transition-all shrink-0"

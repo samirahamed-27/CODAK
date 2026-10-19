@@ -74,8 +74,11 @@ export async function getDailyQuizSessionAction(): Promise<DailyQuizSessionResul
   const todayDate = getKolkataDate();
   const adminClient = getAdminClient();
 
-  // Defensively guarantee profile and student rows exist for user (prevents FK violations)
-  await ensureStudentRecord(adminClient, user);
+  // Defensively guarantee profile and student rows exist for student user
+  const isStudent = await ensureStudentRecord(adminClient, user);
+  if (!isStudent) {
+    return { status: 'error', quizDate: '', error: 'Forbidden: Only students may participate in quizzes.' };
+  }
 
   // 1. Check for existing daily attempt on this IST date
   const { data: existingAttempt } = await adminClient
@@ -335,6 +338,15 @@ export async function submitQuizAnswerAction(input: {
   }
 
   const adminClient = getAdminClient();
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (!profile || profile.role !== 'student') {
+    return { success: false, error: 'Forbidden: Only students may participate in quizzes.', statusCode: 403 };
+  }
 
   // 1. Verify attempt ownership & status
   const { data: attempt, error: attemptError } = await adminClient
@@ -490,7 +502,10 @@ export async function finalizeQuizAction(input: { attemptId: string }) {
   }
 
   const adminClient = getAdminClient();
-  await ensureStudentRecord(adminClient, user);
+  const isStudent = await ensureStudentRecord(adminClient, user);
+  if (!isStudent) {
+    return { success: false, error: 'Forbidden: Only students may participate in quizzes.', statusCode: 403 };
+  }
 
   // 1. Fetch attempt
   const { data: attempt, error: attemptError } = await adminClient
@@ -746,6 +761,16 @@ export async function getPracticeQuizSessionAction() {
   }
 
   const adminClient = getAdminClient();
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (!profile || profile.role !== 'student') {
+    return { success: false, error: 'Forbidden: Only students may participate in quizzes.', questions: [] };
+  }
+
   const { data: approvedQuestions, error } = await adminClient
     .from('questions')
     .select('id, topic, question_text, option_a, option_b, option_c, option_d')
@@ -795,6 +820,17 @@ export async function submitPracticeAnswerAction(input: {
     return { success: false, error: 'Unauthorized: You must be logged in.' };
   }
 
+  const adminClient = getAdminClient();
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (!profile || profile.role !== 'student') {
+    return { success: false, error: 'Forbidden: Only students may participate in quizzes.', statusCode: 403 };
+  }
+
   const rl = await checkRateLimit(user.id, 'quiz_answer');
   if (!rl.allowed) {
     return { success: false, error: rl.error, statusCode: 429 };
@@ -804,7 +840,6 @@ export async function submitPracticeAnswerAction(input: {
     return { success: false, error: 'Invalid option selected.' };
   }
 
-  const adminClient = getAdminClient();
   const { data: question, error } = await adminClient
     .from('questions')
     .select('correct_option, explanation')
@@ -850,6 +885,24 @@ export async function getStudentStreakAction() {
   }
 
   const adminClient = getAdminClient();
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (!profile || profile.role !== 'student') {
+    return {
+      currentStreak: 0,
+      longestStreak: 0,
+      freezeDaysRemaining: 0,
+      lastQuizDate: null,
+      isTodayCompleted: false,
+      todayDate,
+      maxDailyQuizXp: 40,
+      error: 'Forbidden: Only students have streaks.',
+    };
+  }
   const { data: streakRow } = await adminClient
     .from('student_streaks')
     .select('*')

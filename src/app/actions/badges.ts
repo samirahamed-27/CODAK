@@ -74,6 +74,16 @@ export async function getStudentBadgesAction(targetStudentId?: string): Promise<
     ? createAdminClient(supabaseUrl, serviceRoleKey)
     : supabaseServer;
 
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', studentId)
+    .maybeSingle();
+
+  if (!profile || profile.role !== 'student') {
+    return { success: false, badges: [], error: 'Forbidden: Badges are only available for students.' };
+  }
+
   // 1. Fetch all badges
   const { data: allBadges, error: badgesErr } = await adminClient
     .from('badges')

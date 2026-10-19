@@ -595,14 +595,18 @@ describe('Part 1: Campus Feature Core Suite (10 Scenarios)', () => {
 
     expect(totals).toBeDefined();
 
-    for (const t of totals || []) {
-      const { data: events } = await adminClient
-        .from('xp_events')
-        .select('xp_amount')
-        .eq('student_id', t.student_id)
-        .eq('status', 'valid');
+    const { data: allEvents } = await adminClient
+      .from('xp_events')
+      .select('student_id, xp_amount')
+      .eq('status', 'valid');
 
-      const expectedTotal = (events || []).reduce((acc, ev) => acc + (ev.xp_amount || 0), 0);
+    const sumMap = new Map<string, number>();
+    for (const ev of allEvents || []) {
+      sumMap.set(ev.student_id, (sumMap.get(ev.student_id) || 0) + (ev.xp_amount || 0));
+    }
+
+    for (const t of totals || []) {
+      const expectedTotal = sumMap.get(t.student_id) || 0;
       expect(t.total_xp).toBe(expectedTotal);
     }
   });

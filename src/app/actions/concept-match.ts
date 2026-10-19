@@ -40,6 +40,20 @@ export async function getConceptMatchRoundAction(): Promise<{
       return { success: false, error: 'Unauthorized: Student session required' };
     }
 
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
+
+    const { data: profile } = await adminClient
+      .from('profiles')
+      .select('role')
+      .eq('id', studentId)
+      .maybeSingle();
+
+    if (!profile || profile.role !== 'student') {
+      return { success: false, error: 'Forbidden: Only students can play Concept Match.' };
+    }
+
     const round = generateConceptMatchRound(4);
     const roundId = crypto.randomUUID();
     const roundToken = createSignedRoundToken(
@@ -141,7 +155,17 @@ export async function submitConceptMatchAction(
   }
 
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
-  await ensureStudentRecord(adminClient, user);
+  const isStudent = await ensureStudentRecord(adminClient, user);
+  if (!isStudent) {
+    return {
+      success: false,
+      correctCount: 0,
+      totalCount: matches.length,
+      isPerfect: false,
+      xpAwarded: 0,
+      error: 'Forbidden: Only students can play Concept Match.',
+    };
+  }
 
   if (!studentId) {
     return { success: false, correctCount: 0, totalCount: 0, isPerfect: false, xpAwarded: 0, error: 'Unauthorized: Student session required' };

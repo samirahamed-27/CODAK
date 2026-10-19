@@ -56,3 +56,4 @@ The UI displays this exact clarification:
 2. **Zero-XP Rank Badges**: Rank badges carry `xp_reward = 0` to prevent feedback loops where awarding a rank badge generates XP that triggers subsequent rank-ups.
 3. **Voided XP Behavior**: If faculty void an illegitimate or administrative XP event, the student's valid XP drops, and their displayed rank immediately reflects their revised level. Previously earned badges are preserved in the student's showcase record to prevent database thrashing.
 4. **Admin-Editable Tiers**: Rank thresholds live in the database (`rank_tiers` table with RLS) rather than hardcoded client logic.
+5. **Staff Access Isolation**: Faculty and administrator accounts are strictly provisioned via cryptographic invite codes or service-role bootstrapping—preventing public role selection and ensuring all staff identities are excluded from student rank, badge, and leaderboard computations.

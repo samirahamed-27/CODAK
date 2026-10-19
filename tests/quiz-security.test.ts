@@ -218,6 +218,11 @@ vi.mock('@supabase/supabase-js', () => ({
             { key: 'max_freeze_days_per_month', value: 2 },
           ];
         }
+        if (table === 'profiles') {
+          const idFilter = filters.find((f) => f.field === 'id');
+          const targetId = idFilter ? idFilter.val : (mockCurrentUser?.id || 'default-student');
+          list = [{ id: targetId, role: 'student' }];
+        }
 
         for (const f of filters) {
           if (f.op === 'eq') {

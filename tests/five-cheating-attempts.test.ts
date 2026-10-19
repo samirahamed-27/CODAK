@@ -5,6 +5,7 @@ import { runSpikeDetection } from '@/lib/anti-gaming/spike-detection';
 import { runAnswerSharingDetection } from '@/lib/anti-gaming/answer-sharing';
 import { runWinTradingDetection } from '@/lib/anti-gaming/win-trading';
 import { getKolkataDate } from '@/lib/streaks';
+import { claimPracticeProblemAction } from '@/app/actions/practice';
 
 describe('4F: The 5 Cheating Attempts Checkpoint', () => {
   const adminClient = createAdminClient();
@@ -653,6 +654,79 @@ describe('4F: The 5 Cheating Attempts Checkpoint', () => {
       expect(auditLog).toBeDefined();
       expect(auditLog!.actor_id).toBe(facultyUser.id);
       expect(auditLog!.reason).toBe(facultyVoidReason);
+    });
+  });
+
+  describe('Scenario 6: Practice Claim Anti-Gaming: Pending Proof & Duplicate Detection', () => {
+    it('fake practice claim stays pending and pays nothing; duplicate proof flagged', async () => {
+      // 1. Create two test students with blk_ prefix
+      const sPractice1 = await createTestStudent('blk_prac1');
+      const sPractice2 = await createTestStudent('blk_prac2');
+
+      const sharedProofUrl = 'https://leetcode.com/submissions/detail/999888777/';
+
+      // 2. Student 1 claims practice problem
+      const res1 = await claimPracticeProblemAction(
+        {
+          practiceLinkId: 'link-arr-1',
+          submissionProof: sharedProofUrl,
+        },
+        sPractice1.id
+      );
+
+      expect(res1.success).toBe(true);
+      expect(res1.status).toBe('pending');
+      expect(res1.xpAwarded).toBe(0);
+
+      // Verify Student 1 has earned 0 XP from the claim
+      const { data: events1 } = await adminClient
+        .from('xp_events')
+        .select('id')
+        .eq('student_id', sPractice1.id)
+        .in('action_type', ['PRACTICE_EASY', 'PRACTICE_MEDIUM', 'PRACTICE_HARD', 'PRACTICE_SOLVE']);
+      expect(events1?.length || 0).toBe(0);
+
+      // 3. Student 2 attempts to claim with the EXACT SAME proof URL (duplicate proof cheating attempt)
+      const res2 = await claimPracticeProblemAction(
+        {
+          practiceLinkId: 'link-arr-2',
+          submissionProof: sharedProofUrl,
+        },
+        sPractice2.id
+      );
+
+      expect(res2.success).toBe(true);
+      expect(res2.status).toBe('pending');
+      expect(res2.xpAwarded).toBe(0);
+
+      // Verify Student 2 has earned 0 XP from the claim
+      const { data: events2 } = await adminClient
+        .from('xp_events')
+        .select('id')
+        .eq('student_id', sPractice2.id)
+        .in('action_type', ['PRACTICE_EASY', 'PRACTICE_MEDIUM', 'PRACTICE_HARD', 'PRACTICE_SOLVE']);
+      expect(events2?.length || 0).toBe(0);
+
+      // 4. Verify duplicate proof flag is recorded in flags table
+      const { data: flags } = await adminClient
+        .from('flags')
+        .select('*')
+        .eq('student_id', sPractice2.id)
+        .eq('kind', 'duplicate_proof');
+
+      expect(flags).toBeDefined();
+      expect(flags!.length).toBeGreaterThanOrEqual(1);
+      const dupFlag = flags![0];
+      expect(dupFlag.second_student_id).toBe(sPractice1.id);
+      expect(dupFlag.severity).toBe('high');
+      expect(dupFlag.evidence.proof_url).toBe(sharedProofUrl);
+      createdFlagIds.push(dupFlag.id);
+
+      // Cleanup practice completions for clean purge
+      await adminClient
+        .from('student_practice_completions')
+        .delete()
+        .in('student_id', [sPractice1.id, sPractice2.id]);
     });
   });
 });

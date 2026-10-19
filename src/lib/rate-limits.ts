@@ -53,3 +53,41 @@ export async function checkRateLimit(
     return { allowed: true };
   }
 }
+
+export async function checkIpRateLimit(
+  ipAddress: string,
+  actionName: string,
+  maxAttempts: number = 5,
+  windowMinutes: number = 10
+): Promise<RateLimitResult> {
+  try {
+    const adminClient = createAdminClient();
+    const { data, error } = await adminClient.rpc('check_ip_rate_limit', {
+      p_ip: ipAddress,
+      p_action_name: actionName,
+      p_max_attempts: maxAttempts,
+      p_window_minutes: windowMinutes,
+    });
+
+    if (error) {
+      console.error(`IP rate limit check error for ${actionName}:`, error);
+      return { allowed: true };
+    }
+
+    const res = data as { allowed?: boolean; retry_after_seconds?: number } | null;
+    if (res && res.allowed === false) {
+      return {
+        allowed: false,
+        statusCode: 429,
+        error: `Too many attempts from this IP address. Please wait ${res.retry_after_seconds || windowMinutes * 60}s before trying again.`,
+        retryAfterSeconds: res.retry_after_seconds || windowMinutes * 60,
+      };
+    }
+
+    return { allowed: true };
+  } catch (err) {
+    console.error(`Failed to execute IP rate limit for ${actionName}:`, err);
+    return { allowed: true };
+  }
+}
+

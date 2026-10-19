@@ -11,12 +11,21 @@ import {
 } from '@/lib/practice';
 import { checkRateLimit } from '@/lib/rate-limits';
 import { ensureStudentRecord } from '@/lib/auth/ensure-student';
+import { validateProofUrl } from '@/lib/practice-validation';
+
+export interface PracticeCompletionStatus {
+  id: string;
+  status: 'pending' | 'approved' | 'rejected';
+  xpAwarded: number;
+  rejectionReason?: string | null;
+}
 
 export async function getPracticeLinksAction(filter?: PracticeFilter): Promise<{
   success: boolean;
   links: PracticeLink[];
   topics: string[];
   completedLinkIds: string[];
+  completions: Record<string, PracticeCompletionStatus>;
   userRole?: string;
   error?: string;
 }> {
@@ -31,6 +40,7 @@ export async function getPracticeLinksAction(filter?: PracticeFilter): Promise<{
       links: [],
       topics: [],
       completedLinkIds: [],
+      completions: {},
       error: 'Unauthorized',
     };
   }
@@ -38,12 +48,20 @@ export async function getPracticeLinksAction(filter?: PracticeFilter): Promise<{
   if (filter?.search) {
     const rl = await checkRateLimit(user.id, 'search');
     if (!rl.allowed) {
-      return { success: false, links: [], topics: [], completedLinkIds: [], error: rl.error };
+      return {
+        success: false,
+        links: [],
+        topics: [],
+        completedLinkIds: [],
+        completions: {},
+        error: rl.error,
+      };
     }
   }
 
   let allLinks: PracticeLink[] = [];
-  let completedLinkIds: string[] = [];
+  const completedLinkIds: string[] = [];
+  const completionsMap: Record<string, PracticeCompletionStatus> = {};
   let userRole = 'student';
 
   try {
@@ -52,7 +70,9 @@ export async function getPracticeLinksAction(filter?: PracticeFilter): Promise<{
     // 1. Fetch practice links (including faculty competitions)
     const { data, error } = await adminClient
       .from('practice_links')
-      .select('id, platform, problem_id, title, topic, difficulty, link, is_competition, created_by, instructions, deadline, created_at')
+      .select(
+        'id, platform, problem_id, title, topic, difficulty, link, is_competition, created_by, instructions, deadline, created_at'
+      )
       .order('is_competition', { ascending: false })
       .order('topic', { ascending: true })
       .order('difficulty', { ascending: true });
@@ -64,11 +84,19 @@ export async function getPracticeLinksAction(filter?: PracticeFilter): Promise<{
     // 2. Fetch completions for the current user
     const { data: completions } = await adminClient
       .from('student_practice_completions')
-      .select('practice_link_id')
+      .select('id, practice_link_id, status, xp_awarded, rejection_reason')
       .eq('student_id', user.id);
 
     if (completions) {
-      completedLinkIds = completions.map((c: any) => c.practice_link_id);
+      for (const c of completions) {
+        completedLinkIds.push(c.practice_link_id);
+        completionsMap[c.practice_link_id] = {
+          id: c.id,
+          status: (c.status as any) || 'pending',
+          xpAwarded: c.xp_awarded || 0,
+          rejectionReason: c.rejection_reason || null,
+        };
+      }
     }
 
     // 3. Fetch user role
@@ -98,48 +126,81 @@ export async function getPracticeLinksAction(filter?: PracticeFilter): Promise<{
     links: filtered,
     topics: distinctTopics,
     completedLinkIds,
+    completions: completionsMap,
     userRole,
   };
 }
 
 /**
- * Claim solve for a practice problem or faculty competition to earn game XP.
+ * Claim solve for a practice problem or faculty competition.
+ * Creates a PENDING record in student_practice_completions. Awards NO XP yet.
+ * Requires verifiable proof URL on supported domains.
  */
-export async function claimPracticeProblemAction(payload: {
-  practiceLinkId: string;
-  submissionProof?: string;
-}): Promise<{
+export async function claimPracticeProblemAction(
+  payload: {
+    practiceLinkId: string;
+    submissionProof?: string;
+  },
+  userIdOverride?: string
+): Promise<{
   success: boolean;
+  status?: string;
+  claimId?: string;
   xpAwarded?: number;
-  newTotal?: number;
-  isCompetition?: boolean;
+  message?: string;
   error?: string;
+  statusCode?: number;
 }> {
-  const supabaseServer = await createServerClient();
-  const {
-    data: { user },
-  } = await supabaseServer.auth.getUser();
+  let user: { id: string } | null = null;
+
+  if (userIdOverride) {
+    user = { id: userIdOverride };
+  } else {
+    const supabaseServer = await createServerClient();
+    const {
+      data: { user: authUser },
+    } = await supabaseServer.auth.getUser();
+    user = authUser;
+  }
 
   if (!user) {
-    return { success: false, error: 'Unauthorized. Please log in.' };
+    return { success: false, error: 'Unauthorized. Please log in.', statusCode: 401 };
+  }
+
+  const adminClient = createAdminClient();
+
+  // Step 3 Guard: Only student role can submit practice problem claims (faculty/admin get 403)
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (!profile || profile.role !== 'student') {
+    return {
+      success: false,
+      error: 'Forbidden: Only enrolled students can submit practice problem claims.',
+      statusCode: 403,
+    };
   }
 
   const rl = await checkRateLimit(user.id, 'practice_claim');
   if (!rl.allowed) {
-    return { success: false, error: rl.error };
+    return { success: false, error: rl.error, statusCode: 429 };
   }
 
-  // Anti-gaming guard: Require verifiable solution link or profile handle to prevent idle-click XP farming
-  const trimmedProof = payload.submissionProof?.trim();
-  if (!trimmedProof || trimmedProof.length < 3) {
+  // Validate proof URL is required and hosted on authorized platforms
+  const proofValidation = validateProofUrl(payload.submissionProof || '');
+  if (!proofValidation.valid) {
     return {
       success: false,
-      error: 'Please provide a verifiable solution URL or profile handle (LeetCode, HackerRank, Codeforces, or GitHub) to confirm your practice solve.',
+      error: proofValidation.error || 'A valid submission proof URL is required.',
+      statusCode: 400,
     };
   }
+  const normalizedProof = (payload.submissionProof || '').trim();
 
   try {
-    const adminClient = createAdminClient();
     await ensureStudentRecord(adminClient, user);
 
     // 1. Look up problem in practice_links
@@ -155,7 +216,6 @@ export async function claimPracticeProblemAction(payload: {
     if (found) {
       linkRecord = found;
     } else {
-      // Check if ID matches a seed problem
       const seed = SEED_PRACTICE_LINKS.find(
         (s) => s.id === payload.practiceLinkId || s.problem_id === payload.practiceLinkId
       );
@@ -181,76 +241,585 @@ export async function claimPracticeProblemAction(payload: {
     }
 
     if (!linkRecord) {
-      return { success: false, error: 'Problem not found in practice directory.' };
+      return { success: false, error: 'Problem not found in practice directory.', statusCode: 404 };
     }
 
-    // 2. Check if already solved and recorded in student_practice_completions
+    // 2. Reject re-claiming an approved or pending item
     const { data: existing } = await adminClient
       .from('student_practice_completions')
-      .select('id')
+      .select('id, status')
       .eq('student_id', user.id)
       .eq('practice_link_id', effectiveLinkId)
       .maybeSingle();
 
-    if (existing) {
-      return { success: false, error: 'You have already claimed XP for this problem.' };
+    if (existing && (existing.status === 'pending' || existing.status === 'approved')) {
+      return {
+        success: false,
+        error:
+          existing.status === 'approved'
+            ? 'You have already completed and received approved XP for this problem.'
+            : 'You already have a pending claim under review for this problem.',
+        statusCode: 400,
+      };
     }
 
-    // 3. Determine action type (HACKERRANK_COMPETITION vs PRACTICE_SOLVE)
-    const isComp = Boolean(linkRecord.is_competition);
-    const actionType = isComp ? 'HACKERRANK_COMPETITION' : 'PRACTICE_SOLVE';
-    const referenceId = `${actionType.toLowerCase()}:${user.id}:${effectiveLinkId}`;
+    // 3. Anti-gaming Velocity Check: Flag more than 5 claims in the last hour (flag only, never auto-void)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentClaimsCount } = await adminClient
+      .from('student_practice_completions')
+      .select('id', { count: 'exact', head: true })
+      .eq('student_id', user.id)
+      .gte('created_at', oneHourAgo);
 
-    // 4. Award XP via atomic database procedure award_xp
-    const { data: awardRes, error: xpErr } = await adminClient.rpc('award_xp', {
-      p_student_id: user.id,
-      p_action_type: actionType,
-      p_reference_id: referenceId,
-      p_extra_units: 0,
-      p_actor: null,
-    });
-
-    if (xpErr) {
-      return { success: false, error: `Failed to award XP: ${xpErr.message}` };
+    if ((recentClaimsCount || 0) >= 5) {
+      await adminClient.from('flags').insert({
+        kind: 'practice_velocity',
+        severity: 'medium',
+        student_id: user.id,
+        window_start: oneHourAgo,
+        window_end: new Date().toISOString(),
+        evidence: {
+          claims_in_last_hour: (recentClaimsCount || 0) + 1,
+          threshold: 5,
+          problem_id: effectiveLinkId,
+        },
+        status: 'open',
+      });
     }
 
-    const res = awardRes as any;
+    // 4. Anti-gaming Duplicate Proof Check: Flag if another student used the same proof URL
+    const { data: duplicateClaims } = await adminClient
+      .from('student_practice_completions')
+      .select('id, student_id')
+      .eq('submission_proof', normalizedProof)
+      .neq('student_id', user.id)
+      .limit(1);
 
-    if (res?.status === 'limit_reached') {
-      const msg =
-        actionType === 'HACKERRANK_COMPETITION'
-          ? 'Daily limit for custom competitions reached (2/day). Come back tomorrow!'
-          : 'Daily limit for practice problems reached (5/day). Come back tomorrow!';
-      return { success: false, error: msg };
+    if (duplicateClaims && duplicateClaims.length > 0) {
+      const secondStudentId = duplicateClaims[0].student_id;
+      await adminClient.from('flags').insert({
+        kind: 'duplicate_proof',
+        severity: 'high',
+        student_id: user.id,
+        second_student_id: secondStudentId,
+        window_start: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        window_end: new Date().toISOString(),
+        evidence: {
+          proof_url: normalizedProof,
+          matched_claim_id: duplicateClaims[0].id,
+          second_student_id: secondStudentId,
+        },
+        status: 'open',
+      });
     }
 
-    if (res?.status === 'duplicate') {
-      return { success: false, error: 'XP has already been recorded for this problem.' };
+    // 5. Create PENDING record in student_practice_completions (NO XP YET)
+    const { data: claimRow, error: insertError } = await adminClient
+      .from('student_practice_completions')
+      .upsert(
+        {
+          student_id: user.id,
+          practice_link_id: effectiveLinkId,
+          submission_proof: normalizedProof,
+          xp_awarded: 0,
+          status: 'pending',
+          rejection_reason: null,
+          reviewed_by: null,
+          reviewed_at: null,
+          created_at: new Date().toISOString(),
+        },
+        { onConflict: 'student_id,practice_link_id' }
+      )
+      .select('id, status, created_at')
+      .single();
+
+    if (insertError) {
+      return { success: false, error: `Failed to record claim: ${insertError.message}` };
     }
 
-    if (res?.status !== 'awarded' && res?.status !== 'success') {
-      return { success: false, error: res?.reason || 'Unable to award XP at this time.' };
+    return {
+      success: true,
+      status: 'pending',
+      claimId: claimRow.id,
+      xpAwarded: 0,
+      message: 'Practice solve submitted successfully! Your claim is pending faculty review.',
+    };
+  } catch (err: any) {
+    console.error('Error recording practice claim:', err);
+    return { success: false, error: err.message || 'Server error while submitting claim.' };
+  }
+}
+
+/**
+ * Faculty/Admin action: Fetch all pending practice problem claims for review.
+ */
+export async function getPendingPracticeClaimsAction(): Promise<{
+  success: boolean;
+  claims: Array<{
+    id: string;
+    studentId: string;
+    studentName: string;
+    studentEmail: string;
+    studentRoll: string;
+    practiceLinkId: string;
+    problemTitle: string;
+    platform: string;
+    topic: string;
+    difficulty: string;
+    isCompetition: boolean;
+    submissionProof: string;
+    createdAt: string;
+  }>;
+  error?: string;
+  statusCode?: number;
+}> {
+  const supabaseServer = await createServerClient();
+  const {
+    data: { user },
+  } = await supabaseServer.auth.getUser();
+
+  if (!user) {
+    return { success: false, claims: [], error: 'Unauthorized', statusCode: 401 };
+  }
+
+  const adminClient = createAdminClient();
+
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (!profile || (profile.role !== 'faculty' && profile.role !== 'admin')) {
+    return {
+      success: false,
+      claims: [],
+      error: 'Forbidden: Faculty or Administrator access required.',
+      statusCode: 403,
+    };
+  }
+
+  try {
+    const { data: claims, error } = await adminClient
+      .from('student_practice_completions')
+      .select(
+        `
+        id,
+        student_id,
+        practice_link_id,
+        submission_proof,
+        created_at,
+        practice_links (
+          title,
+          platform,
+          topic,
+          difficulty,
+          is_competition
+        ),
+        students (
+          roll_no,
+          profiles (
+            full_name,
+            email
+          )
+        )
+      `
+      )
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      return { success: false, claims: [], error: error.message };
     }
 
-    const xpAwarded = res.xp_awarded ?? (isComp ? 25 : 10);
+    const formatted = (claims || []).map((c: any) => ({
+      id: c.id,
+      studentId: c.student_id,
+      studentName: c.students?.profiles?.full_name || 'Student',
+      studentEmail: c.students?.profiles?.email || '',
+      studentRoll: c.students?.roll_no || '',
+      practiceLinkId: c.practice_link_id,
+      problemTitle: c.practice_links?.title || 'Practice Problem',
+      platform: c.practice_links?.platform || 'Coding Platform',
+      topic: c.practice_links?.topic || 'General',
+      difficulty: c.practice_links?.difficulty || 'Medium',
+      isCompetition: Boolean(c.practice_links?.is_competition),
+      submissionProof: c.submission_proof || '',
+      createdAt: c.created_at,
+    }));
 
-    // 5. Record the completion in student_practice_completions
-    await adminClient.from('student_practice_completions').insert({
-      student_id: user.id,
-      practice_link_id: effectiveLinkId,
-      submission_proof: payload.submissionProof?.trim() || null,
-      xp_awarded: xpAwarded,
+    return { success: true, claims: formatted };
+  } catch (err: any) {
+    return { success: false, claims: [], error: err.message || 'Server error.' };
+  }
+}
+
+/**
+ * Faculty/Admin action: Approve a single practice problem claim.
+ * Awards XP via atomic award_xp procedure with difficulty rules and daily cap.
+ * Writes an audit_logs row.
+ */
+export async function approvePracticeClaimAction(
+  claimId: string,
+  reviewerIdOverride?: string
+): Promise<{
+  success: boolean;
+  xpAwarded?: number;
+  status?: string;
+  error?: string;
+  statusCode?: number;
+}> {
+  let reviewerId = reviewerIdOverride;
+
+  if (!reviewerId) {
+    const supabaseServer = await createServerClient();
+    const {
+      data: { user },
+    } = await supabaseServer.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Unauthorized', statusCode: 401 };
+    }
+    reviewerId = user.id;
+  }
+
+  const adminClient = createAdminClient();
+
+  // Role verification
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', reviewerId)
+    .maybeSingle();
+
+  if (!profile || (profile.role !== 'faculty' && profile.role !== 'admin')) {
+    return {
+      success: false,
+      error: 'Forbidden: Faculty or Administrator access required to approve practice claims.',
+      statusCode: 403,
+    };
+  }
+
+  try {
+    // 1. Fetch claim
+    const { data: claim, error: claimErr } = await adminClient
+      .from('student_practice_completions')
+      .select('*, practice_links(*)')
+      .eq('id', claimId)
+      .maybeSingle();
+
+    if (claimErr || !claim) {
+      return { success: false, error: 'Practice claim record not found.', statusCode: 404 };
+    }
+
+    // Idempotency: If already approved, return success without duplicate award
+    if (claim.status === 'approved') {
+      return {
+        success: true,
+        xpAwarded: claim.xp_awarded,
+        status: 'approved',
+      };
+    }
+
+    const isComp = Boolean(claim.practice_links?.is_competition);
+    const difficulty = (claim.practice_links?.difficulty || 'Medium').toLowerCase();
+
+    // 2. Fetch difficulty XP rules
+    let actionType = 'PRACTICE_MEDIUM';
+    let defaultBaseXp = 20;
+
+    if (isComp) {
+      actionType = 'HACKERRANK_COMPETITION';
+      defaultBaseXp = 25;
+    } else if (difficulty === 'easy') {
+      actionType = 'PRACTICE_EASY';
+      defaultBaseXp = 10;
+    } else if (difficulty === 'hard') {
+      actionType = 'PRACTICE_HARD';
+      defaultBaseXp = 40;
+    }
+
+    const { data: ruleRow } = await adminClient
+      .from('xp_rules')
+      .select('base_xp')
+      .eq('action_type', actionType)
+      .maybeSingle();
+
+    const baseXp = ruleRow?.base_xp ?? defaultBaseXp;
+
+    // 3. Daily Practice Cap Enforcement (default 40 XP per day, admin editable)
+    let actualXpToAward = baseXp;
+
+    if (!isComp) {
+      const { data: capSetting } = await adminClient
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'daily_practice_xp_cap')
+        .maybeSingle();
+
+      const dailyCap =
+        typeof capSetting?.value === 'number'
+          ? capSetting.value
+          : parseInt(String(capSetting?.value || '40'), 10) || 40;
+
+      // Query today's practice XP in Asia/Kolkata
+      const { data: todayEvents } = await adminClient
+        .from('xp_events')
+        .select('xp_amount, created_at')
+        .eq('student_id', claim.student_id)
+        .in('action_type', ['PRACTICE_EASY', 'PRACTICE_MEDIUM', 'PRACTICE_HARD', 'PRACTICE_SOLVE'])
+        .eq('status', 'valid');
+
+      const todayStr = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kolkata',
+      }).format(new Date());
+
+      const todayPracticeXp = (todayEvents || [])
+        .filter((ev: any) => {
+          const evDate = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Kolkata',
+          }).format(new Date(ev.created_at));
+          return evDate === todayStr;
+        })
+        .reduce((sum: number, ev: any) => sum + (ev.xp_amount || 0), 0);
+
+      const remainingCap = Math.max(0, dailyCap - todayPracticeXp);
+      actualXpToAward = Math.min(baseXp, remainingCap);
+    }
+
+    const referenceId = isComp
+      ? `hackerrank_competition:${claim.student_id}:${claim.practice_link_id}`
+      : `practice_solve:${claim.student_id}:${claim.practice_link_id}`;
+
+    // 4. Award XP via atomic database procedure award_xp if actualXpToAward > 0
+    if (actualXpToAward > 0) {
+      const { data: awardRes, error: awardErr } = await adminClient.rpc('award_xp', {
+        p_student_id: claim.student_id,
+        p_action_type: actionType,
+        p_reference_id: referenceId,
+        p_extra_units: 0,
+        p_actor: reviewerId,
+      });
+
+      if (awardErr) {
+        return { success: false, error: `Failed to award XP: ${awardErr.message}` };
+      }
+
+      if (awardRes && typeof awardRes.xp_awarded === 'number') {
+        actualXpToAward = awardRes.xp_awarded;
+      }
+    }
+
+    // 5. Update claim status to approved
+    await adminClient
+      .from('student_practice_completions')
+      .update({
+        status: 'approved',
+        xp_awarded: actualXpToAward,
+        reviewed_by: reviewerId,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq('id', claimId);
+
+    // 6. Write audit_logs record
+    await adminClient.from('audit_logs').insert({
+      actor_id: reviewerId,
+      action: 'approve_practice_claim',
+      target_type: 'practice_claim',
+      target_id: claimId,
+      reason: 'Faculty approval of practice solution proof',
+      details: {
+        student_id: claim.student_id,
+        practice_link_id: claim.practice_link_id,
+        action_type: actionType,
+        xp_awarded: actualXpToAward,
+        reference_id: referenceId,
+      },
     });
 
     return {
       success: true,
-      xpAwarded,
-      newTotal: res.new_total,
-      isCompetition: isComp,
+      status: 'approved',
+      xpAwarded: actualXpToAward,
     };
   } catch (err: any) {
-    console.error('Error claiming practice problem XP:', err);
-    return { success: false, error: err.message || 'Server error while claiming XP.' };
+    console.error('Error approving practice claim:', err);
+    return { success: false, error: err.message || 'Server error while approving claim.' };
+  }
+}
+
+/**
+ * Faculty/Admin action: Bulk approve multiple practice problem claims idempotently.
+ */
+export async function bulkApprovePracticeClaimsAction(
+  claimIds: string[],
+  reviewerIdOverride?: string
+): Promise<{
+  success: boolean;
+  approvedCount: number;
+  failedCount: number;
+  error?: string;
+  statusCode?: number;
+}> {
+  let reviewerId = reviewerIdOverride;
+
+  if (!reviewerId) {
+    const supabaseServer = await createServerClient();
+    const {
+      data: { user },
+    } = await supabaseServer.auth.getUser();
+
+    if (!user) {
+      return { success: false, approvedCount: 0, failedCount: 0, error: 'Unauthorized', statusCode: 401 };
+    }
+    reviewerId = user.id;
+  }
+
+  const adminClient = createAdminClient();
+
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', reviewerId)
+    .maybeSingle();
+
+  if (!profile || (profile.role !== 'faculty' && profile.role !== 'admin')) {
+    return {
+      success: false,
+      approvedCount: 0,
+      failedCount: 0,
+      error: 'Forbidden: Faculty or Administrator access required.',
+      statusCode: 403,
+    };
+  }
+
+  let approvedCount = 0;
+  let failedCount = 0;
+
+  for (const claimId of claimIds) {
+    const res = await approvePracticeClaimAction(claimId, reviewerId);
+    if (res.success) {
+      approvedCount++;
+    } else {
+      failedCount++;
+    }
+  }
+
+  // Write single bulk audit log
+  await adminClient.from('audit_logs').insert({
+    actor_id: reviewerId,
+    action: 'bulk_approve_practice_claims',
+    target_type: 'practice_claims',
+    target_id: 'bulk_claims',
+    reason: `Bulk approval of ${approvedCount} practice claims`,
+    details: {
+      totalRequested: claimIds.length,
+      approvedCount,
+      failedCount,
+      claimIds,
+    },
+  });
+
+  return {
+    success: true,
+    approvedCount,
+    failedCount,
+  };
+}
+
+/**
+ * Faculty/Admin action: Reject a practice problem claim with a mandatory reason.
+ * Pays 0 XP and writes an audit_logs row.
+ */
+export async function rejectPracticeClaimAction(
+  claimId: string,
+  reason: string,
+  reviewerIdOverride?: string
+): Promise<{
+  success: boolean;
+  error?: string;
+  statusCode?: number;
+}> {
+  if (!reason || !reason.trim() || reason.trim().length < 3) {
+    return {
+      success: false,
+      error: 'A valid rejection reason (at least 3 characters) is required.',
+      statusCode: 400,
+    };
+  }
+
+  let reviewerId = reviewerIdOverride;
+
+  if (!reviewerId) {
+    const supabaseServer = await createServerClient();
+    const {
+      data: { user },
+    } = await supabaseServer.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Unauthorized', statusCode: 401 };
+    }
+    reviewerId = user.id;
+  }
+
+  const adminClient = createAdminClient();
+
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role')
+    .eq('id', reviewerId)
+    .maybeSingle();
+
+  if (!profile || (profile.role !== 'faculty' && profile.role !== 'admin')) {
+    return {
+      success: false,
+      error: 'Forbidden: Faculty or Administrator access required.',
+      statusCode: 403,
+    };
+  }
+
+  try {
+    const { data: claim, error: claimErr } = await adminClient
+      .from('student_practice_completions')
+      .select('id, student_id, practice_link_id, status')
+      .eq('id', claimId)
+      .maybeSingle();
+
+    if (claimErr || !claim) {
+      return { success: false, error: 'Practice claim not found.', statusCode: 404 };
+    }
+
+    const rejectionReason = reason.trim();
+
+    await adminClient
+      .from('student_practice_completions')
+      .update({
+        status: 'rejected',
+        rejection_reason: rejectionReason,
+        xp_awarded: 0,
+        reviewed_by: reviewerId,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq('id', claimId);
+
+    // Write audit_logs row
+    await adminClient.from('audit_logs').insert({
+      actor_id: reviewerId,
+      action: 'reject_practice_claim',
+      target_type: 'practice_claim',
+      target_id: claimId,
+      reason: rejectionReason,
+      details: {
+        student_id: claim.student_id,
+        practice_link_id: claim.practice_link_id,
+        rejection_reason: rejectionReason,
+      },
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error rejecting practice claim:', err);
+    return { success: false, error: err.message || 'Server error while rejecting claim.' };
   }
 }
 
@@ -288,7 +857,10 @@ export async function createFacultyCompetitionAction(payload: {
     .maybeSingle();
 
   if (!profile || (profile.role !== 'faculty' && profile.role !== 'admin')) {
-    return { success: false, error: 'Access restricted: Only faculty and admins can create competitions.' };
+    return {
+      success: false,
+      error: 'Access restricted: Only faculty and admins can create competitions.',
+    };
   }
 
   // 2. Rate limit
@@ -309,7 +881,8 @@ export async function createFacultyCompetitionAction(payload: {
   if (!validateHackerRankCompetitionUrl(payload.competitionUrl)) {
     return {
       success: false,
-      error: 'Invalid competition link. Must be an official HackerRank URL (e.g., https://www.hackerrank.com/contests/... or https://www.hackerrank.com/challenges/...).',
+      error:
+        'Invalid competition link. Must be an official HackerRank URL (e.g., https://www.hackerrank.com/contests/... or https://www.hackerrank.com/challenges/...).',
     };
   }
 

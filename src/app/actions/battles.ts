@@ -79,8 +79,9 @@ export async function autoSplitTeamsAction(
 
     const { data: profileRows } = await adminClient
       .from('profiles')
-      .select('id, full_name')
-      .in('id', studentIds);
+      .select('id, full_name, role')
+      .in('id', studentIds)
+      .eq('role', 'student');
 
     const xpMap = new Map<string, number>();
     (xpRows || []).forEach((r) => xpMap.set(r.student_id, r.total_xp || 0));
@@ -88,7 +89,8 @@ export async function autoSplitTeamsAction(
     const nameMap = new Map<string, string>();
     (profileRows || []).forEach((p) => nameMap.set(p.id, p.full_name || 'Student'));
 
-    const studentInputs = studentIds.map((id) => {
+    const validStudentIds = (profileRows || []).map((p) => p.id);
+    const studentInputs = validStudentIds.map((id) => {
       const xp = xpMap.get(id) || 0;
       return {
         id,

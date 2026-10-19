@@ -134,10 +134,11 @@ export async function getFacultyAnalytics(
     displayName: c.is_other ? 'Other campuses' : (c.city ? `${c.name}, ${c.city}` : c.name),
   }));
 
-  // 2. Fetch Students and Cohorts
+  // 2. Fetch Students and Cohorts (strictly excluding faculty and admin accounts)
   let studentQuery = db
     .from('students')
-    .select('id, roll_no, department, year_of_study, created_at, profiles!inner(full_name, is_anonymous, campus_id, campus_other_name, campuses(id, name, city, is_other))');
+    .select('id, roll_no, department, year_of_study, created_at, profiles!inner(role, full_name, is_anonymous, campus_id, campus_other_name, campuses(id, name, city, is_other))')
+    .eq('profiles.role', 'student');
 
   // Apply campus filter if specified
   if (filter.campusId && filter.campusId !== 'all') {
@@ -186,10 +187,11 @@ export async function getFacultyAnalytics(
   const studentIds = students.map((s) => s.id);
   const totalStudents = students.length;
 
-  // Compute available distinct batches across all students
+  // Compute available distinct batches across all students (excluding non-students)
   const { data: allBatchesData } = await db
     .from('students')
-    .select('department, year_of_study');
+    .select('department, year_of_study, profiles!inner(role)')
+    .eq('profiles.role', 'student');
 
   const batchMap = new Map<string, { department: string; yearOfStudy: number; label: string }>();
   (allBatchesData || []).forEach((b: any) => {

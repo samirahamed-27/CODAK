@@ -1,16 +1,29 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
- * Defensive helper to guarantee that a valid public.students record exists for any authenticated user.
- * Prevents foreign key violations (quiz_attempts_student_id_fkey, xp_events_student_id_fkey, etc.)
- * when admins/faculty preview student features or if a user record was created without the trigger.
+ * Defensive helper to guarantee that a valid public.students record exists for verified student accounts.
+ * STRICT ISOLATION: Faculty and Administrator accounts are rejected and will NEVER have a student row created.
  */
 export async function ensureStudentRecord(
   adminClient: SupabaseClient,
   user: { id: string; email?: string | null; user_metadata?: Record<string, any> }
 ): Promise<boolean> {
   try {
-    // 1. Check if student record already exists
+    // 1. Resolve role from profiles or metadata
+    const { data: profile } = await adminClient
+      .from('profiles')
+      .select('id, role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const role = profile?.role || user.user_metadata?.role;
+
+    // Reject non-students: Faculty and Admin accounts must NEVER be treated as students
+    if (role && role !== 'student') {
+      return false;
+    }
+
+    // 2. Check if student record already exists
     const { data: student } = await adminClient
       .from('students')
       .select('id')
@@ -21,13 +34,12 @@ export async function ensureStudentRecord(
       return true;
     }
 
-    // 2. Ensure profile exists first (students references profiles.id)
-    const { data: profile } = await adminClient
-      .from('profiles')
-      .select('id, role')
-      .eq('id', user.id)
-      .maybeSingle();
+    // If role was explicitly specified as non-student, do not create
+    if (role !== undefined && role !== 'student') {
+      return false;
+    }
 
+    // 3. Ensure profile exists first (students references profiles.id)
     if (!profile) {
       const email = user.email || `${user.id}@dev.local`;
       const fullName =
@@ -48,7 +60,7 @@ export async function ensureStudentRecord(
       );
     }
 
-    // 3. Upsert into students with collision-resistant roll number
+    // 4. Upsert into students with collision-resistant roll number
     const userRoll = user.user_metadata?.roll_no;
     const cleanId = user.id.replace(/-/g, '').toUpperCase();
     const fallbackRoll = `ROLL-${cleanId.slice(0, 12)}`;
@@ -57,7 +69,7 @@ export async function ensureStudentRecord(
       {
         id: user.id,
         roll_no: userRoll || fallbackRoll,
-        department: user.user_metadata?.department || (profile?.role === 'admin' ? 'Administration' : profile?.role === 'faculty' ? 'Faculty' : 'General Studies'),
+        department: user.user_metadata?.department || 'General Studies',
         year_of_study: 1,
       },
       { onConflict: 'id', ignoreDuplicates: true }

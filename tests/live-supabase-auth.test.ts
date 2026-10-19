@@ -34,20 +34,24 @@ const isLiveConfigured =
   !supabaseUrl.includes('placeholder');
 
 describe.runIf(isLiveConfigured)('Live Supabase Authentication & RLS Integrity', () => {
+  let studentClient: any;
+  let studentUser: any;
+
   it('authenticates demo student and verifies role is student', async () => {
-    const client = createClient(supabaseUrl, anonKey);
-    const { data: authData, error: authError } = await client.auth.signInWithPassword({
+    studentClient = createClient(supabaseUrl, anonKey);
+    const { data: authData, error: authError } = await studentClient.auth.signInWithPassword({
       email: 'student@demo.edu',
       password: 'Password123!',
     });
 
     expect(authError).toBeNull();
     expect(authData.user).toBeDefined();
+    studentUser = authData.user;
 
-    const { data: profile, error: profileError } = await client
+    const { data: profile, error: profileError } = await studentClient
       .from('profiles')
       .select('role, is_anonymous')
-      .eq('id', authData.user!.id)
+      .eq('id', studentUser.id)
       .single();
 
     expect(profileError).toBeNull();
@@ -95,19 +99,13 @@ describe.runIf(isLiveConfigured)('Live Supabase Authentication & RLS Integrity',
   });
 
   it('proves that a student CANNOT escalate their own role to admin (blocked by trigger)', async () => {
-    const client = createClient(supabaseUrl, anonKey);
-    const { data: authData } = await client.auth.signInWithPassword({
-      email: 'student@demo.edu',
-      password: 'Password123!',
-    });
-
-    expect(authData.user).toBeDefined();
+    expect(studentUser).toBeDefined();
 
     // Student attempts to hack/update their role to 'admin'
-    const { error: updateError } = await client
+    const { error: updateError } = await studentClient
       .from('profiles')
       .update({ role: 'admin' } as any)
-      .eq('id', authData.user!.id);
+      .eq('id', studentUser.id);
 
     // Must be rejected by database trigger!
     expect(updateError).toBeDefined();
@@ -115,14 +113,10 @@ describe.runIf(isLiveConfigured)('Live Supabase Authentication & RLS Integrity',
   });
 
   it('proves that normal authenticated users cannot directly insert into xp_rules or xp_events', async () => {
-    const client = createClient(supabaseUrl, anonKey);
-    const { data: authData } = await client.auth.signInWithPassword({
-      email: 'student@demo.edu',
-      password: 'Password123!',
-    });
+    expect(studentUser).toBeDefined();
 
     // Attempt direct insert into xp_rules
-    const { error: rulesInsertError } = await client.from('xp_rules').insert({
+    const { error: rulesInsertError } = await studentClient.from('xp_rules').insert({
       action_type: 'HACKED_ACTION',
       display_name: 'Free XP',
       base_xp: 9999,
@@ -130,8 +124,8 @@ describe.runIf(isLiveConfigured)('Live Supabase Authentication & RLS Integrity',
     expect(rulesInsertError).toBeDefined();
 
     // Attempt direct insert into xp_events ledger
-    const { error: eventsInsertError } = await client.from('xp_events').insert({
-      student_id: authData.user!.id,
+    const { error: eventsInsertError } = await studentClient.from('xp_events').insert({
+      student_id: studentUser.id,
       action_type: 'DAILY_QUIZ',
       xp_amount: 500,
       reference_id: 'fake_ref_123',
