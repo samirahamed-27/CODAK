@@ -8,7 +8,6 @@ export interface FacultyAnalyticsResponse {
   error?: string;
   statusCode?: number;
   data?: FacultyAnalyticsData;
-  callerRole?: string;
 }
 
 /**
@@ -70,7 +69,6 @@ export async function getFacultyAnalyticsAction(
         callerCampusId: profile.campus_id,
         selectedCampusId: targetCampusId,
       },
-      callerRole: profile.role,
     };
   } catch (err: any) {
     return {

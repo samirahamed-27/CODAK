@@ -94,13 +94,6 @@ export default function AdminDashboardPage() {
 
           <div className="flex flex-wrap items-center gap-3">
             <Link
-              href="/faculty"
-              className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-white text-xs font-semibold transition-all shrink-0"
-            >
-              <Award className="w-3.5 h-3.5 text-white" />
-              <span>Faculty Dashboard</span>
-            </Link>
-            <Link
               href="/admin/invites"
               className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-white text-xs font-semibold transition-all shrink-0"
             >

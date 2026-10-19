@@ -29,13 +29,11 @@ import {
   Search,
   RefreshCw,
   GraduationCap,
-  ShieldCheck,
 } from 'lucide-react';
 import { RankChip } from '@/components/ranks/RankChip';
 import clsx from 'clsx';
 
 export default function FacultyDashboardPage() {
-  const [callerRole, setCallerRole] = useState<string>('faculty');
   const [activeTab, setActiveTab] = useState<'analytics' | 'students'>('analytics');
   const [selectedBatch, setSelectedBatch] = useState<string>('');
   const [selectedCampus, setSelectedCampus] = useState<string>('');
@@ -73,9 +71,6 @@ export default function FacultyDashboardPage() {
         setError(res.error || 'Failed to load faculty analytics.');
       } else {
         setData(res.data);
-        if (res.callerRole) {
-          setCallerRole(res.callerRole);
-        }
         if (!selectedCampus && res.data.selectedCampusId) {
           setSelectedCampus(res.data.selectedCampusId);
         }
@@ -97,7 +92,7 @@ export default function FacultyDashboardPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-black pb-16 text-zinc-100">
-      <Navbar role={callerRole === 'admin' ? 'admin' : 'faculty'} />
+      <Navbar role="faculty" />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 flex flex-col gap-8">
         {/* Top Header & Fast Actions */}
@@ -116,15 +111,6 @@ export default function FacultyDashboardPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {callerRole === 'admin' && (
-              <Link
-                href="/admin"
-                className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/20 text-white text-xs font-semibold transition-all"
-              >
-                <ShieldCheck className="w-4 h-4 text-white" />
-                <span>Admin Hub</span>
-              </Link>
-            )}
             <Link
               href="/faculty/flags"
               className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-white text-xs font-semibold transition-all"
