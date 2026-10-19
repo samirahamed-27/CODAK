@@ -182,7 +182,7 @@ export default function SyntaxSamuraiPage() {
       </main>
 
       <footer className="text-center text-[11px] text-zinc-600 border-t border-zinc-900 pt-3 mt-4">
-        SYNTAX SAMURAI • PHASE 2: KATANA CURSOR, BLADE TRAIL & HIT DETECTION ACTIVE
+        SYNTAX SAMURAI • PHASE 3: PIXEL PARTICLE CRUMBLE FX & TYPEWRITER CODE TRANSITIONS ACTIVE
       </footer>
     </div>
   );

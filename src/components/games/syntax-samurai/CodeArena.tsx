@@ -10,6 +10,8 @@ import {
 } from '@/types/syntaxSamurai';
 import { useKatanaBlade } from '@/hooks/useKatanaBlade';
 import { KatanaCanvas } from '@/components/games/syntax-samurai/KatanaCanvas';
+import { PixelCrumbleEngine } from '@/components/games/syntax-samurai/PixelCrumbleEngine';
+import { TypewriterTransition } from '@/components/games/syntax-samurai/TypewriterTransition';
 
 export interface CodeArenaProps {
   question: SyntaxQuestion;
@@ -35,9 +37,16 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const errorTokenRef = useRef<HTMLSpanElement | null>(null);
   const healthyLinesRef = useRef<(HTMLDivElement | null)[]>([]);
+  const crumbleEngineRef = useRef<PixelCrumbleEngine | null>(new PixelCrumbleEngine());
 
   // Targets for hit detection
   const [targets, setTargets] = useState<TokenBoundingBox[]>([]);
+
+  // Phase 3 States: Typewriter Code Stream, Pixel Crumble & Micro-shake
+  const [isStreaming, setIsStreaming] = useState<boolean>(true);
+  const [isShaking, setIsShaking] = useState<boolean>(false);
+  const [isFlashing, setIsFlashing] = useState<boolean>(false);
+  const [isTokenHidden, setIsTokenHidden] = useState<boolean>(false);
 
   // Game battle states
   const [isSliced, setIsSliced] = useState<boolean>(false);
@@ -64,48 +73,59 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
     // 1. Measure Error Token
     if (errorTokenRef.current) {
       const rect = errorTokenRef.current.getBoundingClientRect();
-      newTargets.push({
-        id: 'error-target',
-        isError: true,
-        lineIndex: question.errorLineIndex,
-        text: question.errorToken,
-        x: rect.left - containerRect.left,
-        y: rect.top - containerRect.top,
-        width: rect.width,
-        height: rect.height,
-      });
-    }
-
-    // 2. Measure Healthy Code Lines (as parry deflect zones)
-    healthyLinesRef.current.forEach((lineEl, idx) => {
-      if (lineEl && idx !== question.errorLineIndex) {
-        const rect = lineEl.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
         newTargets.push({
-          id: `healthy-line-${idx}`,
-          isError: false,
-          lineIndex: idx,
-          text: `Line ${idx + 1}`,
+          id: 'error-target',
+          isError: true,
+          lineIndex: question.errorLineIndex,
+          text: question.errorToken,
           x: rect.left - containerRect.left,
           y: rect.top - containerRect.top,
           width: rect.width,
           height: rect.height,
         });
       }
+    }
+
+    // 2. Measure Healthy Code Lines (as parry deflect zones)
+    healthyLinesRef.current.forEach((lineEl, idx) => {
+      if (lineEl && idx !== question.errorLineIndex) {
+        const rect = lineEl.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          newTargets.push({
+            id: `healthy-line-${idx}`,
+            isError: false,
+            lineIndex: idx,
+            text: `Line ${idx + 1}`,
+            x: rect.left - containerRect.left,
+            y: rect.top - containerRect.top,
+            width: rect.width,
+            height: rect.height,
+          });
+        }
+      }
     });
 
     setTargets(newTargets);
   }, [question.errorLineIndex, question.errorToken]);
 
-  // Recalculate bounding boxes on mount and window resize
+  // Recalculate bounding boxes when typewriter streaming finishes or window resizes
   useEffect(() => {
-    // Initial calculation after render settles
-    const timer = setTimeout(updateBoundingBoxes, 60);
+    if (!isStreaming) {
+      const timer = setTimeout(updateBoundingBoxes, 40);
+      return () => clearTimeout(timer);
+    }
+  }, [isStreaming, updateBoundingBoxes]);
+
+  useEffect(() => {
     window.addEventListener('resize', updateBoundingBoxes);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', updateBoundingBoxes);
-    };
+    return () => window.removeEventListener('resize', updateBoundingBoxes);
   }, [updateBoundingBoxes]);
+
+  // Typewriter streaming completion handler
+  const handleTypingComplete = useCallback(() => {
+    setIsStreaming(false);
+  }, []);
 
   // Timer countdown
   useEffect(() => {
@@ -126,17 +146,44 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
     return () => clearInterval(timer);
   }, [isSliced, onQuestionCompleted, selectedFix]);
 
-  // Hit Handler (Critical Slash on the bugged token)
+  // Hit Handler (Critical Slash on the bugged token with Pixel Crumble FX)
   const handleHit = useCallback(
-    (_e: SlashHitEvent) => {
+    (e: SlashHitEvent) => {
       if (isSliced) return;
       setIsSliced(true);
+      setIsTokenHidden(true); // Hide original text token instantly
       setCombo((prev) => prev + 1);
+
+      // Trigger 80ms screen micro-shake & visual flash
+      setIsShaking(true);
+      setIsFlashing(true);
+      setTimeout(() => setIsShaking(false), 80);
+      setTimeout(() => setIsFlashing(false), 80);
+
+      // Spawn 65 pixel crumble particles erupting along cut vector
+      if (crumbleEngineRef.current && e.token) {
+        let cutAngle = -Math.PI / 4;
+        if (e.cutSegment) {
+          const cdx = e.cutSegment.p2.x - e.cutSegment.p1.x;
+          const cdy = e.cutSegment.p2.y - e.cutSegment.p1.y;
+          cutAngle = Math.atan2(cdy, cdx);
+        }
+
+        crumbleEngineRef.current.explode({
+          x: e.token.x,
+          y: e.token.y,
+          width: e.token.width,
+          height: e.token.height,
+          cutAngle,
+          count: 65,
+          colors: ['#ef4444', '#f87171', '#f59e0b', '#ffffff', '#991b1b'],
+        });
+      }
 
       setRecentEvent({
         type: 'hit',
         text: '斬 • CRITICAL SLASH!',
-        subtext: `Target: "${question.errorToken}" sliced cleanly. Select repair token!`,
+        subtext: `Target: "${question.errorToken}" shattered into pixel debris! Select repair token:`,
         key: Date.now(),
       });
     },
@@ -148,6 +195,10 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
     (e: SlashHitEvent) => {
       if (isSliced) return;
       setCombo(0); // Combo broken
+
+      // Subtle 40ms vibration on parry
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 40);
 
       setRecentEvent({
         type: 'parry',
@@ -167,7 +218,7 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
     isInside,
   } = useKatanaBlade({
     containerRef,
-    targets,
+    targets: isStreaming ? [] : targets,
     themeColor: enemy.themeColor,
     onHit: handleHit,
     onParry: handleParry,
@@ -221,7 +272,9 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
                 <span
                   ref={errorTokenRef}
                   className={`relative inline-block px-1.5 py-0.5 rounded transition-all duration-300 font-bold ${
-                    isSliced
+                    isTokenHidden
+                      ? 'opacity-0 scale-90 pointer-events-none'
+                      : isSliced
                       ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)]'
                       : 'bg-red-950/60 border border-dashed border-red-500/80 text-red-300 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.3)]'
                   }`}
@@ -253,7 +306,9 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
                 <span
                   ref={errorTokenRef}
                   className={`relative inline-block px-1.5 py-0.5 rounded transition-all duration-300 font-bold ${
-                    isSliced
+                    isTokenHidden
+                      ? 'opacity-0 scale-90 pointer-events-none'
+                      : isSliced
                       ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)]'
                       : 'bg-red-950/60 border border-dashed border-red-500/80 text-red-300 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.3)]'
                   }`}
@@ -304,12 +359,13 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
         boxShadow: `0 0 30px ${enemy.themeColor}15, inset 0 0 40px rgba(0,0,0,0.8)`,
       }}
     >
-      {/* 60fps Katana Canvas Overlay */}
+      {/* 60fps Katana Canvas Overlay with Pixel Crumble debris */}
       <KatanaCanvas
         containerRef={containerRef}
         bladeState={bladeState}
         trailRef={trailRef}
         sparksRef={sparksRef}
+        crumbleEngineRef={crumbleEngineRef}
         isInside={isInside}
         themeColor={enemy.themeColor}
         accentColor={enemy.accentColor}
@@ -404,8 +460,17 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
           SLICING BATTLE ARENA (CODE VIEWPORT)
           ========================================================================= */}
       <div className="relative z-10 p-5 sm:p-6 flex flex-col gap-4">
-        {/* Editor Window Chrome */}
-        <div className="rounded-xl bg-[#0c0d14] border border-zinc-800/90 shadow-xl overflow-hidden">
+        {/* Editor Window Chrome with 80ms screen micro-shake & visual impact flash */}
+        <div
+          className={`relative rounded-xl bg-[#0c0d14] border border-zinc-800/90 shadow-xl overflow-hidden transition-transform duration-75 ${
+            isShaking ? '-translate-y-1 translate-x-1 rotate-[0.4deg]' : ''
+          }`}
+        >
+          {/* Visual Flash on Impact */}
+          {isFlashing && (
+            <div className="absolute inset-0 bg-white/20 pointer-events-none z-20 animate-in fade-in duration-75" />
+          )}
+
           {/* Top Window Bar */}
           <div className="px-4 py-2 bg-zinc-950 border-b border-zinc-800/80 flex items-center justify-between text-xs font-mono text-zinc-400">
             <div className="flex items-center gap-2">
@@ -422,9 +487,19 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
             </div>
           </div>
 
-          {/* Code lines container */}
+          {/* Code lines container: Streamed via TypewriterTransition or interactive code */}
           <div className="p-4 sm:p-5 overflow-x-auto min-h-[160px] flex flex-col justify-center">
-            {renderCodeLines()}
+            {isStreaming ? (
+              <TypewriterTransition
+                codeSnippet={question.codeSnippet}
+                lineSpeedMs={26}
+                themeColor={enemy.themeColor}
+                soundEnabled={soundEnabled}
+                onComplete={handleTypingComplete}
+              />
+            ) : (
+              renderCodeLines()
+            )}
           </div>
         </div>
 

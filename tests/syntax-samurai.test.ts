@@ -207,5 +207,73 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       expect(angleDiag).toBeCloseTo(Math.PI / 4, 2);
     });
   });
+
+  describe('Phase 3 - Pixel Crumble Engine & Physics Model', () => {
+    it('spawns 40-80 pixel particles with sizes 2px or 4px upon token explosion', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      expect(engine.particles).toHaveLength(0);
+
+      engine.explode({
+        x: 100,
+        y: 200,
+        width: 60,
+        height: 24,
+        count: 65,
+        cutAngle: -Math.PI / 4,
+      });
+
+      expect(engine.particles).toHaveLength(65);
+      engine.particles.forEach((p) => {
+        expect([2, 4]).toContain(p.size);
+        expect(p.life).toBe(0);
+        expect(p.maxLife).toBeGreaterThan(0.3);
+        expect(p.x).toBeGreaterThanOrEqual(100);
+        expect(p.x).toBeLessThanOrEqual(160);
+        expect(p.y).toBeGreaterThanOrEqual(200);
+        expect(p.y).toBeLessThanOrEqual(224);
+      });
+    });
+
+    it('applies downward gravity ay = +0.4 and decays particle lifetime over time', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      engine.explode({
+        x: 50,
+        y: 50,
+        width: 20,
+        height: 20,
+        count: 10,
+      });
+
+      const initialVy = engine.particles[0].vy;
+      engine.update(1 / 60);
+
+      // vy should have increased by gravity (0.4) scaled by friction
+      expect(engine.gravity).toBe(0.4);
+      expect(engine.particles[0].life).toBeCloseTo(1 / 60, 4);
+
+      // Advance by 1 second so all particles exceed maxLife
+      for (let step = 0; step < 60; step++) {
+        engine.update(1 / 60);
+      }
+      expect(engine.particles).toHaveLength(0);
+    });
+
+    it('clears all active debris instantly on clear()', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      engine.explode({ x: 0, y: 0, width: 50, height: 20, count: 50 });
+      expect(engine.particles.length).toBe(50);
+      engine.clear();
+      expect(engine.particles.length).toBe(0);
+    });
+  });
 });
 

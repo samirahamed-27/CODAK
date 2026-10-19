@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { SlashPoint, BladeSpark } from '@/types/syntaxSamurai';
+import { PixelCrumbleEngine } from '@/components/games/syntax-samurai/PixelCrumbleEngine';
 
 export interface KatanaCanvasProps {
   containerRef: React.RefObject<HTMLElement | null>;
@@ -14,6 +15,7 @@ export interface KatanaCanvasProps {
   }>;
   trailRef: React.MutableRefObject<SlashPoint[]>;
   sparksRef: React.MutableRefObject<BladeSpark[]>;
+  crumbleEngineRef?: React.MutableRefObject<PixelCrumbleEngine | null>;
   isInside: boolean;
   themeColor?: string;
   accentColor?: string;
@@ -24,6 +26,7 @@ export const KatanaCanvas: React.FC<KatanaCanvasProps> = ({
   bladeState,
   trailRef,
   sparksRef,
+  crumbleEngineRef,
   isInside,
   themeColor = '#10b981',
   accentColor = '#34d399',
@@ -261,6 +264,12 @@ export const KatanaCanvas: React.FC<KatanaCanvasProps> = ({
       // Render Sparks
       drawSparks(sparksRef.current);
 
+      // Render Pixel Crumble Debris
+      if (crumbleEngineRef?.current) {
+        crumbleEngineRef.current.update(1 / 60);
+        crumbleEngineRef.current.render(ctx);
+      }
+
       // Render Katana Blade (only when mouse is inside the battle area)
       if (isInside && bladeState.current.x >= 0 && bladeState.current.y >= 0) {
         drawKatana(
@@ -280,7 +289,7 @@ export const KatanaCanvas: React.FC<KatanaCanvasProps> = ({
       cancelAnimationFrame(animId);
       resizeObserver.disconnect();
     };
-  }, [accentColor, bladeState, containerRef, isInside, sparksRef, themeColor, trailRef]);
+  }, [accentColor, bladeState, containerRef, crumbleEngineRef, isInside, sparksRef, themeColor, trailRef]);
 
   return (
     <canvas
