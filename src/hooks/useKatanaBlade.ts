@@ -60,13 +60,6 @@ function segmentIntersectsBox(
   return false;
 }
 
-// Normalize angle delta to [-PI, PI] for smooth rotation
-function normalizeAngleDelta(delta: number): number {
-  while (delta > Math.PI) delta -= Math.PI * 2;
-  while (delta < -Math.PI) delta += Math.PI * 2;
-  return delta;
-}
-
 export interface UseKatanaBladeOptions {
   containerRef: React.RefObject<HTMLElement | null>;
   targets: TokenBoundingBox[];
@@ -244,8 +237,25 @@ export function useKatanaBlade({
 
     const handlePointerMove = (e: PointerEvent) => {
       const rect = container.getBoundingClientRect();
-      pointerPos.current.x = e.clientX - rect.left;
-      pointerPos.current.y = e.clientY - rect.top;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const prevX = pointerPos.current.x >= 0 ? pointerPos.current.x : x;
+      const prevY = pointerPos.current.y >= 0 ? pointerPos.current.y : y;
+      const dx = x - prevX;
+      const dy = y - prevY;
+
+      pointerPos.current.x = x;
+      pointerPos.current.y = y;
+
+      // Direct, instantaneous binding with zero lag, friction, or trailing delay
+      bladeState.current.x = x;
+      bladeState.current.y = y;
+
+      if (Math.hypot(dx, dy) > 2) {
+        bladeState.current.angle = Math.atan2(dy, dx);
+      }
+
       if (!isInside) setIsInside(true);
     };
 
@@ -253,29 +263,39 @@ export function useKatanaBlade({
       initAudio();
       pointerPos.current.isDown = true;
       const rect = container.getBoundingClientRect();
-      pointerPos.current.x = e.clientX - rect.left;
-      pointerPos.current.y = e.clientY - rect.top;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      pointerPos.current.x = x;
+      pointerPos.current.y = y;
+      bladeState.current.x = x;
+      bladeState.current.y = y;
+      bladeState.current.isSlashing = true;
+      setIsSlashing(true);
     };
 
     const handlePointerUp = () => {
       pointerPos.current.isDown = false;
+      bladeState.current.isSlashing = false;
+      setIsSlashing(false);
     };
 
     const handlePointerEnter = (e: PointerEvent) => {
       setIsInside(true);
       const rect = container.getBoundingClientRect();
-      pointerPos.current.x = e.clientX - rect.left;
-      pointerPos.current.y = e.clientY - rect.top;
-      // Initialize blade position immediately to avoid fly-in from corner
-      if (bladeState.current.x < 0) {
-        bladeState.current.x = pointerPos.current.x;
-        bladeState.current.y = pointerPos.current.y;
-      }
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      pointerPos.current.x = x;
+      pointerPos.current.y = y;
+      bladeState.current.x = x;
+      bladeState.current.y = y;
+      bladeState.current.angle = -Math.PI / 4;
     };
 
     const handlePointerLeave = () => {
       setIsInside(false);
       pointerPos.current.isDown = false;
+      bladeState.current.isSlashing = false;
+      setIsSlashing(false);
     };
 
     container.addEventListener('pointermove', handlePointerMove);
@@ -306,32 +326,27 @@ export function useKatanaBlade({
       const ptr = pointerPos.current;
       const b = bladeState.current;
 
-      // 1. Blade Interpolation (lerp toward pointer coordinates)
-      const lerpFactor = ptr.isDown ? 0.55 : 0.38;
+      // 1. Direct Blade Coordinate Binding (NO LERP / NO DELAY)
       const prevX = b.x;
       const prevY = b.y;
 
       if (ptr.x >= 0 && ptr.y >= 0) {
-        b.x += (ptr.x - b.x) * lerpFactor;
-        b.y += (ptr.y - b.y) * lerpFactor;
+        b.x = ptr.x;
+        b.y = ptr.y;
       }
 
       const dx = b.x - prevX;
       const dy = b.y - prevY;
-      const speed = Math.hypot(dx, dy) / (dt * 60); // px per frame at 60fps
+      const dist = Math.hypot(dx, dy);
+      const speed = dt > 0 ? dist / (dt * 60) : 0;
       b.speed = speed;
 
-      // 2. Dynamic Angle Calculation
-      // If moving rapidly, blade tip points in the direction of the velocity vector
-      // If stationary or slow, blade smoothly settles into ready posture (-45° upright guard)
-      let targetAngle = -Math.PI / 4;
-      if (speed > 3) {
-        targetAngle = Math.atan2(dy, dx);
+      // 2. Direct Angle Calculation without sluggish damping
+      if (dist > 3) {
+        b.angle = Math.atan2(dy, dx);
+      } else if (!ptr.isDown) {
+        b.angle = -Math.PI / 4;
       }
-
-      const angleDelta = normalizeAngleDelta(targetAngle - b.angle);
-      const rotSpeed = speed > 5 ? 0.35 : 0.15;
-      b.angle += angleDelta * rotSpeed;
 
       // Slashing threshold: mouse pressed or rapid movement
       const slashingNow = ptr.isDown || speed > 15;

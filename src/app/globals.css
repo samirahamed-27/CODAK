@@ -394,3 +394,11 @@ canvas,
   padding-top: max(0.75rem, env(safe-area-inset-top));
 }
 
+/* ==========================================================================
+   Syntax Samurai - Direct Katana Cursor (No Lag or Following)
+   ========================================================================== */
+.battle-arena {
+  cursor: url('/assets/katana-cursor.svg') 0 0, auto; /* hotspot at the blade tip */
+}
+
+

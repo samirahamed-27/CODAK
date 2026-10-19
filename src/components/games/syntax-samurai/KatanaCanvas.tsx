@@ -19,6 +19,7 @@ export interface KatanaCanvasProps {
   isInside: boolean;
   themeColor?: string;
   accentColor?: string;
+  renderBladeOverlay?: boolean;
 }
 
 export const KatanaCanvas: React.FC<KatanaCanvasProps> = ({
@@ -30,6 +31,7 @@ export const KatanaCanvas: React.FC<KatanaCanvasProps> = ({
   isInside,
   themeColor = '#10b981',
   accentColor = '#34d399',
+  renderBladeOverlay = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -112,11 +114,11 @@ export const KatanaCanvas: React.FC<KatanaCanvasProps> = ({
       ctx.fillRect(0, -2.5, 4, 5);
 
       // Steel Blade (Nagasa & Kissaki)
-      // Slight upward curvature (Sori)
+      // Slight upward curvature (Sori), Kissaki tip anchored precisely at (0, 0)
       ctx.beginPath();
       ctx.moveTo(4, -2.5); // Spine base
       ctx.quadraticCurveTo(bladeLength * 0.55, -3.5, bladeLength - 4, -1); // Curved spine
-      ctx.lineTo(bladeLength + 2, 0); // Kissaki tip
+      ctx.lineTo(bladeLength, 0); // Kissaki tip at exactly (0, 0)
       ctx.lineTo(bladeLength - 6, 2.5); // Cutting edge tip
       ctx.quadraticCurveTo(bladeLength * 0.55, 3.5, 4, 2.5); // Cutting edge
       ctx.closePath();
@@ -148,7 +150,7 @@ export const KatanaCanvas: React.FC<KatanaCanvasProps> = ({
         ctx.beginPath();
         ctx.moveTo(4, 2.5);
         ctx.quadraticCurveTo(bladeLength * 0.55, 3.5, bladeLength - 6, 2.5);
-        ctx.lineTo(bladeLength + 2, 0);
+        ctx.lineTo(bladeLength, 0);
         ctx.stroke();
       }
 
@@ -270,8 +272,10 @@ export const KatanaCanvas: React.FC<KatanaCanvasProps> = ({
         crumbleEngineRef.current.render(ctx);
       }
 
-      // Render Katana Blade (only when mouse is inside the battle area)
-      if (isInside && bladeState.current.x >= 0 && bladeState.current.y >= 0) {
+      // Render Katana Blade Overlay:
+      // When actively slashing (isSlashing === true), or when renderBladeOverlay is enabled
+      const shouldDrawBlade = renderBladeOverlay || bladeState.current.isSlashing;
+      if (isInside && shouldDrawBlade && bladeState.current.x >= 0 && bladeState.current.y >= 0) {
         drawKatana(
           bladeState.current.x,
           bladeState.current.y,
@@ -289,7 +293,7 @@ export const KatanaCanvas: React.FC<KatanaCanvasProps> = ({
       cancelAnimationFrame(animId);
       resizeObserver.disconnect();
     };
-  }, [accentColor, bladeState, containerRef, crumbleEngineRef, isInside, sparksRef, themeColor, trailRef]);
+  }, [accentColor, bladeState, containerRef, crumbleEngineRef, isInside, renderBladeOverlay, sparksRef, themeColor, trailRef]);
 
   return (
     <canvas

@@ -388,9 +388,9 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
     <div
       ref={containerRef}
       data-katana-active="true"
-      className="relative w-full max-w-5xl mx-auto flex flex-col justify-between rounded-2xl bg-[#09090f] border border-zinc-800 shadow-2xl overflow-hidden select-none font-sans"
+      className="battle-arena relative w-full max-w-5xl mx-auto flex flex-col justify-between rounded-2xl bg-[#09090f] border border-zinc-800 shadow-2xl overflow-hidden select-none font-sans"
       style={{
-        cursor: 'none',
+        cursor: "url('/assets/katana-cursor.svg') 0 0, auto",
         boxShadow: `0 0 30px ${enemy.themeColor}15, inset 0 0 40px rgba(0,0,0,0.8)`,
       }}
     >
