@@ -116,76 +116,78 @@ export function ProfileCard({ profile, onUpdateAvatar }: ProfileCardProps) {
     }
   };
 
-  // Front Face: Clean player card without upload button, showing user's set avatar
+  // Front Face: Clean player card where pfp covers the entire front
   const frontContent = (
-    <div className="w-full h-full p-4 flex flex-col justify-between select-none relative overflow-hidden bg-gradient-to-b from-[#141416] via-[#0c0c0e] to-[#08080a] border border-white/10 rounded-[22px]">
-      {/* Top Header */}
-      <div className="flex items-center justify-between text-xs z-10 pb-1">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">
-          Student Card
-        </span>
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-zinc-300">
+    <div className="w-full h-full p-4 flex flex-col justify-between select-none relative overflow-hidden rounded-[22px] border border-white/15 bg-black">
+      {/* Full-bleed Profile Picture / Background Cover */}
+      {avatarUrl ? (
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={avatarUrl}
+            alt={profile.name || 'Student'}
+            className="w-full h-full object-cover object-center scale-[1.01]"
+            draggable={false}
+          />
+          {/* Dual subtle gradient overlays for high text contrast and card depth */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
+        </div>
+      ) : (
+        <div className="absolute inset-0 w-full h-full overflow-hidden bg-gradient-to-b from-[#18181b] via-[#0f0f12] to-black flex flex-col items-center justify-center">
+          <div className="w-24 h-24 rounded-3xl bg-white/[0.04] border border-white/15 flex items-center justify-center text-5xl shadow-2xl shadow-black/80 mb-3">
+            👨‍🎓
+          </div>
+          <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-widest">
+            CODAK Identity
+          </span>
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40 pointer-events-none" />
+        </div>
+      )}
+
+      {/* Top Header Floating Badges */}
+      <div className="flex items-center justify-between text-xs z-10 relative">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[10px] font-mono uppercase tracking-wider text-zinc-300 shadow-md">
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+          <span>Student Card</span>
+        </div>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[10px] font-mono text-zinc-200 shadow-md">
           <ShieldCheck className="w-3 h-3 text-emerald-400" />
           <span>Active</span>
         </div>
       </div>
 
-      {/* Main Avatar / Portrait Display */}
-      <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 bg-zinc-950 my-auto shadow-inner flex items-center justify-center">
-        {avatarUrl ? (
-          // User uploaded custom photo
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={avatarUrl}
-            alt={profile.name || 'Student'}
-            className="w-full h-full object-cover"
-            draggable={false}
-          />
-        ) : (
-          // Clean monogram/student insignia if no picture uploaded yet (no dummy stock photo!)
-          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-zinc-800/30 to-black p-4">
-            <div className="w-20 h-20 rounded-2xl bg-white/[0.04] border border-white/15 flex items-center justify-center text-4xl shadow-xl shadow-black/50 mb-2">
-              👨‍🎓
-            </div>
-            <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
-              CODAK Identity
-            </span>
-          </div>
-        )}
-
-        {/* Level badge overlay */}
-        <div className="absolute bottom-2.5 right-2.5 px-2.5 py-0.5 rounded-full bg-black/75 border border-white/20 text-white font-mono text-[10px] font-bold shadow-lg backdrop-blur-md">
-          LVL {profile.level}
+      {/* Bottom Floating Identity & Rank Information */}
+      <div className="w-full text-center z-10 relative pb-1">
+        <div className="drop-shadow-lg">
+          {profile.name ? (
+            <Shuffle
+              key={profile.name}
+              text={profile.name}
+              tag="h2"
+              effect="slide"
+              duration={0.35}
+              stagger={0.03}
+              triggerOnHover={true}
+              color="#FFFFFF"
+              accentColor="#D4D4D8"
+              style={{ fontSize: '1.25rem', letterSpacing: '0.02em', fontWeight: 700 }}
+            />
+          ) : (
+            <h2
+              style={{ fontSize: '1.25rem', letterSpacing: '0.02em', fontWeight: 700 }}
+              className="text-white"
+            >
+              Student
+            </h2>
+          )}
         </div>
-      </div>
 
-      {/* Student Identity Information (No upload button on front!) */}
-      <div className="w-full text-center mt-2 z-10">
-        {profile.name ? (
-          <Shuffle
-            key={profile.name}
-            text={profile.name}
-            tag="h2"
-            effect="slide"
-            duration={0.35}
-            stagger={0.03}
-            triggerOnHover={true}
-            color="#FFFFFF"
-            accentColor="#A1A1AA"
-            style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
-          />
-        ) : (
-          <h2
-            style={{ fontSize: '1.15rem', letterSpacing: '0.02em', fontWeight: 600 }}
-            className="text-white"
-          >
-            Student
-          </h2>
-        )}
-
-        <div className="mt-1 flex items-center justify-center gap-2">
-          <RankChip level={profile.level} size="sm" showLevel />
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-[11px] font-mono text-zinc-300">
+        <div className="mt-2 flex items-center justify-center gap-2">
+          <div className="backdrop-blur-md bg-black/60 rounded-full border border-white/15 p-0.5">
+            <RankChip level={profile.level} size="sm" showLevel />
+          </div>
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[11px] font-mono text-zinc-200 shadow-sm">
             🏆 {profile.rank}
           </span>
         </div>
