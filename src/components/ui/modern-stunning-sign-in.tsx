@@ -129,12 +129,7 @@ const SignIn1 = ({
               type="button"
               disabled={isLoading || isGoogleLoading}
               onClick={() => {
-                if (onGoogleSignIn) {
-                  onGoogleSignIn();
-                } else {
-                  setEmail('student@demo.edu');
-                  setPassword('Password123!');
-                }
+                onGoogleSignIn?.();
               }}
               className="w-full flex items-center justify-center gap-2 bg-zinc-900 border border-white/15 rounded-full px-5 py-3 font-medium text-white shadow hover:bg-zinc-800 transition mb-2 text-sm active:scale-95 disabled:opacity-50"
             >

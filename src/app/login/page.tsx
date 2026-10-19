@@ -9,6 +9,7 @@ import { GraduationCap, ArrowRight, AlertCircle, CheckCircle } from 'lucide-reac
 import Link from 'next/link';
 import { getCampusesAction } from '@/app/actions/campus';
 import { formatCampusDisplayName } from '@/lib/campus';
+import { IS_DEMO_MODE } from '@/lib/config';
 
 const DEMO_ACCOUNTS = [
   {
@@ -296,7 +297,7 @@ function LoginPageContent() {
             isLoading={loading}
             isGoogleLoading={googleLoading}
             externalError={errorMessage}
-            demoAccounts={DEMO_ACCOUNTS}
+            demoAccounts={IS_DEMO_MODE ? DEMO_ACCOUNTS : []}
             onQuickDemoSelect={handleAuthSubmit}
           />
         </div>

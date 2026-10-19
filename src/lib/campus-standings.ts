@@ -68,10 +68,11 @@ export async function getCampusStandings(
     return { standings: [], minActiveRequired: minActive, weekStart, weekEnd };
   }
 
-  // 3. Fetch all students with their campus_id
+  // 3. Fetch all students with their campus_id (strictly excluding faculty and admin accounts)
   const { data: students, error: studErr } = await adminClient
     .from('students')
-    .select('id, profiles!inner(campus_id)');
+    .select('id, profiles!inner(campus_id, role)')
+    .eq('profiles.role', 'student');
 
   if (studErr || !students) {
     console.error('Error fetching students for standings:', studErr);

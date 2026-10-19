@@ -290,26 +290,26 @@ describe('Part 1: Campus Feature Core Suite (10 Scenarios)', () => {
     // Insert dummy XP entries
     const ev1 = await adminClient.from('xp_events').insert({
       student_id: studentD1.id,
+      action_type: 'DAILY_QUIZ',
       xp_amount: 50,
-      category: 'daily_quiz',
+      reference_id: `cmp_test_ev1_${studentD1.id}_${Date.now()}`,
       status: 'valid',
-      description: 'cmp_test_ev1',
     }).select('id').single();
 
     const ev2 = await adminClient.from('xp_events').insert({
       student_id: studentD2.id,
+      action_type: 'DAILY_QUIZ',
       xp_amount: 30,
-      category: 'daily_quiz',
+      reference_id: `cmp_test_ev2_${studentD2.id}_${Date.now()}`,
       status: 'valid',
-      description: 'cmp_test_ev2',
     }).select('id').single();
 
     const ev3 = await adminClient.from('xp_events').insert({
       student_id: studentJ1.id,
+      action_type: 'DAILY_QUIZ',
       xp_amount: 40,
-      category: 'daily_quiz',
+      reference_id: `cmp_test_ev3_${studentJ1.id}_${Date.now()}`,
       status: 'valid',
-      description: 'cmp_test_ev3',
     }).select('id').single();
 
     if (ev1.data) createdEventIds.push(ev1.data.id);
@@ -424,10 +424,10 @@ describe('Part 1: Campus Feature Core Suite (10 Scenarios)', () => {
 
     const ev = await adminClient.from('xp_events').insert({
       student_id: anonStudent.id,
+      action_type: 'DAILY_QUIZ',
       xp_amount: 100,
-      category: 'daily_quiz',
+      reference_id: `cmp_test_anon_xp_${anonStudent.id}_${Date.now()}`,
       status: 'valid',
-      description: 'cmp_test_anon_xp',
     }).select('id').single();
     if (ev.data) createdEventIds.push(ev.data.id);
 

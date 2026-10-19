@@ -125,10 +125,11 @@ export async function getLeaderboardData(
     }
   }
 
-  // 1. Query students with their profiles and campus relations
+  // 1. Query students with their profiles and campus relations (strictly excluding faculty/admin accounts)
   let query = adminClient
     .from('students')
-    .select('id, roll_no, department, year_of_study, profiles!inner(full_name, is_anonymous, campus_id, campus_other_name, campuses(name, city, is_other))');
+    .select('id, roll_no, department, year_of_study, profiles!inner(role, full_name, is_anonymous, campus_id, campus_other_name, campuses(name, city, is_other))')
+    .eq('profiles.role', 'student');
 
   if (scope === 'batch') {
     if (department) query = query.eq('department', department);
