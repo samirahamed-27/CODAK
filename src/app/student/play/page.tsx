@@ -93,7 +93,7 @@ const playElements: ComponentItem[] = [
     title: 'Codemons: Retro Cyber Arena',
     subtitle: 'ARCADE GAME • 8-BIT CYBER BATTLE',
     description:
-      'Battle algorithmic bugs and conquer compiler errors in our premier retro 8-bit cyber arena. Choose your elemental starter creature—Pyrawr (Python 🔥), Jaskull (JavaScript ⚡), or Cplusaur (C++ 🌿). Each attack round tests your algorithmic problem-solving: answer correctly to charge energy, trigger critical strikes, and defeat multi-tier bug bosses. Earn +50 XP and verifiable academic ledger progression for every victorious match!\n\n🖥️ Recommended to play on PC • Keep magnification around 65% for the best experience.',
+      'Battle algorithmic bugs and conquer compiler errors in our premier retro 8-bit cyber arena. Choose your elemental starter creature—Pyrawr (Python 🔥), Jaskull (JavaScript ⚡), or Cplusaur (C++ 🌿). Each attack round tests your algorithmic problem-solving: answer correctly to charge energy, trigger critical strikes, and defeat multi-tier bug bosses. Earn +50 XP and verifiable academic ledger progression for every victorious match!',
     playAction: {
       label: 'Launch Play Lounge',
       href: '/play.html',
