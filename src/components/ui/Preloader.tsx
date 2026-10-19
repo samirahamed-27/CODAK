@@ -72,10 +72,10 @@ export const Preloader: React.FC<PreloaderProps> = ({
       return;
     }
 
-    // Fallback: if destination route takes a moment to mount, wait at most 700ms
+    // Fallback: if destination route takes a moment to mount, wait at most 350ms
     const fallbackTimer = setTimeout(() => {
       setPhase('exiting');
-    }, 700);
+    }, 350);
 
     return () => clearTimeout(fallbackTimer);
   }, [progress, readyToExit, phase]);
@@ -87,7 +87,7 @@ export const Preloader: React.FC<PreloaderProps> = ({
     const exitTimer = setTimeout(() => {
       setPhase('done');
       onComplete?.();
-    }, 1100);
+    }, 950);
 
     return () => clearTimeout(exitTimer);
   }, [phase, onComplete]);

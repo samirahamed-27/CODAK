@@ -15,11 +15,13 @@ export interface PreloadOptions {
 interface PreloaderContextValue {
   isPreloading: boolean;
   startPreload: (options: PreloadOptions) => void;
+  cancelPreload: () => void;
 }
 
 const PreloaderContext = createContext<PreloaderContextValue>({
   isPreloading: false,
   startPreload: () => {},
+  cancelPreload: () => {},
 });
 
 export const usePreloader = () => useContext(PreloaderContext);
@@ -55,7 +57,7 @@ export function PreloaderProvider({ children }: { children: React.ReactNode }) {
   const [isDestinationReady, setIsDestinationReady] = useState(false);
   const [customText, setCustomText] = useState<string | null>(null);
   const [customSubtext, setCustomSubtext] = useState<string | null>(null);
-  const [customDuration, setCustomDuration] = useState<number>(1800);
+  const [customDuration, setCustomDuration] = useState<number>(1000);
 
   const startPreload = useCallback(
     (options: PreloadOptions) => {
@@ -66,7 +68,7 @@ export function PreloaderProvider({ children }: { children: React.ReactNode }) {
       setIsDestinationReady(false);
       setCustomText(options.text || null);
       setCustomSubtext(options.subtext || null);
-      setCustomDuration(options.duration || 1800);
+      setCustomDuration(options.duration || 1000);
 
       // 1. Immediately activate preloader covering the viewport
       setActive(true);
@@ -74,18 +76,19 @@ export function PreloaderProvider({ children }: { children: React.ReactNode }) {
       // 2. Prefetch and navigate to destination in the background
       try {
         router.prefetch(dest);
-      } catch {
-        // Ignore prefetch errors
-      }
-
-      // Kick off navigation immediately so destination page mounts while preloader runs
-      setTimeout(() => {
         router.push(dest);
-        router.refresh();
-      }, 60);
+      } catch {
+        // Ignore prefetch/push errors
+      }
     },
     [router]
   );
+
+  const cancelPreload = useCallback(() => {
+    setActive(false);
+    setTargetDestination(null);
+    setIsDestinationReady(false);
+  }, []);
 
   const handleDestinationReached = useCallback(() => {
     setIsDestinationReady(true);
@@ -98,7 +101,7 @@ export function PreloaderProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <PreloaderContext.Provider value={{ isPreloading: active, startPreload }}>
+    <PreloaderContext.Provider value={{ isPreloading: active, startPreload, cancelPreload }}>
       {children}
       <Suspense fallback={null}>
         <RouteWatcher

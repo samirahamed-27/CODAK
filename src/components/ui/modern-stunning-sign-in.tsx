@@ -6,7 +6,7 @@ import { useState } from 'react';
 export type UserPortalRole = 'student' | 'faculty' | 'admin';
 
 export interface SignIn1Props {
-  onSignInSuccess?: (email: string, password?: string) => void;
+  onSignInSuccess?: (email: string, password?: string, role?: UserPortalRole) => void;
   onGoogleSignIn?: () => void;
   isLoading?: boolean;
   isGoogleLoading?: boolean;
@@ -79,7 +79,7 @@ const SignIn1 = ({
     setError('');
 
     if (onSignInSuccess) {
-      onSignInSuccess(email, password);
+      onSignInSuccess(email, password, selectedRole);
     }
   };
 

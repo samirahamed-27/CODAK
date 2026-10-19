@@ -55,7 +55,7 @@ function LoginPageContent() {
   }, [searchParams]);
 
   // Global React Bits Pro Stairs Preloader
-  const { startPreload, isPreloading } = usePreloader();
+  const { startPreload, cancelPreload, isPreloading } = usePreloader();
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
@@ -88,13 +88,14 @@ function LoginPageContent() {
     }
   };
 
-  const handleAuthSubmit = async (inputEmail: string, inputPassword?: string) => {
-    setLoading(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
-
+  const handleAuthSubmit = async (
+    inputEmail: string,
+    inputPassword?: string,
+    roleParam?: 'student' | 'faculty' | 'admin'
+  ) => {
     const targetEmail = inputEmail.trim();
     const targetPassword = inputPassword?.trim() || '';
+    const selectedRole = roleParam || initialRole || 'student';
 
     if (!targetPassword) {
       setErrorMessage('Please enter your password.');
@@ -102,19 +103,27 @@ function LoginPageContent() {
       return;
     }
 
-    try {
-      try {
-        await supabase.auth.signOut();
-      } catch {
-        // Ignore signout errors
-      }
+    setLoading(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
 
+    // Instantly launch the stairs transition animation to completely eliminate perceived lag!
+    startPreload({
+      role: selectedRole,
+      destination: `/${selectedRole}`,
+      text: `Welcome to CODAK • Entering ${selectedRole.toUpperCase()} Hub`,
+      subtext: 'Initializing XP ledger, course velocity & battle arena...',
+      duration: 1000,
+    });
+
+    try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: targetEmail,
         password: targetPassword,
       });
 
       if (error) {
+        cancelPreload();
         setErrorMessage(error.message);
         setLoading(false);
         return;
@@ -127,16 +136,13 @@ function LoginPageContent() {
           .eq('id', data.user.id)
           .single();
 
-        const role = (profile?.role as 'student' | 'faculty' | 'admin') || 'student';
-        setSuccessMessage('Credentials verified!');
-        startPreload({
-          role: role,
-          destination: `/${role}`,
-          text: `Welcome to CODAK • Entering ${role.toUpperCase()} Hub`,
-          subtext: 'Initializing XP ledger, course velocity & battle arena...',
-        });
+        const actualRole = (profile?.role as 'student' | 'faculty' | 'admin') || selectedRole;
+        if (actualRole !== selectedRole) {
+          router.push(`/${actualRole}`);
+        }
       }
     } catch (err: any) {
+      cancelPreload();
       setErrorMessage(err.message || 'An unexpected error occurred.');
       setLoading(false);
     }
