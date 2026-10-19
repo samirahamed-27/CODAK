@@ -40,18 +40,9 @@ function RouteWatcher({
   useEffect(() => {
     if (pathname) {
       onInitialPath(pathname);
-    }
-  }, [pathname, onInitialPath]);
-
-  useEffect(() => {
-    if (!targetDestination) return;
-    if (
-      pathname === targetDestination ||
-      (targetDestination !== '/' && pathname.startsWith(targetDestination))
-    ) {
       onDestinationReached();
     }
-  }, [pathname, targetDestination, onDestinationReached]);
+  }, [pathname, onInitialPath, onDestinationReached]);
 
   return null;
 }
@@ -59,32 +50,90 @@ function RouteWatcher({
 export function PreloaderProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  // Active state: starts false, only activates on initial bootup if not previously shown in this session
   const [active, setActive] = useState(false);
   const [role, setRole] = useState<'student' | 'faculty' | 'admin'>('student');
   const [targetDestination, setTargetDestination] = useState<string | null>(null);
   const [isDestinationReady, setIsDestinationReady] = useState(false);
-  const [customText, setCustomText] = useState<string | null>('Welcome to CODAK • Academic Progression Platform');
-  const [customSubtext, setCustomSubtext] = useState<string | null>('Initializing XP ledger, course velocity & battle arena...');
-  const [customDuration, setCustomDuration] = useState<number>(1000);
+  const [customText, setCustomText] = useState<string | null>('Loading CODAK...');
+  const [customSubtext, setCustomSubtext] = useState<string | null>('Syncing XP ledger, course velocity & battle arena...');
+  const [customDuration, setCustomDuration] = useState<number>(800);
 
-  // Only play bootup animation the very first time the website boots up in this session
+  // 1. Initial page load latency detection: if page takes time to load (> 180ms), show animation
   useEffect(() => {
-    try {
-      const hasBooted = sessionStorage.getItem('codak_bootup_shown');
-      if (!hasBooted) {
-        sessionStorage.setItem('codak_bootup_shown', 'true');
+    if (typeof window === 'undefined') return;
+
+    if (document.readyState !== 'complete') {
+      const initialTimer = setTimeout(() => {
+        if (document.readyState !== 'complete') {
+          setActive(true);
+          setIsDestinationReady(false);
+        }
+      }, 180);
+
+      const handleWindowLoad = () => {
+        clearTimeout(initialTimer);
         setIsDestinationReady(true);
-        setActive(true);
-      }
-    } catch {
-      // In case sessionStorage is restricted in strict private browsing
+      };
+
+      window.addEventListener('load', handleWindowLoad);
+      return () => {
+        clearTimeout(initialTimer);
+        window.removeEventListener('load', handleWindowLoad);
+      };
     }
+  }, []);
+
+  // 2. Route navigation latency detection: if navigation takes time (> 160ms), show animation
+  useEffect(() => {
+    let navTimer: NodeJS.Timeout | null = null;
+
+    const handleAnchorClick = (e: MouseEvent) => {
+      const anchor = (e.target as HTMLElement)?.closest('a');
+      if (!anchor) return;
+
+      const href = anchor.getAttribute('href');
+      const target = anchor.getAttribute('target');
+
+      if (
+        href &&
+        href.startsWith('/') &&
+        !href.startsWith('//') &&
+        !href.startsWith('/api') &&
+        !href.startsWith('#') &&
+        target !== '_blank' &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.shiftKey
+      ) {
+        try {
+          const url = new URL(href, window.location.origin);
+          if (url.pathname !== window.location.pathname) {
+            if (navTimer) clearTimeout(navTimer);
+
+            setTargetDestination(url.pathname);
+
+            // If destination page takes time to load (> 160ms), play animation!
+            navTimer = setTimeout(() => {
+              setActive(true);
+              setIsDestinationReady(false);
+              setCustomDuration(750);
+            }, 160);
+          }
+        } catch {
+          // ignore url parse error
+        }
+      }
+    };
+
+    document.addEventListener('click', handleAnchorClick, true);
+    return () => {
+      if (navTimer) clearTimeout(navTimer);
+      document.removeEventListener('click', handleAnchorClick, true);
+    };
   }, []);
 
   const handleInitialPath = useCallback(
     (currentPath: string) => {
-      // Only set bootup text if not performing an explicit targeted navigation
       if (!targetDestination) {
         if (currentPath.startsWith('/admin')) {
           setRole('admin');
@@ -98,7 +147,7 @@ export function PreloaderProvider({ children }: { children: React.ReactNode }) {
         } else if (currentPath === '/login') {
           setCustomText('CODAK • Academic Portal');
         } else {
-          setCustomText('Welcome to CODAK • Academic Progression Platform');
+          setCustomText('Loading CODAK Hub...');
         }
       }
     },
@@ -116,10 +165,9 @@ export function PreloaderProvider({ children }: { children: React.ReactNode }) {
       setCustomSubtext(options.subtext || null);
       setCustomDuration(options.duration || 1000);
 
-      // 1. Immediately activate preloader covering the viewport
+      // Immediately activate preloader
       setActive(true);
 
-      // 2. Prefetch and navigate to destination in the background
       try {
         router.prefetch(dest);
         router.push(dest);
