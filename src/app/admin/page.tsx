@@ -50,7 +50,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Active Admin Modules */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Module 1: Live XP Rule Engine Manager */}
           <div className="p-6 rounded-2xl bg-[#0c0c0e] border border-white/15 hover:border-white/30 transition-all shadow-xl flex flex-col justify-between">
             <div className="space-y-4">
@@ -162,6 +162,64 @@ export default function AdminDashboardPage() {
                 className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold shadow-lg shadow-white/10 transition-all flex items-center justify-center gap-2 active:scale-95"
               >
                 <span>Open Ledger Audit Hub</span>
+                <span>→</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Module 3: Staff Invites & Access Codes */}
+          <div className="p-6 rounded-2xl bg-[#0c0c0e] border border-white/15 hover:border-white/30 transition-all shadow-xl flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white">
+                  <KeyRound className="w-5 h-5" />
+                </div>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Active • Protected
+                </span>
+              </div>
+
+              <div>
+                <h2 className="text-lg font-bold text-white tracking-tight">
+                  Staff Invites & Access Codes
+                </h2>
+                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                  Generate cryptographically secure one-time invite codes for Faculty and Administrator onboarding without public role selection.
+                </p>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-white/10">
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block">
+                  Staff Access Controls:
+                </span>
+                <ul className="space-y-1.5 text-xs text-zinc-300">
+                  <li className="flex items-center gap-2">
+                    <span className="text-white font-bold">✓</span>
+                    <span>Generate Faculty & Admin invite codes</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-white font-bold">✓</span>
+                    <span>One-time display copy box with warning</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-white font-bold">✓</span>
+                    <span>Configurable max uses (1 or multi-use) & 7d expiry</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-white font-bold">✓</span>
+                    <span>Track redemptions & revoke active codes</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="pt-6">
+              <Link
+                href="/admin/invites"
+                className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold shadow-lg shadow-white/10 transition-all flex items-center justify-center gap-2 active:scale-95"
+              >
+                <span>Manage Staff Invites</span>
                 <span>→</span>
               </Link>
             </div>
