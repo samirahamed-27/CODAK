@@ -20,6 +20,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'CODAK - Gamified Learning Platform',
   description: 'CODAK - Next-Gen Gamified Academic Platform: Learn, Play, and Compete.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.png', type: 'image/png', sizes: '64x64' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '64x64', type: 'image/png' },
+    ],
+  },
 };
 
 export const viewport = {
