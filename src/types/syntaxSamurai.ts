@@ -75,3 +75,43 @@ export interface LobbyScreenProps {
   initialEnemy?: LanguageEnemy;
   initialDifficulty?: Difficulty;
 }
+
+export interface SlashPoint {
+  x: number;
+  y: number;
+  time: number;
+  speed: number;
+}
+
+export interface TokenBoundingBox {
+  id: string;
+  isError: boolean;
+  lineIndex: number;
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export type HitType = 'critical_slash' | 'parry_deflect' | 'none';
+
+export interface SlashHitEvent {
+  type: HitType;
+  token?: TokenBoundingBox;
+  point: { x: number; y: number };
+  cutSegment?: { p1: { x: number; y: number }; p2: { x: number; y: number } };
+  timestamp: number;
+}
+
+export interface BladeSpark {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  color: string;
+  size: number;
+  life: number;
+  maxLife: number;
+}
+

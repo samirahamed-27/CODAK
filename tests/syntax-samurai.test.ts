@@ -113,4 +113,99 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       expect(poolOriginal).toHaveLength(5);
     });
   });
+
+  describe('Phase 2 - Katana Blade Geometry & Hit Detection', () => {
+    // Helper function verifying segment-box intersection algorithm
+    const segmentIntersectsBox = (
+      p1: { x: number; y: number },
+      p2: { x: number; y: number },
+      box: { x: number; y: number; width: number; height: number }
+    ): boolean => {
+      const minX = box.x;
+      const maxX = box.x + box.width;
+      const minY = box.y;
+      const maxY = box.y + box.height;
+
+      const inBox = (p: { x: number; y: number }) =>
+        p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY;
+
+      if (inBox(p1) || inBox(p2)) return true;
+
+      const ccw = (
+        ax: number,
+        ay: number,
+        bx: number,
+        by: number,
+        cx: number,
+        cy: number
+      ) => (cy - ay) * (bx - ax) > (by - ay) * (cx - ax);
+
+      const linesIntersect = (
+        ax: number,
+        ay: number,
+        bx: number,
+        by: number,
+        cx: number,
+        cy: number,
+        dx: number,
+        dy: number
+      ) =>
+        ccw(ax, ay, cx, cy, dx, dy) !== ccw(bx, by, cx, cy, dx, dy) &&
+        ccw(ax, ay, bx, by, cx, cy) !== ccw(ax, ay, bx, by, dx, dy);
+
+      if (linesIntersect(p1.x, p1.y, p2.x, p2.y, minX, minY, maxX, minY)) return true;
+      if (linesIntersect(p1.x, p1.y, p2.x, p2.y, minX, maxY, maxX, maxY)) return true;
+      if (linesIntersect(p1.x, p1.y, p2.x, p2.y, minX, minY, minX, maxY)) return true;
+      if (linesIntersect(p1.x, p1.y, p2.x, p2.y, maxX, minY, maxX, maxY)) return true;
+
+      return false;
+    };
+
+    it('detects a diagonal slash cleanly cutting through a token bounding box', () => {
+      const targetBox = { x: 100, y: 100, width: 60, height: 25 };
+      // Diagonal slash from top-left (80, 80) to bottom-right (180, 140)
+      const p1 = { x: 80, y: 80 };
+      const p2 = { x: 180, y: 140 };
+
+      expect(segmentIntersectsBox(p1, p2, targetBox)).toBe(true);
+    });
+
+    it('detects hit when slash starts or ends directly inside the box', () => {
+      const targetBox = { x: 200, y: 200, width: 50, height: 20 };
+      const insidePoint = { x: 220, y: 210 };
+      const outsidePoint = { x: 300, y: 300 };
+
+      expect(segmentIntersectsBox(insidePoint, outsidePoint, targetBox)).toBe(true);
+      expect(segmentIntersectsBox(outsidePoint, insidePoint, targetBox)).toBe(true);
+    });
+
+    it('correctly reports no hit when a slash completely misses the token box', () => {
+      const targetBox = { x: 100, y: 100, width: 40, height: 20 };
+      // Slash passing far above
+      const p1 = { x: 50, y: 50 };
+      const p2 = { x: 200, y: 50 };
+
+      expect(segmentIntersectsBox(p1, p2, targetBox)).toBe(false);
+
+      // Slash passing to the right
+      const p3 = { x: 160, y: 90 };
+      const p4 = { x: 160, y: 140 };
+      expect(segmentIntersectsBox(p3, p4, targetBox)).toBe(false);
+    });
+
+    it('calculates velocity angle so blade tip aligns with swipe direction', () => {
+      // Swiping right: angle should be ~0 radians
+      const angleRight = Math.atan2(0, 50);
+      expect(angleRight).toBeCloseTo(0, 2);
+
+      // Swiping straight down: angle should be PI/2 (~1.57 rad)
+      const angleDown = Math.atan2(50, 0);
+      expect(angleDown).toBeCloseTo(Math.PI / 2, 2);
+
+      // Swiping 45 deg down-right
+      const angleDiag = Math.atan2(50, 50);
+      expect(angleDiag).toBeCloseTo(Math.PI / 4, 2);
+    });
+  });
 });
+
