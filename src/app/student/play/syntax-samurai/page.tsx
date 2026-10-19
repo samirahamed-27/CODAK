@@ -158,12 +158,12 @@ export default function SyntaxSamuraiPage() {
   const currentQuestion = battleQuestions[questionIndex];
 
   return (
-    <div className="min-h-screen bg-[#07070b] text-white flex flex-col justify-between p-4 sm:p-6 font-mono select-none">
-      <header className="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
+    <div className="min-h-screen bg-[#07070b] text-white flex flex-col justify-between p-2 sm:p-3 font-mono select-none overflow-x-hidden">
+      <header className="flex items-center justify-between border-b border-zinc-800/80 px-4 py-2 mb-2 flex-shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={handleBackToLobby}
-            className="px-3 py-1.5 rounded bg-zinc-900 border border-zinc-700 text-xs text-zinc-300 hover:text-white hover:border-zinc-500"
+            className="px-3 py-1.5 rounded bg-zinc-900 border border-zinc-700 text-xs text-zinc-300 hover:text-white hover:border-zinc-500 transition-colors"
           >
             ← FORFEIT MATCH
           </button>
@@ -176,7 +176,7 @@ export default function SyntaxSamuraiPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center">
+      <main className="flex-1 flex flex-col items-center justify-center w-full my-auto">
         {currentQuestion ? (
           <CodeArena
             key={currentQuestion.id}
@@ -194,8 +194,8 @@ export default function SyntaxSamuraiPage() {
         )}
       </main>
 
-      <footer className="text-center text-[11px] text-zinc-600 border-t border-zinc-900 pt-3 mt-4">
-        SYNTAX SAMURAI • PHASE 5: VICTORY DOJO, PERFORMANCE STATS & CODE REVIEW ACTIVE
+      <footer className="text-center text-[11px] text-zinc-600 border-t border-zinc-900/80 py-1.5 mt-2 flex-shrink-0">
+        SYNTAX SAMURAI • EXPANSIVE BATTLE ARENA
       </footer>
     </div>
   );

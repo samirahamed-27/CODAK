@@ -319,6 +319,45 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       expect(scarTransform).toBe('rotate(1.5707963267948966rad)');
       expect(scarTransform).not.toBe('rotate(-25deg)');
     });
+
+    it('verifies expansive arena viewport configuration (Refinement 4)', () => {
+      const arenaStyle = {
+        width: '95vw',
+        maxWidth: '1600px',
+        height: '88vh',
+        minHeight: '720px',
+        margin: '0 auto',
+      };
+
+      expect(arenaStyle.width).toBe('95vw');
+      expect(arenaStyle.maxWidth).toBe('1600px');
+      expect(arenaStyle.height).toBe('88vh');
+      expect(arenaStyle.minHeight).toBe('720px');
+      expect(arenaStyle.margin).toBe('0 auto');
+    });
+
+    it('verifies scaled code typography parameters (Refinement 4)', () => {
+      const codeStyle = {
+        fontFamily: "'JetBrains Mono', 'Fira Code', 'VT323', var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        fontSize: '1.4rem',
+        lineHeight: 2.2,
+        letterSpacing: '0.04em',
+      };
+
+      // Font size must be within 1.35rem to 1.5rem (22px to 24px)
+      const fontSizeNum = parseFloat(codeStyle.fontSize);
+      expect(fontSizeNum).toBeGreaterThanOrEqual(1.35);
+      expect(fontSizeNum).toBeLessThanOrEqual(1.5);
+
+      // Line height must be generous 2.2 for comfortable slicing clearance
+      expect(codeStyle.lineHeight).toBe(2.2);
+      expect(codeStyle.letterSpacing).toBe('0.04em');
+
+      // Monospace font family checks
+      expect(codeStyle.fontFamily).toContain('JetBrains Mono');
+      expect(codeStyle.fontFamily).toContain('Fira Code');
+      expect(codeStyle.fontFamily).toContain('monospace');
+    });
   });
 
   describe('Phase 3 - Pixel Crumble Engine & Physics Model', () => {

@@ -10,6 +10,14 @@ export interface TypewriterTransitionProps {
   onComplete: () => void;
 }
 
+const codeFontStyle: React.CSSProperties = {
+  fontFamily:
+    "'JetBrains Mono', 'Fira Code', 'VT323', var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+  fontSize: '1.4rem',
+  lineHeight: 2.2,
+  letterSpacing: '0.04em',
+};
+
 export const TypewriterTransition: React.FC<TypewriterTransitionProps> = ({
   codeSnippet,
   lineSpeedMs = 26,
@@ -83,26 +91,33 @@ export const TypewriterTransition: React.FC<TypewriterTransitionProps> = ({
   }, [codeSnippet, lineSpeedMs, lines.length, onComplete]);
 
   return (
-    <div className="flex flex-col justify-center min-h-[160px] select-none font-mono text-sm tracking-wide">
+    <div className="flex flex-col justify-center min-h-[220px] select-none">
       {lines.slice(0, visibleLinesCount).map((lineStr, idx) => {
         const isCurrentHead = idx === visibleLinesCount - 1;
 
         return (
           <div
             key={idx}
-            className="flex items-center px-2 py-0.5 rounded transition-opacity duration-75"
+            className="flex items-center px-3 py-1 rounded-lg transition-opacity duration-75"
+            style={{ minHeight: '3.2rem' }}
           >
-            <span className="w-8 select-none text-right pr-4 text-zinc-600 text-xs">
+            <span
+              className="w-12 select-none text-right pr-6 text-zinc-600 font-mono text-sm sm:text-base font-bold opacity-60"
+              style={{ lineHeight: 'inherit' }}
+            >
               {idx + 1}
             </span>
-            <span className="text-zinc-300 flex-1 whitespace-pre flex items-center">
+            <span
+              className="text-zinc-300 flex-1 whitespace-pre flex items-center"
+              style={codeFontStyle}
+            >
               <span>{lineStr || ' '}</span>
               {isCurrentHead && (
                 <span
-                  className="inline-block w-2 h-4 ml-1 bg-white animate-pulse"
+                  className="inline-block w-2.5 h-6 ml-1 bg-white animate-pulse"
                   style={{
                     backgroundColor: themeColor,
-                    boxShadow: `0 0 8px ${themeColor}`,
+                    boxShadow: `0 0 10px ${themeColor}`,
                   }}
                 />
               )}
@@ -113,12 +128,15 @@ export const TypewriterTransition: React.FC<TypewriterTransitionProps> = ({
 
       {/* Trailing empty placeholder lines if any */}
       {visibleLinesCount === 0 && (
-        <div className="flex items-center px-2 py-0.5">
-          <span className="w-8 select-none text-right pr-4 text-zinc-700 text-xs">
+        <div className="flex items-center px-3 py-1" style={{ minHeight: '3.2rem' }}>
+          <span
+            className="w-12 select-none text-right pr-6 text-zinc-700 font-mono text-sm sm:text-base font-bold opacity-60"
+            style={{ lineHeight: 'inherit' }}
+          >
             1
           </span>
           <span
-            className="inline-block w-2 h-4 bg-white animate-pulse"
+            className="inline-block w-2.5 h-6 bg-white animate-pulse"
             style={{ backgroundColor: themeColor }}
           />
         </div>
