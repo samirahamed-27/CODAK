@@ -133,8 +133,15 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
     <header className="sticky top-0 z-[100] w-full border-b border-white/10 bg-black/90 backdrop-blur-md">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         <Link href={`/${role}`} className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-white/20 flex items-center justify-center text-white shadow-none group-hover:scale-105 transition-transform">
-            🎮
+          <div className="w-9 h-9 rounded-xl bg-zinc-900 border border-white/20 flex items-center justify-center p-1.5 shadow-none group-hover:scale-105 transition-transform overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/codak-logo.png"
+              alt="CODAK Favicon"
+              width={26}
+              height={26}
+              className="w-full h-full object-contain rounded-lg"
+            />
           </div>
           <Shuffle
             text="CODAK"

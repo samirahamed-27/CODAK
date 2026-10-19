@@ -177,8 +177,9 @@ export const Preloader: React.FC<PreloaderProps> = ({
                 <div className="absolute w-[440px] h-[440px] rounded-full bg-white/5 blur-[90px] pointer-events-none -z-10" />
 
                 <div className="relative mb-5">
-                  <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-white/30 flex items-center justify-center text-3xl shadow-[0_0_25px_rgba(255,255,255,0.15)] backdrop-blur-md">
-                    🎮
+                  <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-white/30 flex items-center justify-center p-2.5 shadow-[0_0_25px_rgba(255,255,255,0.15)] backdrop-blur-md overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/codak-logo.png" alt="CODAK Logo" className="w-full h-full object-contain" />
                   </div>
                   <motion.div
                     animate={{ rotate: 360 }}
@@ -221,8 +222,9 @@ export const Preloader: React.FC<PreloaderProps> = ({
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-lg">
-                    🎮
+                  <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center p-1.5 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/codak-logo.png" alt="CODAK Logo" className="w-full h-full object-contain" />
                   </div>
                   <span className="text-sm font-bold tracking-wider text-white">CODAK</span>
                 </div>
@@ -329,8 +331,9 @@ export const Preloader: React.FC<PreloaderProps> = ({
                 style={{ backgroundColor: bgColor }}
               >
                 <div className="text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/30 mx-auto flex items-center justify-center text-2xl shadow-lg shadow-white/10 mb-2">
-                    🎮
+                  <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/30 mx-auto flex items-center justify-center p-2 shadow-lg shadow-white/10 mb-2 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/codak-logo.png" alt="CODAK Logo" className="w-full h-full object-contain" />
                   </div>
                   <h2 className="text-base font-bold text-white tracking-wide">CODAK PLATFORM</h2>
                 </div>
@@ -401,8 +404,9 @@ export const Preloader: React.FC<PreloaderProps> = ({
                 transition={{ duration: 0.3 }}
                 className="absolute inset-0 flex items-center justify-center pointer-events-none"
               >
-                <div className="w-14 h-14 rounded-full bg-zinc-900 border border-white flex items-center justify-center text-xl shadow-[0_0_20px_rgba(255,255,255,0.3)]">
-                  🎮
+                <div className="w-14 h-14 rounded-full bg-zinc-900 border border-white flex items-center justify-center p-2.5 shadow-[0_0_20px_rgba(255,255,255,0.3)] overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/codak-logo.png" alt="CODAK Logo" className="w-full h-full object-contain" />
                 </div>
               </motion.div>
             </div>

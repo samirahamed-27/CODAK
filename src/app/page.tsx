@@ -10,8 +10,15 @@ export default function HomePage() {
         {/* Top Bar */}
         <header className="flex items-center justify-between py-4 border-b border-[#1D2233]/60 mb-6">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-[#10131E] border border-sky-400/40 flex items-center justify-center text-xl shadow-lg shadow-sky-500/10">
-              🎮
+            <div className="w-10 h-10 rounded-2xl bg-[#10131E] border border-white/20 flex items-center justify-center p-1.5 shadow-lg shadow-white/5 overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/codak-logo.png"
+                alt="CODAK Favicon"
+                width={28}
+                height={28}
+                className="w-full h-full object-contain rounded-xl"
+              />
             </div>
             <Shuffle
               text="CODAK"
