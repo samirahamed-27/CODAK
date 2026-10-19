@@ -59,14 +59,28 @@ function RouteWatcher({
 export function PreloaderProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  // On website bootup, start active = true so the stairs preloader plays
-  const [active, setActive] = useState(true);
+  // Active state: starts false, only activates on initial bootup if not previously shown in this session
+  const [active, setActive] = useState(false);
   const [role, setRole] = useState<'student' | 'faculty' | 'admin'>('student');
   const [targetDestination, setTargetDestination] = useState<string | null>(null);
-  const [isDestinationReady, setIsDestinationReady] = useState(true);
+  const [isDestinationReady, setIsDestinationReady] = useState(false);
   const [customText, setCustomText] = useState<string | null>('Welcome to CODAK • Academic Progression Platform');
   const [customSubtext, setCustomSubtext] = useState<string | null>('Initializing XP ledger, course velocity & battle arena...');
   const [customDuration, setCustomDuration] = useState<number>(1000);
+
+  // Only play bootup animation the very first time the website boots up in this session
+  useEffect(() => {
+    try {
+      const hasBooted = sessionStorage.getItem('codak_bootup_shown');
+      if (!hasBooted) {
+        sessionStorage.setItem('codak_bootup_shown', 'true');
+        setIsDestinationReady(true);
+        setActive(true);
+      }
+    } catch {
+      // In case sessionStorage is restricted in strict private browsing
+    }
+  }, []);
 
   const handleInitialPath = useCallback(
     (currentPath: string) => {
