@@ -104,16 +104,20 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
     role === 'faculty'
       ? [
           { label: 'Dashboard', ariaLabel: 'Go to Faculty Dashboard', link: '/faculty' },
+          { label: 'Leaderboard', ariaLabel: 'Campus & Student Leaderboard', link: '/faculty/leaderboard' },
           { label: 'Competitions', ariaLabel: 'Manage HackerRank Competitions', link: '/faculty/competitions' },
           { label: 'Questions', ariaLabel: 'Manage Question Bank', link: '/faculty/questions' },
+          { label: 'Security Flags', ariaLabel: 'Integrity Flags Hub', link: '/faculty/flags' },
           { label: 'Student View', ariaLabel: 'Switch to Student View', link: '/student' },
         ]
       : role === 'admin'
       ? [
           { label: 'Admin Hub', ariaLabel: 'Go to Admin Hub', link: '/admin' },
+          { label: 'Leaderboard', ariaLabel: 'Campus & Student Leaderboard', link: '/admin/leaderboard' },
           { label: 'Staff Invites', ariaLabel: 'Manage Staff Invites', link: '/admin/invites' },
           { label: 'XP Rules', ariaLabel: 'Manage XP Rules', link: '/admin/rules' },
           { label: 'Ledger Audit', ariaLabel: 'Inspect Ledger Audit', link: '/admin/audit' },
+          { label: 'Security Flags', ariaLabel: 'Anti-Gaming and Integrity Flags', link: '/admin/flags' },
         ]
       : [
           { label: 'Dashboard', ariaLabel: 'Go to student dashboard', link: '/student' },
@@ -124,7 +128,15 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
         ];
 
   const socialLinks = [
-    { label: 'Leaderboard', link: '/student#leaderboard' },
+    {
+      label: 'Leaderboard',
+      link:
+        role === 'admin'
+          ? '/admin/leaderboard'
+          : role === 'faculty'
+          ? '/faculty/leaderboard'
+          : '/student#leaderboard',
+    },
     { label: 'Log out', link: '/api/auth/signout' },
     { label: 'Home', link: '/' },
   ];
