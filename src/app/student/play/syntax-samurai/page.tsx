@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { LobbyScreen } from '@/components/games/syntax-samurai/LobbyScreen';
 import { CodeArena } from '@/components/games/syntax-samurai/CodeArena';
@@ -37,8 +37,10 @@ export default function SyntaxSamuraiPage() {
   const [timeBonusTotal, setTimeBonusTotal] = useState<number>(0);
   const [comboBonusTotal, setComboBonusTotal] = useState<number>(0);
   const [baseXpTotal, setBaseXpTotal] = useState<number>(0);
+  const recordedQuestionIdsRef = useRef<Set<string>>(new Set());
 
   const handleStartGame = (selection: LobbySelection) => {
+    recordedQuestionIdsRef.current.clear();
     setBattleConfig(selection);
     const questions = getRandomQuestions(selection.enemy, selection.difficulty);
     setBattleQuestions(questions);
@@ -55,6 +57,7 @@ export default function SyntaxSamuraiPage() {
   };
 
   const handleBackToLobby = () => {
+    recordedQuestionIdsRef.current.clear();
     setGameState('lobby');
   };
 
@@ -64,6 +67,11 @@ export default function SyntaxSamuraiPage() {
     meta?: QuestionResultMeta
   ) => {
     const currentQ = battleQuestions[questionIndex];
+    if (!currentQ || recordedQuestionIdsRef.current.has(currentQ.id)) {
+      return;
+    }
+    recordedQuestionIdsRef.current.add(currentQ.id);
+
     const diff = battleConfig ? getDifficultyConfig(battleConfig.difficulty) : null;
 
     if (currentQ) {

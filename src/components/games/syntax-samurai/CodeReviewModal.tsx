@@ -17,9 +17,27 @@ export const CodeReviewModal: React.FC<CodeReviewModalProps> = ({
   enemy,
 }) => {
   const [filter, setFilter] = useState<'all' | 'failed' | 'correct'>('all');
-  const [expandedId, setExpandedId] = useState<string | null>(
-    reviewItems.find((item) => !item.isCorrect)?.question.id || reviewItems[0]?.question.id || null
-  );
+
+  // Deduplicate review items so each question trial is uniquely represented
+  const uniqueReviewItems = React.useMemo(() => {
+    const seen = new Set<string>();
+    const items: QuestionReviewItem[] = [];
+    for (const item of reviewItems) {
+      if (!seen.has(item.question.id)) {
+        seen.add(item.question.id);
+        items.push(item);
+      }
+    }
+    return items;
+  }, [reviewItems]);
+
+  const [expandedId, setExpandedId] = useState<string | null>(() => {
+    const failedIdx = uniqueReviewItems.findIndex((item) => !item.isCorrect);
+    if (failedIdx !== -1) {
+      return `${uniqueReviewItems[failedIdx].question.id}-${failedIdx}`;
+    }
+    return uniqueReviewItems[0] ? `${uniqueReviewItems[0].question.id}-0` : null;
+  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -34,15 +52,15 @@ export const CodeReviewModal: React.FC<CodeReviewModalProps> = ({
 
   if (!isOpen) return null;
 
-  const failedItems = reviewItems.filter((item) => !item.isCorrect);
-  const correctItems = reviewItems.filter((item) => item.isCorrect);
+  const failedItems = uniqueReviewItems.filter((item) => !item.isCorrect);
+  const correctItems = uniqueReviewItems.filter((item) => item.isCorrect);
 
   const displayedItems =
     filter === 'failed'
       ? failedItems
       : filter === 'correct'
       ? correctItems
-      : reviewItems;
+      : uniqueReviewItems;
 
   const getCompilerDiagnostic = (lang: string) => {
     switch (lang) {
@@ -146,12 +164,13 @@ export const CodeReviewModal: React.FC<CodeReviewModalProps> = ({
           ) : (
             displayedItems.map((item, idx) => {
               const q = item.question;
-              const isExpanded = expandedId === q.id;
+              const itemKey = `${q.id}-${idx}`;
+              const isExpanded = expandedId === itemKey;
               const lines = q.codeSnippet.split('\n');
 
               return (
                 <div
-                  key={q.id}
+                  key={itemKey}
                   className={`rounded-xl border transition-all duration-200 overflow-hidden ${
                     item.isCorrect
                       ? 'border-emerald-500/30 bg-emerald-950/10'
@@ -160,7 +179,7 @@ export const CodeReviewModal: React.FC<CodeReviewModalProps> = ({
                 >
                   {/* Collapsible Accordion Header */}
                   <button
-                    onClick={() => setExpandedId(isExpanded ? null : q.id)}
+                    onClick={() => setExpandedId(isExpanded ? null : itemKey)}
                     className="w-full px-4 py-3 bg-zinc-950/80 hover:bg-zinc-900/80 flex items-center justify-between gap-3 text-left transition-colors"
                   >
                     <div className="flex items-center gap-3">

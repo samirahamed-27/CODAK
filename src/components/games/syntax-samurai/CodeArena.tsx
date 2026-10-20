@@ -97,6 +97,33 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
   const [isBladeBroken, setIsBladeBroken] = useState<boolean>(false);
   const [prevQuestionKey, setPrevQuestionKey] = useState<string>(`${question.id}-${difficulty.id}`);
 
+  // Single-completion guard and pending timer canceler
+  const hasCompletedRef = useRef<boolean>(false);
+  const pendingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerQuestionCompleted = useCallback(
+    (correct: boolean, xp: number, meta?: QuestionResultMeta) => {
+      if (hasCompletedRef.current) return;
+      hasCompletedRef.current = true;
+      if (pendingTimeoutRef.current) {
+        clearTimeout(pendingTimeoutRef.current);
+        pendingTimeoutRef.current = null;
+      }
+      onQuestionCompleted?.(correct, xp, meta);
+    },
+    [onQuestionCompleted]
+  );
+
+  useEffect(() => {
+    hasCompletedRef.current = false;
+    return () => {
+      if (pendingTimeoutRef.current) {
+        clearTimeout(pendingTimeoutRef.current);
+        pendingTimeoutRef.current = null;
+      }
+    };
+  }, [question.id]);
+
   if (prevQuestionKey !== `${question.id}-${difficulty.id}`) {
     setPrevQuestionKey(`${question.id}-${difficulty.id}`);
     setSlashesLeft(getMaxSlashes(difficulty.id));
@@ -194,7 +221,7 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
         if (prev <= 1) {
           clearInterval(timer);
           // Time expired
-          onQuestionCompleted?.(false, 0, {
+          triggerQuestionCompleted(false, 0, {
             wasSliced: isSliced,
             selectedFix: null,
             timeRemainingSec: 0,
@@ -208,7 +235,7 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isBladeBroken, isSliced, onQuestionCompleted, selectedFix]);
+  }, [isBladeBroken, isSliced, selectedFix, triggerQuestionCompleted]);
 
   // Hit Handler (Critical Slash on the bugged token with Pixel Crumble FX)
   const handleHit = useCallback(
@@ -324,8 +351,8 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
         });
 
         // Forfeits question and transitions after 2200ms
-        setTimeout(() => {
-          onQuestionCompleted?.(false, 0, {
+        pendingTimeoutRef.current = setTimeout(() => {
+          triggerQuestionCompleted(false, 0, {
             wasSliced: false,
             selectedFix: null,
             timeRemainingSec: timeLeft,
@@ -345,7 +372,7 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
 
       return remaining;
     });
-  }, [containerRef, isBladeBroken, isSliced, maxSlashes, onQuestionCompleted, timeLeft]);
+  }, [containerRef, isBladeBroken, isSliced, maxSlashes, timeLeft, triggerQuestionCompleted]);
 
   // Katana blade tracking hook
   const {
@@ -379,8 +406,8 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
       const slashBonus = isSliced ? 50 : 0;
       const xp = baseReward + comboBonus + timeBonus + (correct ? slashBonus : 0);
 
-      setTimeout(() => {
-        onQuestionCompleted?.(correct, xp, {
+      pendingTimeoutRef.current = setTimeout(() => {
+        triggerQuestionCompleted(correct, xp, {
           wasSliced: isSliced,
           selectedFix: option,
           timeRemainingSec: timeLeft,
@@ -389,7 +416,7 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
         });
       }, 1600);
     },
-    [combo, difficulty.xpReward, isSliced, onQuestionCompleted, question.correctReplacement, selectedFix, timeLeft]
+    [combo, difficulty.xpReward, isSliced, question.correctReplacement, selectedFix, timeLeft, triggerQuestionCompleted]
   );
 
   // Keyboard shortcut listener (keys 1-4 to trigger repair choices 01-04)

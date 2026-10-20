@@ -937,6 +937,34 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       expect(timeBonus).toBe(24);
       expect(totalScore).toBe(1084);
     });
+
+    it('verifies CodeReviewModal deduplicates items and binds unique React keys per index', () => {
+      const modalSrc = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/games/syntax-samurai/CodeReviewModal.tsx'),
+        'utf-8'
+      );
+      // Key must incorporate idx so no duplicate key warnings occur in React
+      expect(modalSrc).toMatch(/key=\{itemKey\}/);
+      expect(modalSrc).toMatch(/itemKey\s*=\s*`\$\{q\.id\}-\$\{idx\}`/);
+      expect(modalSrc).toMatch(/uniqueReviewItems/);
+    });
+
+    it('verifies CodeArena and Page protect against duplicate question completions', () => {
+      const arenaSrc = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/games/syntax-samurai/CodeArena.tsx'),
+        'utf-8'
+      );
+      expect(arenaSrc).toMatch(/hasCompletedRef/);
+      expect(arenaSrc).toMatch(/pendingTimeoutRef/);
+      expect(arenaSrc).toMatch(/triggerQuestionCompleted/);
+
+      const pageSrc = fs.readFileSync(
+        path.join(process.cwd(), 'src/app/student/play/syntax-samurai/page.tsx'),
+        'utf-8'
+      );
+      expect(pageSrc).toMatch(/recordedQuestionIdsRef/);
+    });
   });
 });
+
 
