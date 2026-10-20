@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'fs';
+import path from 'path';
 import {
   ENEMY_PROFILES,
   DIFFICULTY_TIERS,
@@ -355,6 +357,24 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       const scarTransform = `rotate(${slashCutAngle}rad)`;
       expect(scarTransform).toBe('rotate(1.5707963267948966rad)');
       expect(scarTransform).not.toBe('rotate(-25deg)');
+    });
+
+    it('verifies sliced bug red-text replacement and quick-reference review banner (Phase 2)', () => {
+      const codeArenaContent = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/games/syntax-samurai/CodeArena.tsx'),
+        'utf-8'
+      );
+
+      // 1. Sliced token transforms into prominent red badge
+      expect(codeArenaContent).toContain('bg-red-950/85 text-red-400 border border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.4)] scale-105');
+      expect(codeArenaContent).toContain('⚠️');
+      expect(codeArenaContent).toContain('line-through decoration-red-400 decoration-2');
+      expect(codeArenaContent).toContain('SLICED BUG');
+
+      // 2. Quick-reference review banner in repair card
+      expect(codeArenaContent).toContain('SLICED ERROR:');
+      expect(codeArenaContent).toContain('{question.errorToken}');
+      expect(codeArenaContent).toContain('Pick the correct syntax below to replace it:');
     });
 
     it('verifies expansive arena viewport configuration (Refinement 4)', () => {

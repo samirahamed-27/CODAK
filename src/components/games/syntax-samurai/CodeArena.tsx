@@ -51,7 +51,6 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
   const [isStreaming, setIsStreaming] = useState<boolean>(true);
   const [isShaking, setIsShaking] = useState<boolean>(false);
   const [isFlashing, setIsFlashing] = useState<boolean>(false);
-  const [isTokenHidden, setIsTokenHidden] = useState<boolean>(false);
 
   // Game battle states
   const [isSliced, setIsSliced] = useState<boolean>(false);
@@ -168,7 +167,6 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
     (e: SlashHitEvent) => {
       if (isSliced) return;
       setIsSliced(true);
-      setIsTokenHidden(true); // Hide original text token instantly
       setCombo((prev) => prev + 1);
 
       // Trigger 80ms screen micro-shake & visual flash
@@ -329,16 +327,22 @@ const codeFontStyle: React.CSSProperties = {
                 <span
                   ref={errorTokenRef}
                   data-syntax-target="error"
-                  className={`relative inline-block transition-all duration-300 px-1 py-0.5 rounded ${
-                    isTokenHidden
-                      ? 'opacity-0 scale-90 pointer-events-none'
-                      : isSliced
-                      ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] px-2 py-0.5 rounded font-bold'
+                  className={`relative inline-flex items-center gap-1.5 transition-all duration-200 px-2.5 py-0.5 rounded-md font-mono font-bold select-none ${
+                    isSliced
+                      ? 'bg-red-950/85 text-red-400 border border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.4)] scale-105'
                       : 'text-zinc-300'
                   }`}
                   style={{ lineHeight: 'inherit' }}
                 >
-                  {bugged}
+                  {isSliced && <span className="text-red-500 text-xs">⚠️</span>}
+                  <span className={isSliced ? 'line-through decoration-red-400 decoration-2' : ''}>
+                    {bugged}
+                  </span>
+                  {isSliced && (
+                    <span className="text-[10px] text-red-300 font-sans tracking-wide uppercase px-1 py-0.2 bg-red-900/60 rounded border border-red-500/40">
+                      SLICED BUG
+                    </span>
+                  )}
                   {/* Slash cut scar */}
                   {isSliced && (
                     <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -371,16 +375,23 @@ const codeFontStyle: React.CSSProperties = {
                 <span
                   ref={errorTokenRef}
                   data-syntax-target="error"
-                  className={`relative inline-block transition-all duration-300 px-1 py-0.5 rounded ${
-                    isTokenHidden
-                      ? 'opacity-0 scale-90 pointer-events-none'
-                      : isSliced
-                      ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] px-2 py-0.5 rounded font-bold'
+                  className={`relative inline-flex items-center gap-1.5 transition-all duration-200 px-2.5 py-0.5 rounded-md font-mono font-bold select-none ${
+                    isSliced
+                      ? 'bg-red-950/85 text-red-400 border border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.4)] scale-105'
                       : 'text-zinc-300'
                   }`}
                   style={{ lineHeight: 'inherit' }}
                 >
-                  {lineStr || question.errorToken || '/* syntax error */'}
+                  {isSliced && <span className="text-red-500 text-xs">⚠️</span>}
+                  <span className={isSliced ? 'line-through decoration-red-400 decoration-2' : ''}>
+                    {lineStr || question.errorToken || '/* syntax error */'}
+                  </span>
+                  {isSliced && (
+                    <span className="text-[10px] text-red-300 font-sans tracking-wide uppercase px-1 py-0.2 bg-red-900/60 rounded border border-red-500/40">
+                      SLICED BUG
+                    </span>
+                  )}
+                  {/* Slash cut scar */}
                   {isSliced && (
                     <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <span
@@ -637,6 +648,19 @@ const codeFontStyle: React.CSSProperties = {
               </div>
               <span className="text-[10px] font-mono text-zinc-500">
                 1 CORRECT • 3 DISTRACTORS
+              </span>
+            </div>
+
+            {/* Quick-Reference Review Banner */}
+            <div className="flex items-center justify-between px-3.5 py-2 rounded-lg bg-red-950/40 border border-red-500/30 text-xs font-mono">
+              <div className="flex items-center gap-2">
+                <span className="text-red-400 font-bold">SLICED ERROR:</span>
+                <span className="text-red-300 font-bold bg-black/50 px-2 py-0.5 rounded border border-red-500/40 line-through">
+                  {question.errorToken}
+                </span>
+              </div>
+              <span className="text-zinc-400 text-[11px] font-sans">
+                Pick the correct syntax below to replace it:
               </span>
             </div>
 
