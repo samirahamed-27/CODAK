@@ -442,9 +442,9 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       const initialVy = engine.particles[0].vy;
       engine.update(1 / 60);
 
-      // vy reflects downward gravity (+0.45) and air drag (0.96)
-      expect(engine.gravity).toBe(0.45);
-      expect(engine.friction).toBe(0.96);
+      // vy reflects downward gravity (+0.42) and air drag (0.95)
+      expect(engine.gravity).toBe(0.42);
+      expect(engine.friction).toBe(0.95);
       expect(engine.particles[0].vy).toBeCloseTo(initialVy * engine.friction + engine.gravity, 4);
       expect(engine.particles[0].life).toBeCloseTo(1 / 60, 4);
 
@@ -615,16 +615,91 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
         expect(typeof p.vz).toBe('number');
       });
 
-      // Verify air drag (0.96) decay on vx, vy, vz
+      // Verify air drag (0.95) decay on vx, vy, vz
       const p0 = engine.particles[0];
       const initialVx = p0.vx;
       const initialVz = p0.vz;
 
       engine.update(1 / 60);
 
-      // vx and vz should decay by friction (0.96)
-      expect(Math.abs(p0.vx)).toBeCloseTo(Math.abs(initialVx * 0.96), 4);
-      expect(Math.abs(p0.vz)).toBeCloseTo(Math.abs(initialVz * 0.96), 4);
+      // vx and vz should decay by friction (0.95)
+      expect(Math.abs(p0.vx)).toBeCloseTo(Math.abs(initialVx * 0.95), 4);
+      expect(Math.abs(p0.vz)).toBeCloseTo(Math.abs(initialVz * 0.95), 4);
+    });
+
+    it('optimizes particle density with default count = 38 and caps lifetimes between 0.45s and 0.75s', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      // Explode without passing count
+      engine.explode({ x: 20, y: 20, width: 30, height: 15 });
+
+      expect(engine.particles).toHaveLength(38);
+      engine.particles.forEach((p) => {
+        expect(p.maxLife).toBeGreaterThanOrEqual(0.45);
+        expect(p.maxLife).toBeLessThanOrEqual(0.75);
+      });
+    });
+
+    it('pre-computes 3D isometric color palettes with base, top, and side shades', async () => {
+      const { PixelCrumbleEngine, getVoxelPalette } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const palette = getVoxelPalette('#ef4444');
+      expect(palette.base).toBe('#ef4444');
+      expect(palette.top).toBe('#fca5a5');
+      expect(palette.side).toBe('#b91c1c');
+
+      const engine = new PixelCrumbleEngine();
+      engine.explode({ x: 0, y: 0, width: 20, height: 20, colors: ['#ef4444', '#10b981'] });
+      engine.particles.forEach((p) => {
+        expect(p.palette).toBeDefined();
+        expect(typeof p.palette.base).toBe('string');
+        expect(typeof p.palette.top).toBe('string');
+        expect(typeof p.palette.side).toBe('string');
+      });
+    });
+
+    it('renders 60 FPS isometric faces with zero shadowBlur and single canvas state save', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      engine.explode({ x: 0, y: 0, width: 20, height: 20 });
+
+      let saveCount = 0;
+      let restoreCount = 0;
+      let shadowBlurSet = false;
+
+      const mockCtx = {
+        save: () => { saveCount++; },
+        restore: () => { restoreCount++; },
+        beginPath: () => {},
+        moveTo: () => {},
+        lineTo: () => {},
+        closePath: () => {},
+        fill: () => {},
+        stroke: () => {},
+        arc: () => {},
+        set shadowBlur(_val: number) { shadowBlurSet = true; },
+        get shadowBlur() { return 0; },
+        set shadowColor(_val: string) {},
+        get shadowColor() { return ''; },
+        set fillStyle(_val: string) {},
+        set strokeStyle(_val: string) {},
+        set lineWidth(_val: number) {},
+        set globalAlpha(_val: number) {},
+      } as unknown as CanvasRenderingContext2D;
+
+      engine.render(mockCtx);
+
+      // Verify zero shadowBlur was invoked (eliminates GPU rasterizer gaussian blur overhead)
+      expect(shadowBlurSet).toBe(false);
+
+      // Verify minimal canvas state saves (1 for shockwaves, 1 for particles)
+      expect(saveCount).toBeLessThanOrEqual(2);
+      expect(restoreCount).toBe(saveCount);
     });
 
     it('clears all active debris and shockwaves instantly on clear()', async () => {

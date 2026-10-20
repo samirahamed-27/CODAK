@@ -203,7 +203,7 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
           width: e.token.width,
           height: e.token.height,
           cutAngle,
-          count: 65,
+          count: 38,
           colors: [
             tokenColor,
             '#ef4444',
