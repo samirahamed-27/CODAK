@@ -1,14 +1,14 @@
 /**
- * Pixel Crumble Physics Engine - 3D Voxel Particle Engine Upgrade
- * Phase 2 Upgrade: True 3D Voxel Cubes with depth, tumbling rotations, and shaded faces.
+ * Pixel Crumble Physics Engine - High-Velocity 3D Explosion & Shockwave Ring
+ * Phase 3 Upgrade: Explosive 3D radial launch physics & cut epicenter shockwave ring.
  *
- * Manages 3D voxel particles erupting from sliced syntax tokens with:
- * - 3D Positions: (x, y, z) where z < 0 is toward camera/screen, z > 0 into background
- * - 3D Velocities: (vx, vy, vz) with downward gravity ay = +0.4 and air friction
- * - 3D Angular Rotations: (rotX, rotY, rotZ) and tumbling angular velocities (vRotX, vRotY, vRotZ)
- * - Perspective Projection: scale = cameraDistance / Math.max(80, cameraDistance + p.z)
- * - Depth Z-sorting: Farthest particles drawn first (Painter's algorithm occlusion)
- * - 3D Shaded Voxel Faces: Top face highlight (#ffffff / #fca5a5), front face base color, side/bottom drop-shadow shading
+ * Manages 3D voxel particles & impact shockwaves with:
+ * - Expanding Shockwave Ring: radius expanding from 4px to 80px over 280ms with fading neon red glow (#ef4444)
+ * - 3D Spherical Radial Launch: theta (azimuth), phi (elevation), high speed blastSpeed (8-22px/frame)
+ * - Upward explosive impulse: vy = sin(phi) * blastSpeed - (2..6)
+ * - High-speed Z-depth blast: vz = cos(phi) * sin(theta) * blastSpeed * 1.5
+ * - Air Drag & Downward Gravity: vx, vy, vz *= 0.96; vy += 0.45
+ * - Tumbling 3D Rotations & Shaded Voxel Polygons with Painter's depth sorting
  */
 
 export interface CrumbleParticle {
@@ -34,6 +34,17 @@ export interface CrumbleParticle {
   maxLife: number; // seconds
 }
 
+export interface ShockwaveRing {
+  x: number;
+  y: number;
+  currentRadius: number;
+  startRadius: number; // 4px
+  maxRadius: number; // 80px
+  duration: number; // 0.28s (280ms)
+  elapsed: number; // seconds
+  color: string; // #ef4444
+}
+
 export interface ExplodeBoxOptions {
   x: number;
   y: number;
@@ -47,29 +58,30 @@ export interface ExplodeBoxOptions {
 // 8 canonical unit cube vertices
 const UNIT_CUBE_VERTS = [
   { x: -1, y: -1, z: -1 }, // 0: Top-Left-Front
-  { x: 1, y: -1, z: -1 },  // 1: Top-Right-Front
-  { x: 1, y: 1, z: -1 },   // 2: Bottom-Right-Front
-  { x: -1, y: 1, z: -1 },  // 3: Bottom-Left-Front
-  { x: -1, y: -1, z: 1 },  // 4: Top-Left-Back
-  { x: 1, y: -1, z: 1 },   // 5: Top-Right-Back
-  { x: 1, y: 1, z: 1 },    // 6: Bottom-Right-Back
-  { x: -1, y: 1, z: 1 },   // 7: Bottom-Left-Back
+  { x: 1, y: -1, z: -1 }, // 1: Top-Right-Front
+  { x: 1, y: 1, z: -1 }, // 2: Bottom-Right-Front
+  { x: -1, y: 1, z: -1 }, // 3: Bottom-Left-Front
+  { x: -1, y: -1, z: 1 }, // 4: Top-Left-Back
+  { x: 1, y: -1, z: 1 }, // 5: Top-Right-Back
+  { x: 1, y: 1, z: 1 }, // 6: Bottom-Right-Back
+  { x: -1, y: 1, z: 1 }, // 7: Bottom-Left-Back
 ] as const;
 
 // 6 canonical voxel faces with outward normals
 const CUBE_FACES = [
   { indices: [0, 1, 2, 3], norm: { x: 0, y: 0, z: -1 }, type: 'front' as const },
-  { indices: [5, 4, 7, 6], norm: { x: 0, y: 0, z: 1 },  type: 'back' as const },
+  { indices: [5, 4, 7, 6], norm: { x: 0, y: 0, z: 1 }, type: 'back' as const },
   { indices: [4, 5, 1, 0], norm: { x: 0, y: -1, z: 0 }, type: 'top' as const },
-  { indices: [3, 2, 6, 7], norm: { x: 0, y: 1, z: 0 },  type: 'bottom' as const },
-  { indices: [1, 5, 6, 2], norm: { x: 1, y: 0, z: 0 },  type: 'right' as const },
+  { indices: [3, 2, 6, 7], norm: { x: 0, y: 1, z: 0 }, type: 'bottom' as const },
+  { indices: [1, 5, 6, 2], norm: { x: 1, y: 0, z: 0 }, type: 'right' as const },
   { indices: [4, 0, 3, 7], norm: { x: -1, y: 0, z: 0 }, type: 'left' as const },
 ] as const;
 
 export class PixelCrumbleEngine {
   public particles: CrumbleParticle[] = [];
-  public gravity: number = 0.4; // ay = +0.4 downward acceleration
-  public friction: number = 0.985;
+  public shockwaves: ShockwaveRing[] = [];
+  public gravity: number = 0.45; // ay = +0.45 downward acceleration
+  public friction: number = 0.96; // Air drag 0.96
   public cameraDistance: number = 320; // Perspective FOV camera distance
 
   // Reusable 8-vertex buffer to eliminate per-particle GC allocations
@@ -85,7 +97,7 @@ export class PixelCrumbleEngine {
   ];
 
   /**
-   * Spawns 40–80 3D voxel cube particles from the sliced token bounding box
+   * Spawns high-velocity 3D voxel particles & impact shockwave ring from cut epicenter
    */
   public explode({
     x,
@@ -96,58 +108,68 @@ export class PixelCrumbleEngine {
     count = 65,
     colors = ['#ef4444', '#f87171', '#f59e0b', '#ffffff', '#991b1b'],
   }: ExplodeBoxOptions) {
-    // Tangent vector along the slash stroke direction
-    const tx = Math.cos(cutAngle);
-    const ty = Math.sin(cutAngle);
-
-    // Normal vector perpendicular to the cut line
-    const nx = -Math.sin(cutAngle);
-    const ny = Math.cos(cutAngle);
-
     const boxW = width > 0 ? width : 16;
     const boxH = height > 0 ? height : 16;
-    const originX = x + boxW / 2;
-    const originY = y + boxH / 2;
+    const centerX = x + boxW / 2;
+    const centerY = y + boxH / 2;
+
+    // 1. Spawn expanding shockwave ring at cut epicenter:
+    // Expanding radius from 4px to 80px over 280ms with fading neon red glow (#ef4444)
+    this.shockwaves.push({
+      x: centerX,
+      y: centerY,
+      currentRadius: 4,
+      startRadius: 4,
+      maxRadius: 80,
+      duration: 0.28, // 280ms
+      elapsed: 0,
+      color: '#ef4444',
+    });
+
+    // Slash impulse components along travel direction
+    const tx = Math.cos(cutAngle);
+    const ty = Math.sin(cutAngle);
+    const forwardImpulse = 5.5;
 
     const newParticles: CrumbleParticle[] = [];
 
+    // 2. Spawn 3D spherical radial explosion particles
     for (let i = 0; i < count; i++) {
       // Distribute particle inside the token bounding box
       const px = x + Math.random() * boxW;
       const py = y + Math.random() * boxH;
-      const pz = (Math.random() - 0.5) * 16; // initial depth jitter around cut plane
+      const pz = (Math.random() - 0.5) * 16;
 
-      // Stroke forward impulse along the slash travel direction
-      const forwardImpulse = (Math.random() * 0.6 + 0.4) * 4.5;
+      // 3D Spherical explosion velocities:
+      // Azimuth angle: theta in [0, 2*PI]
+      // Elevation angle: phi in [-PI/2, PI/2]
+      const theta = Math.random() * Math.PI * 2;
+      const phi = (Math.random() - 0.5) * Math.PI;
 
-      // Two halves blast apart perpendicular to the cut seam
-      const side = Math.random() > 0.5 ? 1 : -1;
-      const blastPower = Math.random() * 3.5 + 2.0;
+      // High initial blast speed: 8 to 22 px/frame
+      const blastSpeed = Math.random() * 14 + 8;
 
-      // Slight natural scatter jitter
-      const jitter = (Math.random() - 0.5) * 2.0;
+      // Radial spherical velocities + upward explosive impulse
+      let vx = Math.cos(phi) * Math.cos(theta) * blastSpeed;
+      let vy = Math.sin(phi) * blastSpeed - (Math.random() * 3 + 1.5);
+      const vz = Math.cos(phi) * Math.sin(theta) * blastSpeed * 1.5;
 
-      const vx = tx * forwardImpulse + side * nx * blastPower + jitter;
-      const vy = ty * forwardImpulse + side * ny * blastPower + jitter;
-
-      // 3D Z-velocity: 60% burst forward towards the screen/camera (z < 0), 40% into depth (z > 0)
-      const vz =
-        Math.random() > 0.4
-          ? -(Math.random() * 4.2 + 1.2) // bursting out of screen
-          : Math.random() * 2.8 + 0.6; // flying into background
+      // Add forward momentum along the blade cut path
+      vx += tx * forwardImpulse;
+      vy += ty * forwardImpulse;
 
       // 2x2px and 4x4px base cube voxel sizes
       const size = Math.random() > 0.6 ? 4 : 2;
       const color = colors[Math.floor(Math.random() * colors.length)];
 
-      // 3D Rotational angles & tumbling angular velocities
+      // 3D Rotational angles & high-speed tumbling angular velocities
       const rotX = Math.random() * Math.PI * 2;
       const rotY = Math.random() * Math.PI * 2;
       const rotZ = Math.random() * Math.PI * 2;
 
-      const vRotX = (Math.random() - 0.5) * 0.35;
-      const vRotY = (Math.random() - 0.5) * 0.35;
-      const vRotZ = (Math.random() - 0.5) * 0.35;
+      const vRotX = (Math.random() - 0.5) * 0.5;
+      const vRotY = (Math.random() - 0.5) * 0.5;
+      const vRotZ = (Math.random() - 0.5) * 0.5;
 
       const maxLife = Math.random() * 0.35 + 0.45; // 0.45s to 0.8s
 
@@ -155,8 +177,8 @@ export class PixelCrumbleEngine {
         x: px,
         y: py,
         z: pz,
-        originX,
-        originY,
+        originX: centerX,
+        originY: centerY,
         vx,
         vy,
         vz,
@@ -178,24 +200,41 @@ export class PixelCrumbleEngine {
   }
 
   /**
-   * Update 3D particle physics step (60fps delta)
+   * Update 3D particle physics & shockwave expansion (60fps delta)
    */
   public update(dt: number) {
+    // 1. Expand and fade active shockwave rings
+    for (let i = this.shockwaves.length - 1; i >= 0; i--) {
+      const sw = this.shockwaves[i];
+      sw.elapsed += dt;
+      const progress = Math.min(1, sw.elapsed / sw.duration);
+      // Ease-out cubic for rapid initial shockwave expansion
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      sw.currentRadius = sw.startRadius + (sw.maxRadius - sw.startRadius) * easeOut;
+
+      if (sw.elapsed >= sw.duration) {
+        this.shockwaves.splice(i, 1);
+      }
+    }
+
+    // 2. Update 3D particles: Air drag (0.96), downward gravity (+0.45), rotations
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
 
-      // Gravity & air friction
-      p.vy += this.gravity;
+      // Air drag: p.vx *= 0.96; p.vy *= 0.96; p.vz *= 0.96;
       p.vx *= this.friction;
       p.vy *= this.friction;
       p.vz *= this.friction;
+
+      // Downward gravity: p.vy += 0.45;
+      p.vy += this.gravity;
 
       // 3D Translation
       p.x += p.vx;
       p.y += p.vy;
       p.z += p.vz;
 
-      // 3D Tumbling Angular Rotations
+      // 3D Tumbling Angular Rotations: p.rotX += p.vRotX; p.rotY += p.vRotY; p.rotZ += p.vRotZ;
       p.rotX += p.vRotX;
       p.rotY += p.vRotY;
       p.rotZ += p.vRotZ;
@@ -210,9 +249,44 @@ export class PixelCrumbleEngine {
   }
 
   /**
-   * Render 3D voxel cubes to 2D canvas context with perspective projection and depth shading
+   * Render shockwave rings and 3D voxel cubes to 2D canvas context
    */
   public render(ctx: CanvasRenderingContext2D) {
+    // 1. Render Shockwave Rings at cut epicenter
+    if (this.shockwaves.length > 0) {
+      ctx.save();
+      for (const sw of this.shockwaves) {
+        const progress = Math.min(1, sw.elapsed / sw.duration);
+        const alpha = Math.max(0, 1 - progress);
+        if (alpha <= 0) continue;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(sw.x, sw.y, sw.currentRadius, 0, Math.PI * 2);
+
+        // Neon red outer glowing shockwave stroke
+        ctx.strokeStyle = sw.color;
+        ctx.lineWidth = Math.max(1, 3.5 * (1 - progress));
+        ctx.globalAlpha = alpha;
+        ctx.shadowColor = sw.color;
+        ctx.shadowBlur = 18 * alpha;
+        ctx.stroke();
+
+        // Razor-white inner edge gleam
+        ctx.beginPath();
+        ctx.arc(sw.x, sw.y, sw.currentRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = Math.max(0.5, 1.2 * (1 - progress));
+        ctx.globalAlpha = alpha * 0.9;
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 8 * alpha;
+        ctx.stroke();
+
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
     if (this.particles.length === 0) return;
 
     ctx.save();
@@ -348,10 +422,11 @@ export class PixelCrumbleEngine {
   }
 
   /**
-   * Clear all active particles
+   * Clear all active particles and shockwave rings
    */
   public clear() {
     this.particles = [];
+    this.shockwaves = [];
   }
 }
 

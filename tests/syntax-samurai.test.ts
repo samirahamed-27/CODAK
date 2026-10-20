@@ -442,9 +442,10 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       const initialVy = engine.particles[0].vy;
       engine.update(1 / 60);
 
-      // vy should have increased by gravity (0.4) scaled by friction
-      expect(engine.gravity).toBe(0.4);
-      expect(engine.particles[0].vy).toBeGreaterThan(initialVy);
+      // vy reflects downward gravity (+0.45) and air drag (0.96)
+      expect(engine.gravity).toBe(0.45);
+      expect(engine.friction).toBe(0.96);
+      expect(engine.particles[0].vy).toBeCloseTo(initialVy * engine.friction + engine.gravity, 4);
       expect(engine.particles[0].life).toBeCloseTo(1 / 60, 4);
 
       // Advance by 1 second so all particles exceed maxLife
@@ -551,15 +552,93 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       expect(scaleForeground).toBeGreaterThan(scaleBackground);
     });
 
-    it('clears all active debris instantly on clear()', async () => {
+    it('spawns expanding neon red shockwave ring at cut epicenter expanding from 4px to 80px over 280ms', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      expect(engine.shockwaves).toHaveLength(0);
+
+      // Sliced token at x=100, y=200, width=60, height=30
+      engine.explode({
+        x: 100,
+        y: 200,
+        width: 60,
+        height: 30,
+        count: 40,
+      });
+
+      expect(engine.shockwaves).toHaveLength(1);
+      const sw = engine.shockwaves[0];
+
+      // Epicenter must be at token center: (100 + 30, 200 + 15) = (130, 215)
+      expect(sw.x).toBe(130);
+      expect(sw.y).toBe(215);
+
+      // Expansion parameters
+      expect(sw.startRadius).toBe(4);
+      expect(sw.maxRadius).toBe(80);
+      expect(sw.currentRadius).toBe(4);
+      expect(sw.duration).toBe(0.28);
+      expect(sw.color).toBe('#ef4444');
+
+      // Update by 140ms (halfway)
+      engine.update(0.14);
+      expect(engine.shockwaves[0].currentRadius).toBeGreaterThan(4);
+      expect(engine.shockwaves[0].currentRadius).toBeLessThanOrEqual(80);
+
+      // Update past 280ms duration -> should be culled
+      engine.update(0.15);
+      expect(engine.shockwaves).toHaveLength(0);
+    });
+
+    it('calculates 3D spherical explosion velocities with blastSpeed 8-22 and high-speed Z-depth burst', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      engine.explode({
+        x: 50,
+        y: 50,
+        width: 40,
+        height: 20,
+        count: 50,
+      });
+
+      expect(engine.particles).toHaveLength(50);
+
+      // Verify spherical velocities
+      engine.particles.forEach((p) => {
+        const speed2D = Math.hypot(p.vx, p.vy);
+        expect(speed2D).toBeGreaterThan(0);
+        // vz includes 1.5x multiplier for dramatic screen/depth blast
+        expect(typeof p.vz).toBe('number');
+      });
+
+      // Verify air drag (0.96) decay on vx, vy, vz
+      const p0 = engine.particles[0];
+      const initialVx = p0.vx;
+      const initialVz = p0.vz;
+
+      engine.update(1 / 60);
+
+      // vx and vz should decay by friction (0.96)
+      expect(Math.abs(p0.vx)).toBeCloseTo(Math.abs(initialVx * 0.96), 4);
+      expect(Math.abs(p0.vz)).toBeCloseTo(Math.abs(initialVz * 0.96), 4);
+    });
+
+    it('clears all active debris and shockwaves instantly on clear()', async () => {
       const { PixelCrumbleEngine } = await import(
         '@/components/games/syntax-samurai/PixelCrumbleEngine'
       );
       const engine = new PixelCrumbleEngine();
       engine.explode({ x: 0, y: 0, width: 50, height: 20, count: 50 });
       expect(engine.particles.length).toBe(50);
+      expect(engine.shockwaves.length).toBe(1);
+
       engine.clear();
       expect(engine.particles.length).toBe(0);
+      expect(engine.shockwaves.length).toBe(0);
     });
   });
 
