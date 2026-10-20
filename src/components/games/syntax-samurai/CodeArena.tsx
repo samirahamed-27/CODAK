@@ -33,6 +33,7 @@ export interface CodeArenaProps {
  * Pure Fisher-Yates shuffle utility to randomize multiple-choice repair buttons
  */
 export function shuffleArray<T>(array: T[]): T[] {
+  if (!array || array.length <= 1) return array ? [...array] : [];
   const copy = [...array];
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -276,29 +277,47 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
   });
 
   // Repair choice handler
-  const handleChooseFix = (option: string) => {
-    if (selectedFix !== null) return;
-    setSelectedFix(option);
+  const handleChooseFix = useCallback(
+    (option: string) => {
+      if (selectedFix !== null) return;
+      setSelectedFix(option);
 
-    const correct = option === question.correctReplacement;
-    setIsAnswerCorrect(correct);
+      const correct = option === question.correctReplacement;
+      setIsAnswerCorrect(correct);
 
-    const baseReward = correct ? difficulty.xpReward : 0;
-    const comboBonus = correct ? Math.round(difficulty.xpReward * (combo * 0.1)) : 0;
-    const timeBonus = correct ? Math.round(timeLeft * 2) : 0;
-    const slashBonus = isSliced ? 50 : 0;
-    const xp = baseReward + comboBonus + timeBonus + (correct ? slashBonus : 0);
+      const baseReward = correct ? difficulty.xpReward : 0;
+      const comboBonus = correct ? Math.round(difficulty.xpReward * (combo * 0.1)) : 0;
+      const timeBonus = correct ? Math.round(timeLeft * 2) : 0;
+      const slashBonus = isSliced ? 50 : 0;
+      const xp = baseReward + comboBonus + timeBonus + (correct ? slashBonus : 0);
 
-    setTimeout(() => {
-      onQuestionCompleted?.(correct, xp, {
-        wasSliced: isSliced,
-        selectedFix: option,
-        timeRemainingSec: timeLeft,
-        combo,
-        timeBonus,
-      });
-    }, 1600);
-  };
+      setTimeout(() => {
+        onQuestionCompleted?.(correct, xp, {
+          wasSliced: isSliced,
+          selectedFix: option,
+          timeRemainingSec: timeLeft,
+          combo,
+          timeBonus,
+        });
+      }, 1600);
+    },
+    [combo, difficulty.xpReward, isSliced, onQuestionCompleted, question.correctReplacement, selectedFix, timeLeft]
+  );
+
+  // Keyboard shortcut listener (keys 1-4 to trigger repair choices 01-04)
+  useEffect(() => {
+    if (!isSliced || selectedFix !== null) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && num <= shuffledFixOptions.length) {
+        handleChooseFix(shuffledFixOptions[num - 1]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleChooseFix, isSliced, selectedFix, shuffledFixOptions]);
 
 const codeFontStyle: React.CSSProperties = {
   fontFamily:
@@ -695,7 +714,7 @@ const codeFontStyle: React.CSSProperties = {
 
                 return (
                   <button
-                    key={i}
+                    key={`${opt}-${i}`}
                     onClick={() => handleChooseFix(opt)}
                     disabled={selectedFix !== null}
                     className={`group relative p-3 rounded-lg border font-mono text-xs sm:text-sm font-bold tracking-wider transition-all duration-200 text-center overflow-hidden ${btnStyle}`}

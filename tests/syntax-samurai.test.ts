@@ -420,6 +420,15 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       expect(codeArenaContent).toContain('shuffledFixOptions = useMemo');
       expect(codeArenaContent).toContain('shuffledFixOptions.map');
       expect(codeArenaContent).not.toContain('question.fixOptions.map');
+
+      // 4. Edge-case safety checks
+      expect(shuffleArray([])).toEqual([]);
+      expect(shuffleArray(['single'])).toEqual(['single']);
+      expect(shuffleArray(null as unknown as string[])).toEqual([]);
+
+      // 5. Verify keyboard shortcut integration for 1-4
+      expect(codeArenaContent).toContain("addEventListener('keydown'");
+      expect(codeArenaContent).toContain('shuffledFixOptions[num - 1]');
     });
 
     it('verifies expansive arena viewport configuration (Refinement 4)', () => {
