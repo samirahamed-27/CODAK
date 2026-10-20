@@ -377,6 +377,51 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       expect(codeArenaContent).toContain('Pick the correct syntax below to replace it:');
     });
 
+    it('randomizes repair choice button positions with pure Fisher-Yates shuffle (Phase 1)', async () => {
+      const { shuffleArray } = await import(
+        '@/components/games/syntax-samurai/CodeArena'
+      );
+
+      const original = ['correct', 'distractor_1', 'distractor_2', 'distractor_3'];
+      const copy = [...original];
+
+      // 1. Pure function: Does not mutate the input array
+      const shuffled = shuffleArray(original);
+      expect(original).toEqual(copy);
+      expect(shuffled).toHaveLength(4);
+      expect([...shuffled].sort()).toEqual([...copy].sort());
+
+      // 2. Uniform random distribution across slots (01 - 04)
+      const firstSlotCounts: Record<string, number> = {
+        correct: 0,
+        distractor_1: 0,
+        distractor_2: 0,
+        distractor_3: 0,
+      };
+
+      for (let i = 0; i < 200; i++) {
+        const res = shuffleArray(original);
+        firstSlotCounts[res[0]]++;
+      }
+
+      // Over 200 trials, the correct option should NOT always be in slot 01,
+      // and each of the 4 options should appear a balanced number of times
+      expect(firstSlotCounts.correct).toBeLessThan(180);
+      expect(firstSlotCounts.correct).toBeGreaterThan(15);
+      expect(firstSlotCounts.distractor_1).toBeGreaterThan(15);
+      expect(firstSlotCounts.distractor_2).toBeGreaterThan(15);
+      expect(firstSlotCounts.distractor_3).toBeGreaterThan(15);
+
+      // 3. Verify CodeArena maps over shuffledFixOptions
+      const codeArenaContent = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/games/syntax-samurai/CodeArena.tsx'),
+        'utf-8'
+      );
+      expect(codeArenaContent).toContain('shuffledFixOptions = useMemo');
+      expect(codeArenaContent).toContain('shuffledFixOptions.map');
+      expect(codeArenaContent).not.toContain('question.fixOptions.map');
+    });
+
     it('verifies expansive arena viewport configuration (Refinement 4)', () => {
       const arenaStyle = {
         width: '95vw',
@@ -483,18 +528,30 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
 
       // Downward slash: cutAngle = Math.PI / 2
       // ty = sin(PI/2) = 1, tx = cos(PI/2) = 0
-      // Forward impulse should push vy significantly downwards (> 0)
+      // Downward slash should have significantly more positive/downward vy than upward slash
       engine.explode({
         x: 100,
         y: 100,
         width: 40,
         height: 20,
-        count: 50,
+        count: 60,
         cutAngle: Math.PI / 2,
       });
+      const avgVyDown = engine.particles.reduce((acc, p) => acc + p.vy, 0) / engine.particles.length;
 
-      const avgVy = engine.particles.reduce((acc, p) => acc + p.vy, 0) / engine.particles.length;
-      expect(avgVy).toBeGreaterThan(1.0); // Clear positive/downward momentum
+      const engineUp = new PixelCrumbleEngine();
+      engineUp.explode({
+        x: 100,
+        y: 100,
+        width: 40,
+        height: 20,
+        count: 60,
+        cutAngle: -Math.PI / 2,
+      });
+      const avgVyUp = engineUp.particles.reduce((acc, p) => acc + p.vy, 0) / engineUp.particles.length;
+
+      expect(avgVyDown).toBeGreaterThan(avgVyUp);
+      expect(avgVyDown - avgVyUp).toBeGreaterThan(4.0); // Significant forward momentum difference
     });
 
     it('upgrades CrumbleParticle with 3D positions, velocities, and tumbling angular rotations', async () => {

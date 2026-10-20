@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   SyntaxQuestion,
   EnemyProfile,
@@ -27,6 +27,18 @@ export interface CodeArenaProps {
     meta?: QuestionResultMeta
   ) => void;
   onForfeit?: () => void;
+}
+
+/**
+ * Pure Fisher-Yates shuffle utility to randomize multiple-choice repair buttons
+ */
+export function shuffleArray<T>(array: T[]): T[] {
+  const copy = [...array];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
 export const CodeArena: React.FC<CodeArenaProps> = ({
@@ -59,6 +71,11 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
   const [combo, setCombo] = useState<number>(0);
   const [timeLeft, setTimeLeft] = useState<number>(difficulty.timePerQuestionSec);
+
+  // Randomize repair choice button positions across all 4 slots (01-04)
+  const shuffledFixOptions = useMemo(() => {
+    return shuffleArray(question.fixOptions);
+  }, [question.fixOptions]);
   const [recentEvent, setRecentEvent] = useState<{
     type: 'hit' | 'parry';
     text: string;
@@ -665,7 +682,7 @@ const codeFontStyle: React.CSSProperties = {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {question.fixOptions.map((opt, i) => {
+              {shuffledFixOptions.map((opt, i) => {
                 const isSelected = selectedFix === opt;
                 const isCorrect = opt === question.correctReplacement;
 
