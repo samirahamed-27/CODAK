@@ -54,15 +54,15 @@ export function PracticeCard() {
         </div>
 
         {/* Platform Directory Chips */}
-        <div className="flex items-center justify-center gap-1.5 text-[10px] font-mono text-zinc-300">
-          <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10" title="LeetCode problems">
+        <div className="flex items-center justify-center gap-1.5 text-[10px] font-mono">
+          <span className="px-2 py-0.5 rounded-md bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-semibold shadow-sm shadow-yellow-500/5" title="LeetCode problems">
             LeetCode
           </span>
-          <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10" title="HackerRank problems">
-            HackerRank
-          </span>
-          <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10" title="Codeforces problems">
+          <span className="px-2 py-0.5 rounded-md bg-red-500/10 border border-red-500/30 text-red-400 font-semibold shadow-sm shadow-red-500/5" title="Codeforces problems">
             Codeforces
+          </span>
+          <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold shadow-sm shadow-emerald-500/5" title="HackerRank problems">
+            HackerRank
           </span>
         </div>
       </div>
@@ -147,7 +147,7 @@ export function PracticeCard() {
             <span>Verifiable Ledger XP</span>
           </div>
           <p className="text-[11px] text-zinc-400 leading-snug">
-            Solve problems on LeetCode, Codeforces, or HackerRank and claim verified XP credited directly to your student ledger.
+            Solve problems on <span className="text-yellow-400 font-semibold">LeetCode</span>, <span className="text-red-400 font-semibold">Codeforces</span>, or <span className="text-emerald-400 font-semibold">HackerRank</span> and claim verified XP credited directly to your student ledger.
           </p>
         </div>
 

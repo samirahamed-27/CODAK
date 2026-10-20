@@ -165,6 +165,16 @@ export default function StudentPracticePage() {
   };
 
   const getPlatformBadge = (platform: string) => {
+    const p = (platform || '').toLowerCase();
+    if (p.includes('leetcode')) {
+      return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/40 shadow-sm shadow-yellow-500/10';
+    }
+    if (p.includes('codeforces')) {
+      return 'text-red-400 bg-red-500/10 border-red-500/40 shadow-sm shadow-red-500/10';
+    }
+    if (p.includes('hackerrank') || p.includes('hackerank')) {
+      return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/40 shadow-sm shadow-emerald-500/10';
+    }
     return 'text-zinc-300 bg-zinc-900/90 border-zinc-700';
   };
 
@@ -326,20 +336,43 @@ export default function StudentPracticePage() {
                 Filter by Platform / Website
               </span>
               <div className="flex flex-wrap gap-2">
-                {['All', ...platforms].map((plat) => (
-                  <button
-                    key={plat}
-                    onClick={() => setSelectedPlatform(plat)}
-                    className={clsx(
-                      'px-3.5 py-1.5 rounded-xl text-xs font-mono transition-all border',
-                      selectedPlatform === plat
-                        ? 'bg-white text-black font-bold border-white shadow-md shadow-white/10'
-                        : 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
-                    )}
-                  >
-                    {plat}
-                  </button>
-                ))}
+                {['All', ...platforms].map((plat) => {
+                  const p = plat.toLowerCase();
+                  const isSelected = selectedPlatform === plat;
+                  let colorClasses = '';
+
+                  if (isSelected) {
+                    if (p.includes('leetcode')) {
+                      colorClasses = 'bg-yellow-400 text-black font-bold border-yellow-400 shadow-md shadow-yellow-500/20';
+                    } else if (p.includes('codeforces')) {
+                      colorClasses = 'bg-red-500 text-white font-bold border-red-500 shadow-md shadow-red-500/20';
+                    } else if (p.includes('hackerrank') || p.includes('hackerank')) {
+                      colorClasses = 'bg-emerald-500 text-black font-bold border-emerald-500 shadow-md shadow-emerald-500/20';
+                    } else {
+                      colorClasses = 'bg-white text-black font-bold border-white shadow-md shadow-white/10';
+                    }
+                  } else {
+                    if (p.includes('leetcode')) {
+                      colorClasses = 'border-yellow-500/30 text-yellow-400/90 hover:text-yellow-300 hover:border-yellow-500/60 bg-yellow-500/5';
+                    } else if (p.includes('codeforces')) {
+                      colorClasses = 'border-red-500/30 text-red-400/90 hover:text-red-300 hover:border-red-500/60 bg-red-500/5';
+                    } else if (p.includes('hackerrank') || p.includes('hackerank')) {
+                      colorClasses = 'border-emerald-500/30 text-emerald-400/90 hover:text-emerald-300 hover:border-emerald-500/60 bg-emerald-500/5';
+                    } else {
+                      colorClasses = 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700';
+                    }
+                  }
+
+                  return (
+                    <button
+                      key={plat}
+                      onClick={() => setSelectedPlatform(plat)}
+                      className={clsx('px-3.5 py-1.5 rounded-xl text-xs font-mono transition-all border', colorClasses)}
+                    >
+                      {plat}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -520,7 +553,12 @@ export default function StudentPracticePage() {
             {/* Problem Overview */}
             <div className="p-4 rounded-2xl bg-black/60 border border-zinc-800 space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">
+                <span
+                  className={clsx(
+                    'text-[10px] font-mono px-2 py-0.5 rounded border font-semibold',
+                    getPlatformBadge(selectedProblem.platform)
+                  )}
+                >
                   {selectedProblem.platform}
                 </span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/10 text-white font-bold border border-white/20">
