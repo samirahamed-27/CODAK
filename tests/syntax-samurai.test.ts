@@ -651,8 +651,17 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       expect(palette.top).toBe('#fca5a5');
       expect(palette.side).toBe('#b91c1c');
 
+      // Test short hex (#f00) and computed style format (rgb(34, 197, 94))
+      const shortPalette = getVoxelPalette('#f00');
+      expect(shortPalette.base).toBe('#f00');
+      expect(shortPalette.top).toContain('rgb(');
+
+      const rgbPalette = getVoxelPalette('rgb(34, 197, 94)');
+      expect(rgbPalette.base).toBe('rgb(34, 197, 94)');
+      expect(rgbPalette.top).toContain('rgb(');
+
       const engine = new PixelCrumbleEngine();
-      engine.explode({ x: 0, y: 0, width: 20, height: 20, colors: ['#ef4444', '#10b981'] });
+      engine.explode({ x: 0, y: 0, width: 20, height: 20, colors: ['#ef4444', '#10b981', 'rgb(52, 211, 153)'] });
       engine.particles.forEach((p) => {
         expect(p.palette).toBeDefined();
         expect(typeof p.palette.base).toBe('string');

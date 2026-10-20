@@ -84,14 +84,27 @@ export function getVoxelPalette(color: string): VoxelPalette {
   const cached = PALETTE_CACHE.get(color);
   if (cached) return cached;
 
-  // Compute isometric shades for custom colors
+  // Compute isometric shades for custom colors (supports #rrggbb, #rgb, rgb(...), rgba(...))
   let r = 239,
     g = 68,
     b = 68;
-  if (color.startsWith('#') && color.length === 7) {
-    r = parseInt(color.slice(1, 3), 16) || 0;
-    g = parseInt(color.slice(3, 5), 16) || 0;
-    b = parseInt(color.slice(5, 7), 16) || 0;
+  if (color.startsWith('#')) {
+    if (color.length === 7) {
+      r = parseInt(color.slice(1, 3), 16) || 0;
+      g = parseInt(color.slice(3, 5), 16) || 0;
+      b = parseInt(color.slice(5, 7), 16) || 0;
+    } else if (color.length === 4) {
+      r = parseInt(color[1] + color[1], 16) || 0;
+      g = parseInt(color[2] + color[2], 16) || 0;
+      b = parseInt(color[3] + color[3], 16) || 0;
+    }
+  } else if (color.startsWith('rgb')) {
+    const m = color.match(/\d+/g);
+    if (m && m.length >= 3) {
+      r = parseInt(m[0], 10) || 0;
+      g = parseInt(m[1], 10) || 0;
+      b = parseInt(m[2], 10) || 0;
+    }
   }
   const top = `rgb(${Math.min(255, r + 70)}, ${Math.min(255, g + 70)}, ${Math.min(255, b + 70)})`;
   const side = `rgb(${Math.max(0, r - 60)}, ${Math.max(0, g - 60)}, ${Math.max(0, b - 60)})`;
