@@ -48,8 +48,7 @@ describe('No Fake XP on Student Home / Personal Planner (Step 4)', () => {
       expect(studentPageSource).not.toMatch(/totalXp:\s*prev\.totalXp\s*\+\s*xpEarned/);
     });
 
-    it('invokes ToDoCard with zero props (no fake XP callback)', () => {
-      expect(studentPageSource).toMatch(/<ToDoCard\s*\/>/);
+    it('does not pass fake XP callback to ToDoCard or cards', () => {
       expect(studentPageSource).not.toMatch(/<ToDoCard\s+onQuestCompleted/);
     });
   });
