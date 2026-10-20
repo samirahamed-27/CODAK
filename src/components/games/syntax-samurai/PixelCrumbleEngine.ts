@@ -44,11 +44,45 @@ export interface ExplodeBoxOptions {
   colors?: string[];
 }
 
+// 8 canonical unit cube vertices
+const UNIT_CUBE_VERTS = [
+  { x: -1, y: -1, z: -1 }, // 0: Top-Left-Front
+  { x: 1, y: -1, z: -1 },  // 1: Top-Right-Front
+  { x: 1, y: 1, z: -1 },   // 2: Bottom-Right-Front
+  { x: -1, y: 1, z: -1 },  // 3: Bottom-Left-Front
+  { x: -1, y: -1, z: 1 },  // 4: Top-Left-Back
+  { x: 1, y: -1, z: 1 },   // 5: Top-Right-Back
+  { x: 1, y: 1, z: 1 },    // 6: Bottom-Right-Back
+  { x: -1, y: 1, z: 1 },   // 7: Bottom-Left-Back
+] as const;
+
+// 6 canonical voxel faces with outward normals
+const CUBE_FACES = [
+  { indices: [0, 1, 2, 3], norm: { x: 0, y: 0, z: -1 }, type: 'front' as const },
+  { indices: [5, 4, 7, 6], norm: { x: 0, y: 0, z: 1 },  type: 'back' as const },
+  { indices: [4, 5, 1, 0], norm: { x: 0, y: -1, z: 0 }, type: 'top' as const },
+  { indices: [3, 2, 6, 7], norm: { x: 0, y: 1, z: 0 },  type: 'bottom' as const },
+  { indices: [1, 5, 6, 2], norm: { x: 1, y: 0, z: 0 },  type: 'right' as const },
+  { indices: [4, 0, 3, 7], norm: { x: -1, y: 0, z: 0 }, type: 'left' as const },
+] as const;
+
 export class PixelCrumbleEngine {
   public particles: CrumbleParticle[] = [];
   public gravity: number = 0.4; // ay = +0.4 downward acceleration
   public friction: number = 0.985;
   public cameraDistance: number = 320; // Perspective FOV camera distance
+
+  // Reusable 8-vertex buffer to eliminate per-particle GC allocations
+  private rotVerts = [
+    { x: 0, y: 0, z: 0 },
+    { x: 0, y: 0, z: 0 },
+    { x: 0, y: 0, z: 0 },
+    { x: 0, y: 0, z: 0 },
+    { x: 0, y: 0, z: 0 },
+    { x: 0, y: 0, z: 0 },
+    { x: 0, y: 0, z: 0 },
+    { x: 0, y: 0, z: 0 },
+  ];
 
   /**
    * Spawns 40–80 3D voxel cube particles from the sliced token bounding box
@@ -70,15 +104,17 @@ export class PixelCrumbleEngine {
     const nx = -Math.sin(cutAngle);
     const ny = Math.cos(cutAngle);
 
-    const originX = x + width / 2;
-    const originY = y + height / 2;
+    const boxW = width > 0 ? width : 16;
+    const boxH = height > 0 ? height : 16;
+    const originX = x + boxW / 2;
+    const originY = y + boxH / 2;
 
     const newParticles: CrumbleParticle[] = [];
 
     for (let i = 0; i < count; i++) {
       // Distribute particle inside the token bounding box
-      const px = x + Math.random() * width;
-      const py = y + Math.random() * height;
+      const px = x + Math.random() * boxW;
+      const py = y + Math.random() * boxH;
       const pz = (Math.random() - 0.5) * 16; // initial depth jitter around cut plane
 
       // Stroke forward impulse along the slash travel direction
@@ -195,18 +231,6 @@ export class PixelCrumbleEngine {
       const projSize = Math.max(1.2, p.size * scale);
       const h = projSize / 2;
 
-      // 8 local 3D vertices of the voxel cube centered at origin
-      const rawVerts = [
-        { x: -h, y: -h, z: -h }, // 0: Top-Left-Front
-        { x: h, y: -h, z: -h }, // 1: Top-Right-Front
-        { x: h, y: h, z: -h }, // 2: Bottom-Right-Front
-        { x: -h, y: h, z: -h }, // 3: Bottom-Left-Front
-        { x: -h, y: -h, z: h }, // 4: Top-Left-Back
-        { x: h, y: -h, z: h }, // 5: Top-Right-Back
-        { x: h, y: h, z: h }, // 6: Bottom-Right-Back
-        { x: -h, y: h, z: h }, // 7: Bottom-Left-Back
-      ];
-
       // Precalculate 3D rotation trigonometric values
       const cosX = Math.cos(p.rotX);
       const sinX = Math.sin(p.rotX);
@@ -215,46 +239,50 @@ export class PixelCrumbleEngine {
       const cosZ = Math.cos(p.rotZ);
       const sinZ = Math.sin(p.rotZ);
 
-      // Rotate vertex around X, Y, and Z axes
-      const rotate = (v: { x: number; y: number; z: number }) => {
-        // Pitch (around X)
-        const y1 = v.y * cosX - v.z * sinX;
-        const z1 = v.y * sinX + v.z * cosX;
-        // Yaw (around Y)
-        const x2 = v.x * cosY + z1 * sinY;
-        const z2 = -v.x * sinY + z1 * cosY;
-        // Roll (around Z)
-        const x3 = x2 * cosZ - y1 * sinZ;
-        const y3 = x2 * sinZ + y1 * cosZ;
-        return { x: x3, y: y3, z: z2 };
+      // Rotate 3D normal vector
+      const rotateNorm = (n: { readonly x: number; readonly y: number; readonly z: number }) => {
+        const y1 = n.y * cosX - n.z * sinX;
+        const z1 = n.y * sinX + n.z * cosX;
+        const x2 = n.x * cosY + z1 * sinY;
+        const z2 = -n.x * sinY + z1 * cosY;
+        return {
+          x: x2 * cosZ - y1 * sinZ,
+          y: x2 * sinZ + y1 * cosZ,
+          z: z2,
+        };
       };
 
-      const verts = rawVerts.map(rotate);
-
-      // Define 6 voxel faces with outward normal vectors:
-      // Front:  [0, 1, 2, 3], norm: (0, 0, -1)
-      // Back:   [5, 4, 7, 6], norm: (0, 0, 1)
-      // Top:    [4, 5, 1, 0], norm: (0, -1, 0)
-      // Bottom: [3, 2, 6, 7], norm: (0, 1, 0)
-      // Right:  [1, 5, 6, 2], norm: (1, 0, 0)
-      // Left:   [4, 0, 3, 7], norm: (-1, 0, 0)
-      const faces = [
-        { indices: [0, 1, 2, 3], norm: { x: 0, y: 0, z: -1 }, type: 'front' as const },
-        { indices: [5, 4, 7, 6], norm: { x: 0, y: 0, z: 1 }, type: 'back' as const },
-        { indices: [4, 5, 1, 0], norm: { x: 0, y: -1, z: 0 }, type: 'top' as const },
-        { indices: [3, 2, 6, 7], norm: { x: 0, y: 1, z: 0 }, type: 'bottom' as const },
-        { indices: [1, 5, 6, 2], norm: { x: 1, y: 0, z: 0 }, type: 'right' as const },
-        { indices: [4, 0, 3, 7], norm: { x: -1, y: 0, z: 0 }, type: 'left' as const },
-      ];
+      // Rotate 8 vertices directly into reusable buffer
+      for (let vi = 0; vi < 8; vi++) {
+        const uv = UNIT_CUBE_VERTS[vi];
+        const vx = uv.x * h;
+        const vy = uv.y * h;
+        const vz = uv.z * h;
+        // Pitch (around X)
+        const y1 = vy * cosX - vz * sinX;
+        const z1 = vy * sinX + vz * cosX;
+        // Yaw (around Y)
+        const x2 = vx * cosY + z1 * sinY;
+        const z2 = -vx * sinY + z1 * cosY;
+        // Roll (around Z)
+        this.rotVerts[vi].x = x2 * cosZ - y1 * sinZ;
+        this.rotVerts[vi].y = x2 * sinZ + y1 * cosZ;
+        this.rotVerts[vi].z = z2;
+      }
 
       // Identify visible faces (Backface Culling: normal points towards camera if rNorm.z < 0)
       const visibleFaces = [];
-      for (const face of faces) {
-        const rNorm = rotate(face.norm);
+      for (const face of CUBE_FACES) {
+        const rNorm = rotateNorm(face.norm);
         if (rNorm.z < 0) {
-          const pts = face.indices.map((idx) => verts[idx]);
-          const avgZ = (pts[0].z + pts[1].z + pts[2].z + pts[3].z) / 4;
-          visibleFaces.push({ face, pts, rNorm, avgZ });
+          const idxs = face.indices;
+          const avgZ =
+            (this.rotVerts[idxs[0]].z +
+              this.rotVerts[idxs[1]].z +
+              this.rotVerts[idxs[2]].z +
+              this.rotVerts[idxs[3]].z) *
+            0.25;
+          visibleFaces.push({ face, rNorm, avgZ });
         }
       }
 
@@ -266,12 +294,18 @@ export class PixelCrumbleEngine {
       ctx.shadowColor = p.color;
       ctx.shadowBlur = projSize >= 4 ? 6 : 2;
 
-      for (const { face, pts, rNorm } of visibleFaces) {
+      for (const { face, rNorm } of visibleFaces) {
+        const idxs = face.indices;
+        const p0 = this.rotVerts[idxs[0]];
+        const p1 = this.rotVerts[idxs[1]];
+        const p2 = this.rotVerts[idxs[2]];
+        const p3 = this.rotVerts[idxs[3]];
+
         ctx.beginPath();
-        ctx.moveTo(projX + pts[0].x, projY + pts[0].y);
-        ctx.lineTo(projX + pts[1].x, projY + pts[1].y);
-        ctx.lineTo(projX + pts[2].x, projY + pts[2].y);
-        ctx.lineTo(projX + pts[3].x, projY + pts[3].y);
+        ctx.moveTo(projX + p0.x, projY + p0.y);
+        ctx.lineTo(projX + p1.x, projY + p1.y);
+        ctx.lineTo(projX + p2.x, projY + p2.y);
+        ctx.lineTo(projX + p3.x, projY + p3.y);
         ctx.closePath();
 
         // 1. Base face fill
