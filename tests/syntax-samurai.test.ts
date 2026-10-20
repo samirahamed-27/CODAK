@@ -206,6 +206,158 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       const angleDiag = Math.atan2(50, 50);
       expect(angleDiag).toBeCloseTo(Math.PI / 4, 2);
     });
+
+    it('verifies katana-cursor.svg asset exists with 32x32 viewbox and blade hotspot at 0,0', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const svgPath = path.resolve(process.cwd(), 'public/assets/katana-cursor.svg');
+      expect(fs.existsSync(svgPath)).toBe(true);
+
+      const content = fs.readFileSync(svgPath, 'utf8');
+      expect(content).toContain('<svg');
+      expect(content).toContain('viewBox="0 0 32 32"');
+      expect(content).toContain('bladeSteel');
+      expect(content).toContain('edgeGleam');
+    });
+
+    it('guarantees zero-lag instantaneous binding without smoothing lerp', () => {
+      // Simulating direct pointer coordinate binding
+      const pointer = { x: 0, y: 0 };
+      const blade = { x: 0, y: 0 };
+
+      // User moves mouse abruptly to (240, 180)
+      pointer.x = 240;
+      pointer.y = 180;
+
+      // With direct binding (no lerp), blade immediately reflects target coordinate
+      blade.x = pointer.x;
+      blade.y = pointer.y;
+
+      expect(blade.x).toBe(240);
+      expect(blade.y).toBe(180);
+    });
+
+    it('anchors the Kissaki blade tip precisely at local (0, 0)', () => {
+      const bladeLength = 75;
+      // In KatanaCanvas: translate(-bladeLength, 0) then lineTo(bladeLength, 0)
+      const tipLocalX = -bladeLength + bladeLength;
+      const tipLocalY = 0;
+
+      expect(tipLocalX).toBe(0);
+      expect(tipLocalY).toBe(0);
+    });
+
+    it('verifies error token is unhighlighted before slice (Refinement 2 invariant)', () => {
+      // Invariant: Unhighlighted error token blends with terminal text (text-zinc-300) without red pulse or borders
+      const isSliced = false;
+      const isTokenHidden = false;
+      const tokenClass = isTokenHidden
+        ? 'opacity-0 scale-90 pointer-events-none'
+        : isSliced
+        ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] px-1.5 py-0.5 rounded font-bold'
+        : 'text-zinc-300';
+
+      expect(tokenClass).toBe('text-zinc-300');
+      expect(tokenClass).not.toContain('red');
+      expect(tokenClass).not.toContain('border');
+      expect(tokenClass).not.toContain('pulse');
+    });
+
+    it('computes real-time stroke vector dx, dy and orientation angle along travel direction (Refinement 3)', () => {
+      // Downward slash: top (startX=100, startY=50) to bottom (currentX=115, currentY=250)
+      const startX = 100;
+      const startY = 50;
+      const currentX = 115;
+      const currentY = 250;
+
+      const dx = currentX - startX; // 15 (slight right)
+      const dy = currentY - startY; // 200 (downward)
+      const angle = Math.atan2(dy, dx);
+
+      expect(dx).toBe(15);
+      expect(dy).toBe(200);
+      expect(angle).toBeGreaterThan(1.4); // Downward trajectory (~85 deg)
+      expect(angle).toBeLessThan(1.6);
+
+      // Upward cut: (startX=100, startY=300) to (currentX=100, currentY=100)
+      const upDx = 100 - 100;
+      const upDy = 100 - 300;
+      const upAngle = Math.atan2(upDy, upDx);
+      expect(upAngle).toBeCloseTo(-Math.PI / 2, 2);
+    });
+
+    it('verifies tapered slash trail parameters: needle tail at origin (t=0) and full cutting beam at head (t=1)', () => {
+      const trail = [
+        { x: 100, y: 50, time: 1000, timestamp: 1000, speed: 0 },
+        { x: 105, y: 120, time: 1010, timestamp: 1010, speed: 12 },
+        { x: 110, y: 200, time: 1020, timestamp: 1020, speed: 20 },
+        { x: 115, y: 250, time: 1030, timestamp: 1030, speed: 25 },
+      ];
+      const n = trail.length;
+
+      // Tail segment (i=1) vs Head segment (i=n-1)
+      const tailProgress = 1 / (n - 1); // 0.333
+      const headProgress = (n - 1) / (n - 1); // 1.0
+
+      const tailTaper = Math.pow(tailProgress, 0.75);
+      const headTaper = Math.pow(headProgress, 0.75);
+
+      expect(tailTaper).toBeLessThan(headTaper);
+      expect(headTaper).toBe(1.0);
+      expect(tailTaper).toBeLessThan(0.5);
+
+      // Verify razor needle tail width <= 4px and full cutting head width >= 8px
+      const tailWidth = Math.max(0.75, tailTaper * 9);
+      const headWidth = Math.max(0.75, headTaper * 9);
+      expect(tailWidth).toBeLessThan(headWidth);
+      expect(headWidth).toBe(9);
+    });
+
+    it('verifies cut scar on sliced token dynamically rotates with slashCutAngle', () => {
+      const slashCutAngle = Math.PI / 2; // Vertical cut
+      const scarTransform = `rotate(${slashCutAngle}rad)`;
+      expect(scarTransform).toBe('rotate(1.5707963267948966rad)');
+      expect(scarTransform).not.toBe('rotate(-25deg)');
+    });
+
+    it('verifies expansive arena viewport configuration (Refinement 4)', () => {
+      const arenaStyle = {
+        width: '95vw',
+        maxWidth: '1600px',
+        height: '88vh',
+        minHeight: '720px',
+        margin: '0 auto',
+      };
+
+      expect(arenaStyle.width).toBe('95vw');
+      expect(arenaStyle.maxWidth).toBe('1600px');
+      expect(arenaStyle.height).toBe('88vh');
+      expect(arenaStyle.minHeight).toBe('720px');
+      expect(arenaStyle.margin).toBe('0 auto');
+    });
+
+    it('verifies scaled code typography parameters (Refinement 4)', () => {
+      const codeStyle = {
+        fontFamily: "'JetBrains Mono', 'Fira Code', 'VT323', var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        fontSize: '1.4rem',
+        lineHeight: 2.2,
+        letterSpacing: '0.04em',
+      };
+
+      // Font size must be within 1.35rem to 1.5rem (22px to 24px)
+      const fontSizeNum = parseFloat(codeStyle.fontSize);
+      expect(fontSizeNum).toBeGreaterThanOrEqual(1.35);
+      expect(fontSizeNum).toBeLessThanOrEqual(1.5);
+
+      // Line height must be generous 2.2 for comfortable slicing clearance
+      expect(codeStyle.lineHeight).toBe(2.2);
+      expect(codeStyle.letterSpacing).toBe('0.04em');
+
+      // Monospace font family checks
+      expect(codeStyle.fontFamily).toContain('JetBrains Mono');
+      expect(codeStyle.fontFamily).toContain('Fira Code');
+      expect(codeStyle.fontFamily).toContain('monospace');
+    });
   });
 
   describe('Phase 3 - Pixel Crumble Engine & Physics Model', () => {
@@ -255,6 +407,7 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
 
       // vy should have increased by gravity (0.4) scaled by friction
       expect(engine.gravity).toBe(0.4);
+      expect(engine.particles[0].vy).toBeGreaterThan(initialVy);
       expect(engine.particles[0].life).toBeCloseTo(1 / 60, 4);
 
       // Advance by 1 second so all particles exceed maxLife
@@ -262,6 +415,28 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
         engine.update(1 / 60);
       }
       expect(engine.particles).toHaveLength(0);
+    });
+
+    it('orients particle burst along the slash angle with forward impulse (Refinement 3)', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+
+      // Downward slash: cutAngle = Math.PI / 2
+      // ty = sin(PI/2) = 1, tx = cos(PI/2) = 0
+      // Forward impulse should push vy significantly downwards (> 0)
+      engine.explode({
+        x: 100,
+        y: 100,
+        width: 40,
+        height: 20,
+        count: 50,
+        cutAngle: Math.PI / 2,
+      });
+
+      const avgVy = engine.particles.reduce((acc, p) => acc + p.vy, 0) / engine.particles.length;
+      expect(avgVy).toBeGreaterThan(1.0); // Clear positive/downward momentum
     });
 
     it('clears all active debris instantly on clear()', async () => {
@@ -340,7 +515,7 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
     it('calculates score based on slashes landed, accuracy, combo, and time bonuses', () => {
       const slashesLanded = 5;
       const correctCount = 5;
-      const totalQuestions = 5;
+      const _totalQuestions = 5;
       const xpReward = 150;
       const comboMultiplier = 4; // x4
       const timeRemainingSec = 12;

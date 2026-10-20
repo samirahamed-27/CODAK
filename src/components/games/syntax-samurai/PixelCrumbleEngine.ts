@@ -46,6 +46,10 @@ export class PixelCrumbleEngine {
     count = 60,
     colors = ['#ef4444', '#f87171', '#f59e0b', '#ffffff', '#991b1b'],
   }: ExplodeBoxOptions) {
+    // Tangent vector along the slash stroke direction
+    const tx = Math.cos(cutAngle);
+    const ty = Math.sin(cutAngle);
+
     // Normal vector perpendicular to the cut line
     const nx = -Math.sin(cutAngle);
     const ny = Math.cos(cutAngle);
@@ -57,14 +61,18 @@ export class PixelCrumbleEngine {
       const px = x + Math.random() * width;
       const py = y + Math.random() * height;
 
-      // Two halves blast apart away from the cut line
-      const side = Math.random() > 0.5 ? 1 : -1;
-      const blastPower = Math.random() * 4 + 2.5;
-      const spreadX = (Math.random() - 0.5) * 5;
-      const spreadY = -Math.random() * 4 - 1.5; // Initial upward pop
+      // Stroke forward impulse along the slash travel direction
+      const forwardImpulse = (Math.random() * 0.6 + 0.4) * 4.5;
 
-      const vx = side * nx * blastPower + spreadX;
-      const vy = side * ny * blastPower + spreadY;
+      // Two halves blast apart perpendicular to the cut seam
+      const side = Math.random() > 0.5 ? 1 : -1;
+      const blastPower = Math.random() * 3.5 + 2.0;
+
+      // Slight natural scatter jitter
+      const jitter = (Math.random() - 0.5) * 2.0;
+
+      const vx = tx * forwardImpulse + side * nx * blastPower + jitter;
+      const vy = ty * forwardImpulse + side * ny * blastPower + jitter;
 
       // 2x2px and 4x4px square particles
       const size = Math.random() > 0.6 ? 4 : 2;

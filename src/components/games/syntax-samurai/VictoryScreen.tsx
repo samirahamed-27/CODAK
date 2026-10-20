@@ -134,6 +134,9 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({
           gain.connect(ctx.destination);
           osc.start(now);
           osc.stop(now + 0.6);
+          setTimeout(() => {
+            ctx.close().catch(() => {});
+          }, 800);
         }
       } catch {
         // Audio fallback

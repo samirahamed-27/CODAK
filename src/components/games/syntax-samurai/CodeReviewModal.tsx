@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QuestionReviewItem, EnemyProfile } from '@/types/syntaxSamurai';
 
 export interface CodeReviewModalProps {
@@ -20,6 +20,17 @@ export const CodeReviewModal: React.FC<CodeReviewModalProps> = ({
   const [expandedId, setExpandedId] = useState<string | null>(
     reviewItems.find((item) => !item.isCorrect)?.question.id || reviewItems[0]?.question.id || null
   );
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -53,9 +64,13 @@ export const CodeReviewModal: React.FC<CodeReviewModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="review-modal-title"
+      onClick={onClose}
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
     >
-      <div className="relative w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl bg-[#0a0a12] border border-zinc-800 shadow-2xl overflow-hidden font-mono">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-5xl max-h-[90vh] flex flex-col rounded-2xl bg-[#0a0a12] border border-zinc-800 shadow-2xl overflow-hidden font-mono"
+      >
         {/* Top Header */}
         <div className="px-5 py-4 bg-zinc-950 border-b border-zinc-800/80 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -218,7 +233,12 @@ export const CodeReviewModal: React.FC<CodeReviewModalProps> = ({
                               const errIdx = isErr ? lineStr.indexOf(q.errorToken) : -1;
 
                               return (
-                                <div key={lineIdx} className="flex items-center">
+                                <div
+                                  key={lineIdx}
+                                  className={`flex items-center px-1 py-0.5 rounded ${
+                                    isErr ? 'bg-red-500/15 border-l-2 border-red-500' : ''
+                                  }`}
+                                >
                                   <span className="w-6 text-right pr-3 text-zinc-600 select-none text-[11px]">
                                     {lineIdx + 1}
                                   </span>
@@ -235,6 +255,10 @@ export const CodeReviewModal: React.FC<CodeReviewModalProps> = ({
                                           {lineStr.substring(errIdx + q.errorToken.length)}
                                         </span>
                                       </>
+                                    ) : isErr ? (
+                                      <span className="bg-red-950/70 text-red-300 font-bold px-1.5 py-0.5 rounded border border-red-500/50">
+                                        {lineStr || `[flawed line: ${q.errorToken}]`}
+                                      </span>
                                     ) : (
                                       <span className="text-zinc-400">{lineStr || ' '}</span>
                                     )}
@@ -263,7 +287,12 @@ export const CodeReviewModal: React.FC<CodeReviewModalProps> = ({
                               const errIdx = isErr ? lineStr.indexOf(q.errorToken) : -1;
 
                               return (
-                                <div key={lineIdx} className="flex items-center">
+                                <div
+                                  key={lineIdx}
+                                  className={`flex items-center px-1 py-0.5 rounded ${
+                                    isErr ? 'bg-emerald-500/15 border-l-2 border-emerald-500' : ''
+                                  }`}
+                                >
                                   <span className="w-6 text-right pr-3 text-zinc-600 select-none text-[11px]">
                                     {lineIdx + 1}
                                   </span>
@@ -280,6 +309,10 @@ export const CodeReviewModal: React.FC<CodeReviewModalProps> = ({
                                           {lineStr.substring(errIdx + q.errorToken.length)}
                                         </span>
                                       </>
+                                    ) : isErr ? (
+                                      <span className="bg-emerald-950/70 text-emerald-300 font-bold px-1.5 py-0.5 rounded border border-emerald-500/50">
+                                        {lineStr || `[purified line: ${q.correctReplacement}]`}
+                                      </span>
                                     ) : (
                                       <span className="text-zinc-400">{lineStr || ' '}</span>
                                     )}

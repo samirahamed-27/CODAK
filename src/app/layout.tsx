@@ -65,8 +65,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-icon.png?v=3" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&family=Poppins:wght@300;400;500;600;700;800&family=Press+Start+2P&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&family=Pixelify+Sans:wght@400..700&family=Poppins:wght@300;400;500;600;700;800&family=Press+Start+2P&display=swap"
           rel="stylesheet"
         />
       </head>

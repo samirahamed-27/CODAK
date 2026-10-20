@@ -55,6 +55,7 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
 
   // Game battle states
   const [isSliced, setIsSliced] = useState<boolean>(false);
+  const [slashCutAngle, setSlashCutAngle] = useState<number>(-Math.PI / 4);
   const [selectedFix, setSelectedFix] = useState<string | null>(null);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
   const [combo, setCombo] = useState<number>(0);
@@ -117,8 +118,13 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
   // Recalculate bounding boxes when typewriter streaming finishes or window resizes
   useEffect(() => {
     if (!isStreaming) {
-      const timer = setTimeout(updateBoundingBoxes, 40);
-      return () => clearTimeout(timer);
+      updateBoundingBoxes();
+      const t1 = setTimeout(updateBoundingBoxes, 50);
+      const t2 = setTimeout(updateBoundingBoxes, 180);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     }
   }, [isStreaming, updateBoundingBoxes]);
 
@@ -173,12 +179,16 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
 
       // Spawn 65 pixel crumble particles erupting along cut vector
       if (crumbleEngineRef.current && e.token) {
-        let cutAngle = -Math.PI / 4;
-        if (e.cutSegment) {
+        let cutAngle = e.slashAngle;
+        if ((cutAngle === undefined || isNaN(cutAngle)) && e.cutSegment) {
           const cdx = e.cutSegment.p2.x - e.cutSegment.p1.x;
           const cdy = e.cutSegment.p2.y - e.cutSegment.p1.y;
           cutAngle = Math.atan2(cdy, cdx);
         }
+        if (cutAngle === undefined || isNaN(cutAngle)) {
+          cutAngle = -Math.PI / 4;
+        }
+        setSlashCutAngle(cutAngle);
 
         // Match color of the sliced code token dynamically
         let tokenColor = '#ef4444';
@@ -275,6 +285,14 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
     }, 1600);
   };
 
+const codeFontStyle: React.CSSProperties = {
+  fontFamily:
+    "'JetBrains Mono', 'Fira Code', 'VT323', var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+  fontSize: '1.4rem',
+  lineHeight: 2.2,
+  letterSpacing: '0.04em',
+};
+
   // Syntax Tokenizer for clean visual presentation
   const renderCodeLines = () => {
     const lines = question.codeSnippet.split('\n');
@@ -297,29 +315,37 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
               ref={(el) => {
                 healthyLinesRef.current[lineIdx] = el;
               }}
-              className="flex items-center hover:bg-white/[0.02] px-2 py-0.5 rounded transition-colors"
+              className="flex items-center hover:bg-white/[0.03] px-3 py-1 rounded-lg transition-colors group"
+              style={{ minHeight: '3.2rem' }}
             >
-              <span className="w-8 select-none text-right pr-4 text-zinc-600 font-mono text-xs">
+              <span
+                className="w-12 select-none text-right pr-6 text-zinc-600 font-mono text-sm sm:text-base font-bold opacity-60 group-hover:opacity-100 transition-opacity"
+                style={{ lineHeight: 'inherit' }}
+              >
                 {lineIdx + 1}
               </span>
-              <span className="font-mono text-sm tracking-wide flex-1 whitespace-pre">
+              <span className="flex-1 whitespace-pre" style={codeFontStyle}>
                 <span className="text-zinc-300">{before}</span>
                 <span
                   ref={errorTokenRef}
-                  className={`relative inline-block px-1.5 py-0.5 rounded transition-all duration-300 font-bold ${
+                  data-syntax-target="error"
+                  className={`relative inline-block transition-all duration-300 px-1 py-0.5 rounded ${
                     isTokenHidden
                       ? 'opacity-0 scale-90 pointer-events-none'
                       : isSliced
-                      ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)]'
-                      : 'bg-red-950/60 border border-dashed border-red-500/80 text-red-300 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.3)]'
+                      ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] px-2 py-0.5 rounded font-bold'
+                      : 'text-zinc-300'
                   }`}
-                  title="Flawed syntax wound: Drag katana across this token to slice!"
+                  style={{ lineHeight: 'inherit' }}
                 >
                   {bugged}
                   {/* Slash cut scar */}
                   {isSliced && (
                     <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <span className="w-[120%] h-0.5 bg-white shadow-[0_0_8px_#ffffff] rotate-[-25deg]" />
+                      <span
+                        className="w-[130%] h-0.5 bg-white shadow-[0_0_10px_#ffffff]"
+                        style={{ transform: `rotate(${slashCutAngle}rad)` }}
+                      />
                     </span>
                   )}
                 </span>
@@ -332,27 +358,35 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
           return (
             <div
               key={lineIdx}
-              className="flex items-center hover:bg-white/[0.02] px-2 py-0.5 rounded transition-colors"
+              className="flex items-center hover:bg-white/[0.03] px-3 py-1 rounded-lg transition-colors group"
+              style={{ minHeight: '3.2rem' }}
             >
-              <span className="w-8 select-none text-right pr-4 text-zinc-600 font-mono text-xs">
+              <span
+                className="w-12 select-none text-right pr-6 text-zinc-600 font-mono text-sm sm:text-base font-bold opacity-60 group-hover:opacity-100 transition-opacity"
+                style={{ lineHeight: 'inherit' }}
+              >
                 {lineIdx + 1}
               </span>
-              <span className="font-mono text-sm tracking-wide flex-1 whitespace-pre">
+              <span className="flex-1 whitespace-pre" style={codeFontStyle}>
                 <span
                   ref={errorTokenRef}
-                  className={`relative inline-block px-1.5 py-0.5 rounded transition-all duration-300 font-bold ${
+                  data-syntax-target="error"
+                  className={`relative inline-block transition-all duration-300 px-1 py-0.5 rounded ${
                     isTokenHidden
                       ? 'opacity-0 scale-90 pointer-events-none'
                       : isSliced
-                      ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)]'
-                      : 'bg-red-950/60 border border-dashed border-red-500/80 text-red-300 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.3)]'
+                      ? 'bg-red-500/20 text-red-200 line-through decoration-red-500 decoration-2 shadow-[0_0_15px_rgba(239,68,68,0.5)] px-2 py-0.5 rounded font-bold'
+                      : 'text-zinc-300'
                   }`}
-                  title="Flawed syntax wound: Drag katana across this token to slice!"
+                  style={{ lineHeight: 'inherit' }}
                 >
                   {lineStr || question.errorToken || '/* syntax error */'}
                   {isSliced && (
                     <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <span className="w-[120%] h-0.5 bg-white shadow-[0_0_8px_#ffffff] rotate-[-25deg]" />
+                      <span
+                        className="w-[130%] h-0.5 bg-white shadow-[0_0_10px_#ffffff]"
+                        style={{ transform: `rotate(${slashCutAngle}rad)` }}
+                      />
                     </span>
                   )}
                 </span>
@@ -369,12 +403,16 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
           ref={(el) => {
             healthyLinesRef.current[lineIdx] = el;
           }}
-          className="flex items-center hover:bg-white/[0.02] px-2 py-0.5 rounded transition-colors"
+          className="flex items-center hover:bg-white/[0.03] px-3 py-1 rounded-lg transition-colors group"
+          style={{ minHeight: '3.2rem' }}
         >
-          <span className="w-8 select-none text-right pr-4 text-zinc-600 font-mono text-xs">
+          <span
+            className="w-12 select-none text-right pr-6 text-zinc-600 font-mono text-sm sm:text-base font-bold opacity-60 group-hover:opacity-100 transition-opacity"
+            style={{ lineHeight: 'inherit' }}
+          >
             {lineIdx + 1}
           </span>
-          <span className="font-mono text-sm text-zinc-300 tracking-wide flex-1 whitespace-pre">
+          <span className="text-zinc-300 flex-1 whitespace-pre" style={codeFontStyle}>
             {lineStr || ' '}
           </span>
         </div>
@@ -388,10 +426,15 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
     <div
       ref={containerRef}
       data-katana-active="true"
-      className="relative w-full max-w-5xl mx-auto flex flex-col justify-between rounded-2xl bg-[#09090f] border border-zinc-800 shadow-2xl overflow-hidden select-none font-sans"
+      className="battle-arena relative flex flex-col justify-between rounded-2xl bg-[#09090f] border border-zinc-800 shadow-2xl overflow-hidden select-none font-sans"
       style={{
-        cursor: 'none',
-        boxShadow: `0 0 30px ${enemy.themeColor}15, inset 0 0 40px rgba(0,0,0,0.8)`,
+        width: '95vw',
+        maxWidth: '1600px',
+        height: '88vh',
+        minHeight: '720px',
+        margin: '0 auto',
+        cursor: "url('/assets/katana-cursor.svg') 0 0, auto",
+        boxShadow: `0 0 35px ${enemy.themeColor}15, inset 0 0 45px rgba(0,0,0,0.85)`,
       }}
     >
       {/* 60fps Katana Canvas Overlay with Pixel Crumble debris */}
@@ -494,10 +537,10 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
       {/* =========================================================================
           SLICING BATTLE ARENA (CODE VIEWPORT)
           ========================================================================= */}
-      <div className="relative z-10 p-5 sm:p-6 flex flex-col gap-4">
+      <div className="relative z-10 p-4 sm:p-6 flex-1 flex flex-col justify-between gap-4 min-h-0 overflow-y-auto overflow-x-hidden">
         {/* Editor Window Chrome with 80ms screen micro-shake & visual impact flash */}
         <div
-          className={`relative rounded-xl bg-[#0c0d14] border border-zinc-800/90 shadow-xl overflow-hidden transition-transform duration-75 ${
+          className={`relative rounded-2xl bg-[#0c0d14]/95 border border-zinc-800/90 shadow-2xl flex-1 flex flex-col justify-between min-h-0 overflow-hidden transition-transform duration-75 ${
             isShaking ? '-translate-y-1 translate-x-1 rotate-[0.4deg]' : ''
           }`}
         >
@@ -507,23 +550,24 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
           )}
 
           {/* Top Window Bar */}
-          <div className="px-4 py-2 bg-zinc-950 border-b border-zinc-800/80 flex items-center justify-between text-xs font-mono text-zinc-400">
+          <div className="px-5 py-2.5 bg-zinc-950/90 border-b border-zinc-800/80 flex items-center justify-between text-xs font-mono text-zinc-400 flex-shrink-0">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500/80 inline-block" />
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block" />
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block" />
-              <span className="ml-2 text-[11px] text-zinc-500">
+              <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+              <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+              <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+              <span className="ml-3 text-xs text-zinc-400 font-bold tracking-wider">
                 scroll_{question.id}.{question.language === 'python' ? 'py' : question.language === 'javascript' ? 'js' : question.language === 'cpp' ? 'cpp' : 'java'}
               </span>
             </div>
 
-            <div className="text-[11px] text-zinc-500 flex items-center gap-2">
-              <span>HINT: {question.errorBoundingHint}</span>
+            <div className="text-xs text-zinc-400 flex items-center gap-2 bg-zinc-900/60 px-3 py-1 rounded-md border border-zinc-800">
+              <span className="text-zinc-500 font-bold">HINT:</span>
+              <span className="text-zinc-300">{question.errorBoundingHint}</span>
             </div>
           </div>
 
           {/* Code lines container: Streamed via TypewriterTransition or interactive code */}
-          <div className="p-4 sm:p-5 overflow-x-auto min-h-[160px] flex flex-col justify-center">
+          <div className="p-6 sm:p-10 flex-1 flex flex-col justify-center overflow-x-auto min-h-[280px]">
             {isStreaming ? (
               <TypewriterTransition
                 codeSnippet={question.codeSnippet}
@@ -638,17 +682,19 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
       {/* =========================================================================
           FOOTER / BATTLE INSTRUCTIONS
           ========================================================================= */}
-      <div className="relative z-10 px-5 py-2.5 bg-zinc-950/80 border-t border-zinc-900 flex items-center justify-between text-[11px] font-mono text-zinc-500">
+      <div className="relative z-10 px-6 py-3 bg-zinc-950/90 border-t border-zinc-900 flex items-center justify-between text-xs font-mono text-zinc-400 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-zinc-400">KATANA COMMAND:</span>
+          <span className="text-zinc-300 font-bold">KATANA COMMAND:</span>
           <span>
             {isSliced
               ? 'TARGET SLICED! Pick the correct repair token above.'
-              : 'Drag blade across corrupted red token to trigger Critical Slash.'}
+              : 'Drag blade across corrupted code token to trigger Critical Slash.'}
           </span>
         </div>
-        <div>
-          <span>TIMER: {timeLeft}s</span>
+        <div className="flex items-center gap-3">
+          <span className="bg-zinc-900 px-3 py-1 rounded border border-zinc-800 text-zinc-300 font-bold">
+            TIMER: {timeLeft}s
+          </span>
         </div>
       </div>
     </div>
