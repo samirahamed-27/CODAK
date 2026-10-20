@@ -431,6 +431,50 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       expect(codeArenaContent).toContain('shuffledFixOptions[num - 1]');
     });
 
+    it('determines slash allowance per difficulty tier with getMaxSlashes (Phase 2)', async () => {
+      const { getMaxSlashes } = await import(
+        '@/components/games/syntax-samurai/CodeArena'
+      );
+
+      expect(getMaxSlashes('easy')).toBe(5);
+      expect(getMaxSlashes('normal')).toBe(4);
+      expect(getMaxSlashes('hard')).toBe(3);
+      expect(getMaxSlashes('codemare')).toBe(2);
+      expect(getMaxSlashes('custom')).toBe(3);
+    });
+
+    it('verifies blade stamina HUD, failure state banner, and error reveal (Phase 2)', () => {
+      const codeArenaContent = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/games/syntax-samurai/CodeArena.tsx'),
+        'utf-8'
+      );
+
+      // 1. Blade Strikes HUD counter with glowing strikes and line-through spent indicator
+      expect(codeArenaContent).toContain('STRIKES:');
+      expect(codeArenaContent).toContain('{slashesLeft}/{maxSlashes}');
+      expect(codeArenaContent).toContain('text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.7)]');
+
+      // 2. Blade Broken Failure State Banner
+      expect(codeArenaContent).toContain('BLADE BROKEN — OUT OF SLASHES!');
+      expect(codeArenaContent).toContain('Exhausted all available blade strikes for this trial');
+
+      // 3. Corrupted syntax reveal on blade break
+      expect(codeArenaContent).toContain('CORRUPTED SYNTAX');
+      expect(codeArenaContent).toContain('underline decoration-amber-400 decoration-wavy');
+
+      // 4. Hook wiring: onSlashMiss and disabled guards
+      expect(codeArenaContent).toContain('onSlashMiss: handleSlashMiss');
+      expect(codeArenaContent).toContain('disabled: isStreaming || isSliced || isBladeBroken');
+
+      const hookContent = fs.readFileSync(
+        path.join(process.cwd(), 'src/hooks/useKatanaBlade.ts'),
+        'utf-8'
+      );
+      expect(hookContent).toContain('onSlashMiss?: () => void');
+      expect(hookContent).toContain('disabled?: boolean');
+      expect(hookContent).toContain('currentStrokeRef.current.totalDist >= 25');
+    });
+
     it('verifies expansive arena viewport configuration (Refinement 4)', () => {
       const arenaStyle = {
         width: '95vw',

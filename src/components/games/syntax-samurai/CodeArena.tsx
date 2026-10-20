@@ -42,6 +42,24 @@ export function shuffleArray<T>(array: T[]): T[] {
   return copy;
 }
 
+/**
+ * Scaling maximum slash strikes allowance per question based on difficulty tier
+ */
+export const getMaxSlashes = (diff: string): number => {
+  switch (diff) {
+    case 'easy':
+      return 5;
+    case 'normal':
+      return 4;
+    case 'hard':
+      return 3;
+    case 'codemare':
+      return 2;
+    default:
+      return 3;
+  }
+};
+
 export const CodeArena: React.FC<CodeArenaProps> = ({
   question,
   enemy,
@@ -73,12 +91,24 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
   const [combo, setCombo] = useState<number>(0);
   const [timeLeft, setTimeLeft] = useState<number>(difficulty.timePerQuestionSec);
 
+  // Phase 2: Slash Limit & Blade Stamina System
+  const maxSlashes = getMaxSlashes(difficulty.id);
+  const [slashesLeft, setSlashesLeft] = useState<number>(maxSlashes);
+  const [isBladeBroken, setIsBladeBroken] = useState<boolean>(false);
+  const [prevQuestionKey, setPrevQuestionKey] = useState<string>(`${question.id}-${difficulty.id}`);
+
+  if (prevQuestionKey !== `${question.id}-${difficulty.id}`) {
+    setPrevQuestionKey(`${question.id}-${difficulty.id}`);
+    setSlashesLeft(getMaxSlashes(difficulty.id));
+    setIsBladeBroken(false);
+  }
+
   // Randomize repair choice button positions across all 4 slots (01-04)
   const shuffledFixOptions = useMemo(() => {
     return shuffleArray(question.fixOptions);
   }, [question.fixOptions]);
   const [recentEvent, setRecentEvent] = useState<{
-    type: 'hit' | 'parry';
+    type: 'hit' | 'parry' | 'miss' | 'broken';
     text: string;
     subtext: string;
     key: number;
@@ -157,7 +187,7 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
 
   // Timer countdown
   useEffect(() => {
-    if (isSliced && selectedFix !== null) return; // Pause when round completed
+    if ((isSliced && selectedFix !== null) || isBladeBroken) return; // Pause when round completed
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -178,12 +208,12 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isSliced, onQuestionCompleted, selectedFix]);
+  }, [isBladeBroken, isSliced, onQuestionCompleted, selectedFix]);
 
   // Hit Handler (Critical Slash on the bugged token with Pixel Crumble FX)
   const handleHit = useCallback(
     (e: SlashHitEvent) => {
-      if (isSliced) return;
+      if (isSliced || isBladeBroken) return;
       setIsSliced(true);
       setCombo((prev) => prev + 1);
 
@@ -193,7 +223,7 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
       setTimeout(() => setIsShaking(false), 80);
       setTimeout(() => setIsFlashing(false), 80);
 
-      // Spawn 65 pixel crumble particles erupting along cut vector
+      // Spawn 38 pixel crumble particles erupting along cut vector
       if (crumbleEngineRef.current && e.token) {
         let cutAngle = e.slashAngle;
         if ((cutAngle === undefined || isNaN(cutAngle)) && e.cutSegment) {
@@ -238,13 +268,13 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
         key: Date.now(),
       });
     },
-    [enemy.accentColor, enemy.themeColor, isSliced, question.errorToken]
+    [enemy.accentColor, enemy.themeColor, isBladeBroken, isSliced, question.errorToken]
   );
 
   // Parry Handler (Deflect when slashing healthy code)
   const handleParry = useCallback(
     (e: SlashHitEvent) => {
-      if (isSliced) return;
+      if (isSliced || isBladeBroken) return;
       setCombo(0); // Combo broken
 
       // Subtle 40ms vibration on parry
@@ -258,8 +288,64 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
         key: Date.now(),
       });
     },
-    [isSliced]
+    [isBladeBroken, isSliced]
   );
+
+  // Slash Miss Handler (Decrements available strikes when a swipe fails to cut the bug)
+  const handleSlashMiss = useCallback(() => {
+    if (isSliced || isBladeBroken) return;
+
+    setSlashesLeft((prev) => {
+      const remaining = Math.max(0, prev - 1);
+
+      if (remaining === 0) {
+        // BLADE BROKEN / FAILURE STATE
+        setIsBladeBroken(true);
+        setCombo(0);
+
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          crumbleEngineRef.current?.explode({
+            x: rect.width / 2 - 40,
+            y: rect.height / 2 - 20,
+            width: 80,
+            height: 40,
+            count: 45,
+            cutAngle: -Math.PI / 4,
+            colors: ['#ef4444', '#71717a', '#a1a1aa', '#ffffff', '#dc2626'],
+          });
+        }
+
+        setRecentEvent({
+          type: 'broken',
+          text: '刀折れ • BLADE BROKEN / OUT OF SLASHES!',
+          subtext: `All ${maxSlashes} strikes exhausted! Corrupted line revealed. 0 XP awarded.`,
+          key: Date.now(),
+        });
+
+        // Forfeits question and transitions after 2200ms
+        setTimeout(() => {
+          onQuestionCompleted?.(false, 0, {
+            wasSliced: false,
+            selectedFix: null,
+            timeRemainingSec: timeLeft,
+            combo: 0,
+            timeBonus: 0,
+          });
+        }, 2200);
+      } else {
+        // Strike spent notification
+        setRecentEvent({
+          type: 'miss',
+          text: '空振り • STRIKE MISSED!',
+          subtext: `${remaining} ${remaining === 1 ? 'strike' : 'strikes'} remaining! Focus your blade precision.`,
+          key: Date.now(),
+        });
+      }
+
+      return remaining;
+    });
+  }, [containerRef, isBladeBroken, isSliced, maxSlashes, onQuestionCompleted, timeLeft]);
 
   // Katana blade tracking hook
   const {
@@ -269,11 +355,13 @@ export const CodeArena: React.FC<CodeArenaProps> = ({
     isInside,
   } = useKatanaBlade({
     containerRef,
-    targets: isStreaming ? [] : targets,
+    targets: isStreaming || isBladeBroken ? [] : targets,
     themeColor: enemy.themeColor,
     onHit: handleHit,
     onParry: handleParry,
+    onSlashMiss: handleSlashMiss,
     soundEnabled,
+    disabled: isStreaming || isSliced || isBladeBroken,
   });
 
   // Repair choice handler
@@ -366,17 +454,33 @@ const codeFontStyle: React.CSSProperties = {
                   className={`relative inline-flex items-center gap-1.5 transition-all duration-200 px-2.5 py-0.5 rounded-md font-mono font-bold select-none ${
                     isSliced
                       ? 'bg-red-950/85 text-red-400 border border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.4)] scale-105'
+                      : isBladeBroken
+                      ? 'bg-amber-950/80 text-amber-300 border-2 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.5)] scale-105 animate-pulse'
                       : 'text-zinc-300'
                   }`}
                   style={{ lineHeight: 'inherit' }}
                 >
                   {isSliced && <span className="text-red-500 text-xs">⚠️</span>}
-                  <span className={isSliced ? 'line-through decoration-red-400 decoration-2' : ''}>
+                  {isBladeBroken && <span className="text-amber-400 text-xs">⚠️</span>}
+                  <span
+                    className={
+                      isSliced
+                        ? 'line-through decoration-red-400 decoration-2'
+                        : isBladeBroken
+                        ? 'underline decoration-amber-400 decoration-wavy decoration-2'
+                        : ''
+                    }
+                  >
                     {bugged}
                   </span>
                   {isSliced && (
                     <span className="text-[10px] text-red-300 font-sans tracking-wide uppercase px-1 py-0.2 bg-red-900/60 rounded border border-red-500/40">
                       SLICED BUG
+                    </span>
+                  )}
+                  {isBladeBroken && (
+                    <span className="text-[10px] text-amber-200 font-sans tracking-wide uppercase px-1.5 py-0.2 bg-amber-900/80 rounded border border-amber-500/60 font-bold">
+                      CORRUPTED SYNTAX
                     </span>
                   )}
                   {/* Slash cut scar */}
@@ -542,8 +646,38 @@ const codeFontStyle: React.CSSProperties = {
           </div>
         </div>
 
-        {/* Combo & Score Counter */}
+        {/* Combo, Strikes Counter & Score */}
         <div className="flex items-center gap-4 text-xs font-mono">
+          {/* Blade Strikes / Slash Counter */}
+          <div className="flex items-center gap-2 bg-zinc-900/90 px-3 py-1 rounded-lg border border-zinc-800 text-xs font-mono">
+            <span className="text-zinc-500 font-bold">STRIKES:</span>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: maxSlashes }).map((_, i) => {
+                const isAvailable = i < slashesLeft;
+                return (
+                  <span
+                    key={i}
+                    className={`text-sm transition-all duration-300 ${
+                      isAvailable
+                        ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.7)] scale-100 opacity-100'
+                        : 'text-zinc-700 scale-90 opacity-40 line-through'
+                    }`}
+                    title={isAvailable ? `Strike ${i + 1} ready` : 'Strike spent'}
+                  >
+                    ⚔️
+                  </span>
+                );
+              })}
+            </div>
+            <span
+              className={`text-[11px] font-bold ${
+                slashesLeft <= 1 ? 'text-red-400 animate-pulse' : 'text-zinc-400'
+              }`}
+            >
+              {slashesLeft}/{maxSlashes}
+            </span>
+          </div>
+
           <div
             className={`px-3 py-1 rounded-full border transition-all duration-300 font-bold flex items-center gap-1.5 ${
               combo > 0
@@ -637,19 +771,29 @@ const codeFontStyle: React.CSSProperties = {
           </div>
         </div>
 
-        {/* Dynamic Slash / Parry Event Banner */}
+        {/* Dynamic Slash / Parry / Miss / Broken Event Banner */}
         {recentEvent && (
           <div
             key={recentEvent.key}
             className={`px-4 py-2.5 rounded-xl border flex items-center justify-between gap-3 animate-in fade-in zoom-in-95 duration-200 ${
               recentEvent.type === 'hit'
                 ? 'bg-emerald-950/70 border-emerald-500/50 text-emerald-200'
+                : recentEvent.type === 'broken'
+                ? 'bg-red-950/80 border-red-500/80 text-red-200 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
+                : recentEvent.type === 'miss'
+                ? 'bg-amber-950/70 border-amber-500/50 text-amber-200'
                 : 'bg-sky-950/70 border-sky-500/50 text-sky-200'
             }`}
           >
             <div className="flex items-center gap-2">
               <span className="text-lg">
-                {recentEvent.type === 'hit' ? '⚔️' : '🛡️'}
+                {recentEvent.type === 'hit'
+                  ? '⚔️'
+                  : recentEvent.type === 'broken'
+                  ? '💥'
+                  : recentEvent.type === 'miss'
+                  ? '💨'
+                  : '🛡️'}
               </span>
               <div>
                 <span className="text-xs font-mono font-bold tracking-wider">
@@ -662,15 +806,34 @@ const codeFontStyle: React.CSSProperties = {
             </div>
 
             <div className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-black/40">
-              {recentEvent.type === 'hit' ? 'BLADE SLICED' : 'BLADE DEFLECTED'}
+              {recentEvent.type === 'hit'
+                ? 'BLADE SLICED'
+                : recentEvent.type === 'broken'
+                ? 'BLADE SHATTERED'
+                : recentEvent.type === 'miss'
+                ? 'STRIKE SPENT'
+                : 'BLADE DEFLECTED'}
             </div>
+          </div>
+        )}
+
+        {/* Blade Broken Failure State Banner */}
+        {isBladeBroken && (
+          <div className="rounded-xl p-4 bg-red-950/85 border-2 border-red-500/80 text-red-200 shadow-[0_0_30px_rgba(239,68,68,0.5)] flex flex-col items-center justify-center gap-2 animate-in fade-in zoom-in-95 duration-300">
+            <div className="flex items-center gap-2 text-red-400 font-mono font-bold text-base sm:text-lg tracking-wider">
+              <span>⚔️💥</span>
+              <span>BLADE BROKEN — OUT OF SLASHES!</span>
+            </div>
+            <p className="text-xs text-zinc-300 font-sans text-center max-w-xl leading-relaxed">
+              Exhausted all available blade strikes for this trial. 0 XP gained. The corrupted syntax has been revealed above. Preparing next trial scroll...
+            </p>
           </div>
         )}
 
         {/* =====================================================================
             REPAIR CHOICES (UNLOCKED UPON CRITICAL SLASH)
             ===================================================================== */}
-        {isSliced && (
+        {isSliced && !isBladeBroken && (
           <div className="rounded-xl p-4 bg-zinc-950/90 border border-zinc-800 shadow-xl flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -754,9 +917,11 @@ const codeFontStyle: React.CSSProperties = {
         <div className="flex items-center gap-2">
           <span className="text-zinc-300 font-bold">KATANA COMMAND:</span>
           <span>
-            {isSliced
+            {isBladeBroken
+              ? 'BLADE SHATTERED! 0 strikes left. Revealing syntax flaw...'
+              : isSliced
               ? 'TARGET SLICED! Pick the correct repair token above.'
-              : 'Drag blade across corrupted code token to trigger Critical Slash.'}
+              : `Drag blade across corrupted code token to trigger Critical Slash (${slashesLeft} strikes left).`}
           </span>
         </div>
         <div className="flex items-center gap-3">

@@ -66,7 +66,9 @@ export interface UseKatanaBladeOptions {
   themeColor?: string;
   onHit?: (event: SlashHitEvent) => void;
   onParry?: (event: SlashHitEvent) => void;
+  onSlashMiss?: () => void;
   soundEnabled?: boolean;
+  disabled?: boolean;
 }
 
 export function useKatanaBlade({
@@ -75,7 +77,9 @@ export function useKatanaBlade({
   themeColor = '#10b981',
   onHit,
   onParry,
+  onSlashMiss,
   soundEnabled = true,
+  disabled = false,
 }: UseKatanaBladeOptions) {
   const [isInside, setIsInside] = useState(false);
   const [isSlashing, setIsSlashing] = useState(false);
@@ -92,6 +96,17 @@ export function useKatanaBlade({
   const trailRef = useRef<SlashPoint[]>([]);
   const sparksRef = useRef<BladeSpark[]>([]);
   const strokeStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  // Stroke tracking for deliberate slash attempts & stamina decrement
+  const currentStrokeRef = useRef<{
+    active: boolean;
+    totalDist: number;
+    hitError: boolean;
+  }>({
+    active: false,
+    totalDist: 0,
+    hitError: false,
+  });
 
   // Hit cooldowns to avoid duplicate hits on a single swipe
   const lastHitTimeRef = useRef<number>(0);
@@ -273,6 +288,18 @@ export function useKatanaBlade({
 
       if (!isInside) setIsInside(true);
 
+      // Accumulate stroke distance during dragging
+      if (currentStrokeRef.current.active) {
+        currentStrokeRef.current.totalDist += moveDist;
+
+        // Anti-scribble safeguard: If dragging continuously > 320px without hitting error,
+        // finish this stroke segment as a miss and restart so players cannot drag endlessly
+        if (!disabled && !currentStrokeRef.current.hitError && currentStrokeRef.current.totalDist > 320) {
+          onSlashMiss?.();
+          currentStrokeRef.current.totalDist = 0;
+        }
+      }
+
       // If dragging and stroke start wasn't captured yet, record origin
       if (pointerPos.current.isDown && !strokeStartRef.current) {
         strokeStartRef.current = { x: prevX, y: prevY, time: now };
@@ -280,6 +307,7 @@ export function useKatanaBlade({
     };
 
     const handlePointerDown = (e: PointerEvent) => {
+      if (disabled) return;
       initAudio();
       pointerPos.current.isDown = true;
       const rect = container.getBoundingClientRect();
@@ -293,6 +321,12 @@ export function useKatanaBlade({
       bladeState.current.y = y;
       bladeState.current.isSlashing = true;
       setIsSlashing(true);
+
+      currentStrokeRef.current = {
+        active: true,
+        totalDist: 0,
+        hitError: false,
+      };
 
       // Initialize stroke start point and trajectory
       strokeStartRef.current = { x, y, time: now };
@@ -308,6 +342,13 @@ export function useKatanaBlade({
     };
 
     const handlePointerUp = () => {
+      if (currentStrokeRef.current.active) {
+        currentStrokeRef.current.active = false;
+        // Deliberate slash completed without cutting the bug:
+        if (!disabled && !currentStrokeRef.current.hitError && currentStrokeRef.current.totalDist >= 25) {
+          onSlashMiss?.();
+        }
+      }
       pointerPos.current.isDown = false;
       bladeState.current.isSlashing = false;
       setIsSlashing(false);
@@ -327,6 +368,12 @@ export function useKatanaBlade({
 
     const handlePointerLeave = () => {
       setIsInside(false);
+      if (currentStrokeRef.current.active) {
+        currentStrokeRef.current.active = false;
+        if (!disabled && !currentStrokeRef.current.hitError && currentStrokeRef.current.totalDist >= 25) {
+          onSlashMiss?.();
+        }
+      }
       pointerPos.current.isDown = false;
       bladeState.current.isSlashing = false;
       setIsSlashing(false);
@@ -347,7 +394,7 @@ export function useKatanaBlade({
       container.removeEventListener('pointerenter', handlePointerEnter);
       container.removeEventListener('pointerleave', handlePointerLeave);
     };
-  }, [containerRef, initAudio, isInside]);
+  }, [containerRef, disabled, initAudio, isInside, onSlashMiss]);
 
   // Main 60fps Blade Physics and Hit Detection loop
   useEffect(() => {
@@ -450,11 +497,13 @@ export function useKatanaBlade({
         const slashAngle = Math.atan2(strokeDy, strokeDx);
 
         // Check targets
-        for (const target of targets) {
-          if (segmentIntersectsBox(p1, p2, target)) {
-            if (target.isError) {
-              // CRITICAL HIT
-              if (currentTime - lastHitTimeRef.current > 400) {
+        if (!disabled) {
+          for (const target of targets) {
+            if (segmentIntersectsBox(p1, p2, target)) {
+              if (target.isError) {
+                // CRITICAL HIT
+                currentStrokeRef.current.hitError = true;
+                if (currentTime - lastHitTimeRef.current > 400) {
                 lastHitTimeRef.current = currentTime;
                 playSfx('hit');
                 spawnSparks(p2.x, p2.y, 28, themeColor, 8, slashAngle);
@@ -492,13 +541,14 @@ export function useKatanaBlade({
           }
         }
       }
+    }
 
-      animId = requestAnimationFrame(loop);
+    animId = requestAnimationFrame(loop);
     };
 
     animId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animId);
-  }, [onHit, onParry, playSfx, spawnSparks, targets, themeColor]);
+  }, [disabled, onHit, onParry, playSfx, spawnSparks, targets, themeColor]);
 
   return {
     bladeState,
