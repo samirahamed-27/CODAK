@@ -397,8 +397,11 @@ canvas,
 /* ==========================================================================
    Syntax Samurai - Direct Katana Cursor (No Lag or Following)
    ========================================================================== */
-.battle-arena {
-  cursor: url('/assets/katana-cursor.svg') 0 0, auto; /* hotspot at the blade tip */
+.battle-arena,
+.battle-arena *,
+[data-katana-active="true"],
+[data-katana-active="true"] * {
+  cursor: url('/assets/katana-cursor.svg') 0 0, auto !important; /* hotspot at the blade tip */
 }
 
 

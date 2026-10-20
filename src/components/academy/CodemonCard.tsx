@@ -153,10 +153,10 @@ export function CodemonCard() {
         </div>
       </div>
 
-      {/* Play Action Buttons */}
-      <div className="space-y-1.5 pt-1">
+      {/* Play Action Button */}
+      <div className="pt-1">
         <Link
-          href="/play.html"
+          href="/index.html"
           data-no-flip
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
@@ -165,16 +165,6 @@ export function CodemonCard() {
           <Gamepad2 className="w-4 h-4" />
           <span>Launch Codemons Arena</span>
           <ArrowUpRight className="w-4 h-4" />
-        </Link>
-
-        <Link
-          href="/index.html"
-          data-no-flip
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-          className="w-full py-1 px-2 rounded-lg text-zinc-400 hover:text-white text-[10px] font-mono flex items-center justify-center gap-1 transition-colors cursor-pointer"
-        >
-          <span>Direct Battle View (/index.html)</span>
         </Link>
       </div>
     </div>

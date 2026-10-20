@@ -121,11 +121,7 @@ const playElements: ComponentItem[] = [
     description:
       'Battle algorithmic bugs and conquer compiler errors in our premier retro 8-bit cyber arena. Choose your elemental starter creature—Pyrawr (Python 🔥), Jaskull (JavaScript ⚡), or Cplusaur (C++ 🌿). Each attack round tests your algorithmic problem-solving: answer correctly to charge energy, trigger critical strikes, and defeat multi-tier bug bosses. Earn +50 XP and verifiable academic ledger progression for every victorious match!',
     playAction: {
-      label: 'Launch Play Lounge',
-      href: '/play.html',
-    },
-    secondaryAction: {
-      label: 'Direct Arena (/index.html)',
+      label: 'Launch Codemons Arena',
       href: '/index.html',
     },
   },

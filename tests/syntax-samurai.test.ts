@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'fs';
+import path from 'path';
 import {
   ENEMY_PROFILES,
   DIFFICULTY_TIERS,
@@ -239,12 +241,49 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
 
     it('anchors the Kissaki blade tip precisely at local (0, 0)', () => {
       const bladeLength = 75;
-      // In KatanaCanvas: translate(-bladeLength, 0) then lineTo(bladeLength, 0)
       const tipLocalX = -bladeLength + bladeLength;
       const tipLocalY = 0;
 
       expect(tipLocalX).toBe(0);
       expect(tipLocalY).toBe(0);
+    });
+
+    it('verifies floating canvas katana is removed from KatanaCanvas.tsx', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const canvasFile = path.resolve(process.cwd(), 'src/components/games/syntax-samurai/KatanaCanvas.tsx');
+      const content = fs.readFileSync(canvasFile, 'utf8');
+
+      // Floating canvas blade renderer drawKatana should be completely removed
+      expect(content).not.toContain('const drawKatana =');
+      expect(content).not.toContain('drawKatana(');
+      // But slash trail and crumble debris remain intact
+      expect(content).toContain('drawTrail');
+      expect(content).toContain('drawSparks');
+      expect(content).toContain('crumbleEngineRef');
+    });
+
+    it('verifies TargetCursor excludes battle arena from cursor: none !important', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const targetCursorFile = path.resolve(process.cwd(), 'src/components/ui/TargetCursor.tsx');
+      const content = fs.readFileSync(targetCursorFile, 'utf8');
+
+      // TargetCursor must not apply cursor: none to .battle-arena or [data-katana-active]
+      expect(content).toContain(':not(.battle-arena)');
+      expect(content).toContain(':not([data-katana-active])');
+      expect(content).toContain('isKatanaZone');
+    });
+
+    it('verifies direct Katana cursor CSS with hotspot at blade tip (0 0) on .battle-arena and descendants', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const globalsCssFile = path.resolve(process.cwd(), 'src/app/globals.css');
+      const content = fs.readFileSync(globalsCssFile, 'utf8');
+
+      expect(content).toContain('.battle-arena');
+      expect(content).toContain(".battle-arena *");
+      expect(content).toContain("cursor: url('/assets/katana-cursor.svg') 0 0, auto !important;");
     });
 
     it('verifies error token is unhighlighted before slice (Refinement 2 invariant)', () => {
@@ -318,6 +357,122 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       const scarTransform = `rotate(${slashCutAngle}rad)`;
       expect(scarTransform).toBe('rotate(1.5707963267948966rad)');
       expect(scarTransform).not.toBe('rotate(-25deg)');
+    });
+
+    it('verifies sliced bug red-text replacement and quick-reference review banner (Phase 2)', () => {
+      const codeArenaContent = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/games/syntax-samurai/CodeArena.tsx'),
+        'utf-8'
+      );
+
+      // 1. Sliced token transforms into prominent red badge
+      expect(codeArenaContent).toContain('bg-red-950/85 text-red-400 border border-red-500/80 shadow-[0_0_15px_rgba(239,68,68,0.4)] scale-105');
+      expect(codeArenaContent).toContain('⚠️');
+      expect(codeArenaContent).toContain('line-through decoration-red-400 decoration-2');
+      expect(codeArenaContent).toContain('SLICED BUG');
+
+      // 2. Quick-reference review banner in repair card
+      expect(codeArenaContent).toContain('SLICED ERROR:');
+      expect(codeArenaContent).toContain('{question.errorToken}');
+      expect(codeArenaContent).toContain('Pick the correct syntax below to replace it:');
+    });
+
+    it('randomizes repair choice button positions with pure Fisher-Yates shuffle (Phase 1)', async () => {
+      const { shuffleArray } = await import(
+        '@/components/games/syntax-samurai/CodeArena'
+      );
+
+      const original = ['correct', 'distractor_1', 'distractor_2', 'distractor_3'];
+      const copy = [...original];
+
+      // 1. Pure function: Does not mutate the input array
+      const shuffled = shuffleArray(original);
+      expect(original).toEqual(copy);
+      expect(shuffled).toHaveLength(4);
+      expect([...shuffled].sort()).toEqual([...copy].sort());
+
+      // 2. Uniform random distribution across slots (01 - 04)
+      const firstSlotCounts: Record<string, number> = {
+        correct: 0,
+        distractor_1: 0,
+        distractor_2: 0,
+        distractor_3: 0,
+      };
+
+      for (let i = 0; i < 200; i++) {
+        const res = shuffleArray(original);
+        firstSlotCounts[res[0]]++;
+      }
+
+      // Over 200 trials, the correct option should NOT always be in slot 01,
+      // and each of the 4 options should appear a balanced number of times
+      expect(firstSlotCounts.correct).toBeLessThan(180);
+      expect(firstSlotCounts.correct).toBeGreaterThan(15);
+      expect(firstSlotCounts.distractor_1).toBeGreaterThan(15);
+      expect(firstSlotCounts.distractor_2).toBeGreaterThan(15);
+      expect(firstSlotCounts.distractor_3).toBeGreaterThan(15);
+
+      // 3. Verify CodeArena maps over shuffledFixOptions
+      const codeArenaContent = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/games/syntax-samurai/CodeArena.tsx'),
+        'utf-8'
+      );
+      expect(codeArenaContent).toContain('shuffledFixOptions = useMemo');
+      expect(codeArenaContent).toContain('shuffledFixOptions.map');
+      expect(codeArenaContent).not.toContain('question.fixOptions.map');
+
+      // 4. Edge-case safety checks
+      expect(shuffleArray([])).toEqual([]);
+      expect(shuffleArray(['single'])).toEqual(['single']);
+      expect(shuffleArray(null as unknown as string[])).toEqual([]);
+
+      // 5. Verify keyboard shortcut integration for 1-4
+      expect(codeArenaContent).toContain("addEventListener('keydown'");
+      expect(codeArenaContent).toContain('shuffledFixOptions[num - 1]');
+    });
+
+    it('determines slash allowance per difficulty tier with getMaxSlashes (Phase 2)', async () => {
+      const { getMaxSlashes } = await import(
+        '@/components/games/syntax-samurai/CodeArena'
+      );
+
+      expect(getMaxSlashes('easy')).toBe(5);
+      expect(getMaxSlashes('normal')).toBe(4);
+      expect(getMaxSlashes('hard')).toBe(3);
+      expect(getMaxSlashes('codemare')).toBe(2);
+      expect(getMaxSlashes('custom')).toBe(3);
+    });
+
+    it('verifies blade stamina HUD, failure state banner, and error reveal (Phase 2)', () => {
+      const codeArenaContent = fs.readFileSync(
+        path.join(process.cwd(), 'src/components/games/syntax-samurai/CodeArena.tsx'),
+        'utf-8'
+      );
+
+      // 1. Blade Strikes HUD counter with glowing strikes and line-through spent indicator
+      expect(codeArenaContent).toContain('STRIKES:');
+      expect(codeArenaContent).toContain('{slashesLeft}/{maxSlashes}');
+      expect(codeArenaContent).toContain('text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.7)]');
+
+      // 2. Blade Broken Failure State Banner
+      expect(codeArenaContent).toContain('BLADE BROKEN — OUT OF SLASHES!');
+      expect(codeArenaContent).toContain('Exhausted all available blade strikes for this trial');
+
+      // 3. Corrupted syntax reveal on blade break
+      expect(codeArenaContent).toContain('CORRUPTED SYNTAX');
+      expect(codeArenaContent).toContain('underline decoration-amber-400 decoration-wavy');
+
+      // 4. Hook wiring: onSlashMiss and disabled guards
+      expect(codeArenaContent).toContain('onSlashMiss: handleSlashMiss');
+      expect(codeArenaContent).toContain('disabled: isStreaming || isSliced || isBladeBroken');
+
+      const hookContent = fs.readFileSync(
+        path.join(process.cwd(), 'src/hooks/useKatanaBlade.ts'),
+        'utf-8'
+      );
+      expect(hookContent).toContain('onSlashMiss?: () => void');
+      expect(hookContent).toContain('disabled?: boolean');
+      expect(hookContent).toContain('currentStrokeRef.current.totalDist >= 25');
     });
 
     it('verifies expansive arena viewport configuration (Refinement 4)', () => {
@@ -405,9 +560,10 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       const initialVy = engine.particles[0].vy;
       engine.update(1 / 60);
 
-      // vy should have increased by gravity (0.4) scaled by friction
-      expect(engine.gravity).toBe(0.4);
-      expect(engine.particles[0].vy).toBeGreaterThan(initialVy);
+      // vy reflects downward gravity (+0.42) and air drag (0.95)
+      expect(engine.gravity).toBe(0.42);
+      expect(engine.friction).toBe(0.95);
+      expect(engine.particles[0].vy).toBeCloseTo(initialVy * engine.friction + engine.gravity, 4);
       expect(engine.particles[0].life).toBeCloseTo(1 / 60, 4);
 
       // Advance by 1 second so all particles exceed maxLife
@@ -425,29 +581,278 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
 
       // Downward slash: cutAngle = Math.PI / 2
       // ty = sin(PI/2) = 1, tx = cos(PI/2) = 0
-      // Forward impulse should push vy significantly downwards (> 0)
+      // Downward slash should have significantly more positive/downward vy than upward slash
       engine.explode({
         x: 100,
         y: 100,
         width: 40,
         height: 20,
-        count: 50,
+        count: 60,
         cutAngle: Math.PI / 2,
       });
+      const avgVyDown = engine.particles.reduce((acc, p) => acc + p.vy, 0) / engine.particles.length;
 
-      const avgVy = engine.particles.reduce((acc, p) => acc + p.vy, 0) / engine.particles.length;
-      expect(avgVy).toBeGreaterThan(1.0); // Clear positive/downward momentum
+      const engineUp = new PixelCrumbleEngine();
+      engineUp.explode({
+        x: 100,
+        y: 100,
+        width: 40,
+        height: 20,
+        count: 60,
+        cutAngle: -Math.PI / 2,
+      });
+      const avgVyUp = engineUp.particles.reduce((acc, p) => acc + p.vy, 0) / engineUp.particles.length;
+
+      expect(avgVyDown).toBeGreaterThan(avgVyUp);
+      expect(avgVyDown - avgVyUp).toBeGreaterThan(4.0); // Significant forward momentum difference
     });
 
-    it('clears all active debris instantly on clear()', async () => {
+    it('upgrades CrumbleParticle with 3D positions, velocities, and tumbling angular rotations', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      engine.explode({ x: 100, y: 100, width: 40, height: 20, count: 50 });
+
+      expect(engine.particles).toHaveLength(50);
+
+      let hasBurstTowardsCamera = false;
+      let hasBurstIntoBackground = false;
+
+      engine.particles.forEach((p) => {
+        // 3D position & velocity checks
+        expect(typeof p.z).toBe('number');
+        expect(typeof p.vz).toBe('number');
+        if (p.vz < 0) hasBurstTowardsCamera = true;
+        if (p.vz > 0) hasBurstIntoBackground = true;
+
+        // 3D angular rotation checks
+        expect(typeof p.rotX).toBe('number');
+        expect(typeof p.rotY).toBe('number');
+        expect(typeof p.rotZ).toBe('number');
+        expect(typeof p.vRotX).toBe('number');
+        expect(typeof p.vRotY).toBe('number');
+        expect(typeof p.vRotZ).toBe('number');
+        expect(p.rotation).toBe(p.rotZ); // Backwards-compatible alias
+      });
+
+      expect(hasBurstTowardsCamera).toBe(true);
+      expect(hasBurstIntoBackground).toBe(true);
+    });
+
+    it('updates 3D tumbling rotations and translations over time', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      engine.explode({ x: 100, y: 100, width: 40, height: 20, count: 10 });
+
+      const p0 = engine.particles[0];
+      const initialRotX = p0.rotX;
+      const initialRotY = p0.rotY;
+      const initialRotZ = p0.rotZ;
+      const initialZ = p0.z;
+
+      engine.update(1 / 60);
+
+      // Rotations must update by angular velocities
+      expect(p0.rotX).not.toBe(initialRotX);
+      expect(p0.rotY).not.toBe(initialRotY);
+      expect(p0.rotZ).not.toBe(initialRotZ);
+      expect(p0.z).not.toBe(initialZ);
+    });
+
+    it('verifies perspective projection scaling formula and Z-depth sorting order', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      const cameraDistance = engine.cameraDistance; // 320
+      expect(cameraDistance).toBeGreaterThan(0);
+
+      // Foreground particle (closer to camera, z = -100)
+      const scaleForeground = cameraDistance / Math.max(80, cameraDistance - 100);
+      expect(scaleForeground).toBeGreaterThan(1.0); // Expands in foreground
+
+      // Background particle (farther in background, z = +200)
+      const scaleBackground = cameraDistance / Math.max(80, cameraDistance + 200);
+      expect(scaleBackground).toBeLessThan(1.0); // Recedes in background
+
+      // Perspective scale should smoothly decrease with depth
+      expect(scaleForeground).toBeGreaterThan(scaleBackground);
+    });
+
+    it('spawns expanding neon red shockwave ring at cut epicenter expanding from 4px to 80px over 280ms', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      expect(engine.shockwaves).toHaveLength(0);
+
+      // Sliced token at x=100, y=200, width=60, height=30
+      engine.explode({
+        x: 100,
+        y: 200,
+        width: 60,
+        height: 30,
+        count: 40,
+      });
+
+      expect(engine.shockwaves).toHaveLength(1);
+      const sw = engine.shockwaves[0];
+
+      // Epicenter must be at token center: (100 + 30, 200 + 15) = (130, 215)
+      expect(sw.x).toBe(130);
+      expect(sw.y).toBe(215);
+
+      // Expansion parameters
+      expect(sw.startRadius).toBe(4);
+      expect(sw.maxRadius).toBe(80);
+      expect(sw.currentRadius).toBe(4);
+      expect(sw.duration).toBe(0.28);
+      expect(sw.color).toBe('#ef4444');
+
+      // Update by 140ms (halfway)
+      engine.update(0.14);
+      expect(engine.shockwaves[0].currentRadius).toBeGreaterThan(4);
+      expect(engine.shockwaves[0].currentRadius).toBeLessThanOrEqual(80);
+
+      // Update past 280ms duration -> should be culled
+      engine.update(0.15);
+      expect(engine.shockwaves).toHaveLength(0);
+    });
+
+    it('calculates 3D spherical explosion velocities with blastSpeed 8-22 and high-speed Z-depth burst', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      engine.explode({
+        x: 50,
+        y: 50,
+        width: 40,
+        height: 20,
+        count: 50,
+      });
+
+      expect(engine.particles).toHaveLength(50);
+
+      // Verify spherical velocities
+      engine.particles.forEach((p) => {
+        const speed2D = Math.hypot(p.vx, p.vy);
+        expect(speed2D).toBeGreaterThan(0);
+        // vz includes 1.5x multiplier for dramatic screen/depth blast
+        expect(typeof p.vz).toBe('number');
+      });
+
+      // Verify air drag (0.95) decay on vx, vy, vz
+      const p0 = engine.particles[0];
+      const initialVx = p0.vx;
+      const initialVz = p0.vz;
+
+      engine.update(1 / 60);
+
+      // vx and vz should decay by friction (0.95)
+      expect(Math.abs(p0.vx)).toBeCloseTo(Math.abs(initialVx * 0.95), 4);
+      expect(Math.abs(p0.vz)).toBeCloseTo(Math.abs(initialVz * 0.95), 4);
+    });
+
+    it('optimizes particle density with default count = 38 and caps lifetimes between 0.45s and 0.75s', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      // Explode without passing count
+      engine.explode({ x: 20, y: 20, width: 30, height: 15 });
+
+      expect(engine.particles).toHaveLength(38);
+      engine.particles.forEach((p) => {
+        expect(p.maxLife).toBeGreaterThanOrEqual(0.45);
+        expect(p.maxLife).toBeLessThanOrEqual(0.75);
+      });
+    });
+
+    it('pre-computes 3D isometric color palettes with base, top, and side shades', async () => {
+      const { PixelCrumbleEngine, getVoxelPalette } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const palette = getVoxelPalette('#ef4444');
+      expect(palette.base).toBe('#ef4444');
+      expect(palette.top).toBe('#fca5a5');
+      expect(palette.side).toBe('#b91c1c');
+
+      // Test short hex (#f00) and computed style format (rgb(34, 197, 94))
+      const shortPalette = getVoxelPalette('#f00');
+      expect(shortPalette.base).toBe('#f00');
+      expect(shortPalette.top).toContain('rgb(');
+
+      const rgbPalette = getVoxelPalette('rgb(34, 197, 94)');
+      expect(rgbPalette.base).toBe('rgb(34, 197, 94)');
+      expect(rgbPalette.top).toContain('rgb(');
+
+      const engine = new PixelCrumbleEngine();
+      engine.explode({ x: 0, y: 0, width: 20, height: 20, colors: ['#ef4444', '#10b981', 'rgb(52, 211, 153)'] });
+      engine.particles.forEach((p) => {
+        expect(p.palette).toBeDefined();
+        expect(typeof p.palette.base).toBe('string');
+        expect(typeof p.palette.top).toBe('string');
+        expect(typeof p.palette.side).toBe('string');
+      });
+    });
+
+    it('renders 60 FPS isometric faces with zero shadowBlur and single canvas state save', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      engine.explode({ x: 0, y: 0, width: 20, height: 20 });
+
+      let saveCount = 0;
+      let restoreCount = 0;
+      let shadowBlurSet = false;
+
+      const mockCtx = {
+        save: () => { saveCount++; },
+        restore: () => { restoreCount++; },
+        beginPath: () => {},
+        moveTo: () => {},
+        lineTo: () => {},
+        closePath: () => {},
+        fill: () => {},
+        stroke: () => {},
+        arc: () => {},
+        set shadowBlur(_val: number) { shadowBlurSet = true; },
+        get shadowBlur() { return 0; },
+        set shadowColor(_val: string) {},
+        get shadowColor() { return ''; },
+        set fillStyle(_val: string) {},
+        set strokeStyle(_val: string) {},
+        set lineWidth(_val: number) {},
+        set globalAlpha(_val: number) {},
+      } as unknown as CanvasRenderingContext2D;
+
+      engine.render(mockCtx);
+
+      // Verify zero shadowBlur was invoked (eliminates GPU rasterizer gaussian blur overhead)
+      expect(shadowBlurSet).toBe(false);
+
+      // Verify minimal canvas state saves (1 for shockwaves, 1 for particles)
+      expect(saveCount).toBeLessThanOrEqual(2);
+      expect(restoreCount).toBe(saveCount);
+    });
+
+    it('clears all active debris and shockwaves instantly on clear()', async () => {
       const { PixelCrumbleEngine } = await import(
         '@/components/games/syntax-samurai/PixelCrumbleEngine'
       );
       const engine = new PixelCrumbleEngine();
       engine.explode({ x: 0, y: 0, width: 50, height: 20, count: 50 });
       expect(engine.particles.length).toBe(50);
+      expect(engine.shockwaves.length).toBe(1);
+
       engine.clear();
       expect(engine.particles.length).toBe(0);
+      expect(engine.shockwaves.length).toBe(0);
     });
   });
 

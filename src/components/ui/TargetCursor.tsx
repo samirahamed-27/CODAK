@@ -104,7 +104,7 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
     const style = document.createElement('style');
     document.head.appendChild(style);
 
-    const pointer = { x: 0, y: 0, inside: false, seen: false, pressed: false };
+    const pointer = { x: 0, y: 0, inside: false, seen: false, pressed: false, inKatanaZone: false };
     const centerX: SpringState = { x: 0, v: 0 };
     const centerY: SpringState = { x: 0, v: 0 };
     const halfW: SpringState = { x: 0, v: 0 };
@@ -137,7 +137,9 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
       }
       const selector = scope ? '[data-target-cursor-scope]' : 'html';
       const rule =
-        s.hideDefaultCursor && pointer.inside ? `${selector}, ${selector} * { cursor: none !important; }` : '';
+        s.hideDefaultCursor && pointer.inside
+          ? `${selector}:not(.battle-arena):not([data-katana-active]), ${selector} *:not(.battle-arena):not(.battle-arena *):not([data-katana-active]):not([data-katana-active] *) { cursor: none !important; }`
+          : '';
       if (style.textContent !== rule) style.textContent = rule;
     };
 
@@ -280,7 +282,7 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
         root.style.setProperty('--target-cursor-color', color);
         lastColor = color;
       }
-      root.style.opacity = pointer.inside ? Math.max(0.1, Math.min(1, presence.x)).toFixed(3) : '0';
+      root.style.opacity = pointer.inside && !pointer.inKatanaZone ? Math.max(0.1, Math.min(1, presence.x)).toFixed(3) : '0';
 
       const resting =
         !pointer.inside &&
@@ -314,16 +316,23 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
       return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
     };
 
+    const isKatanaZone = (element?: Element | null): boolean => {
+      return !!element?.closest?.('.battle-arena, [data-katana-active="true"]');
+    };
+
     const onPointerMove = (event: PointerEvent | MouseEvent) => {
       if ('pointerType' in event && event.pointerType === 'touch') return;
       pointer.x = event.clientX;
       pointer.y = event.clientY;
-      const inside = insideScope(pointer.x, pointer.y, event.target as Element);
+      const targetEl = event.target as Element | null;
+      const inKatana = isKatanaZone(targetEl);
+      pointer.inKatanaZone = inKatana;
+      const inside = insideScope(pointer.x, pointer.y, targetEl);
       if (inside !== pointer.inside) {
         pointer.inside = inside;
         hideCursor();
       }
-      lockOn(inside ? findTarget(pointer.x, pointer.y, event.target as Element) : null);
+      lockOn(inside && !inKatana ? findTarget(pointer.x, pointer.y, targetEl) : null);
       wake();
     };
 
@@ -340,6 +349,7 @@ export const TargetCursor: React.FC<TargetCursorProps> = ({
 
     const onLeave = () => {
       pointer.inside = false;
+      pointer.inKatanaZone = false;
       pointer.pressed = false;
       lockOn(null);
       hideCursor();
