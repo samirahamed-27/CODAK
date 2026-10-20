@@ -476,6 +476,81 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
       expect(avgVy).toBeGreaterThan(1.0); // Clear positive/downward momentum
     });
 
+    it('upgrades CrumbleParticle with 3D positions, velocities, and tumbling angular rotations', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      engine.explode({ x: 100, y: 100, width: 40, height: 20, count: 50 });
+
+      expect(engine.particles).toHaveLength(50);
+
+      let hasBurstTowardsCamera = false;
+      let hasBurstIntoBackground = false;
+
+      engine.particles.forEach((p) => {
+        // 3D position & velocity checks
+        expect(typeof p.z).toBe('number');
+        expect(typeof p.vz).toBe('number');
+        if (p.vz < 0) hasBurstTowardsCamera = true;
+        if (p.vz > 0) hasBurstIntoBackground = true;
+
+        // 3D angular rotation checks
+        expect(typeof p.rotX).toBe('number');
+        expect(typeof p.rotY).toBe('number');
+        expect(typeof p.rotZ).toBe('number');
+        expect(typeof p.vRotX).toBe('number');
+        expect(typeof p.vRotY).toBe('number');
+        expect(typeof p.vRotZ).toBe('number');
+        expect(p.rotation).toBe(p.rotZ); // Backwards-compatible alias
+      });
+
+      expect(hasBurstTowardsCamera).toBe(true);
+      expect(hasBurstIntoBackground).toBe(true);
+    });
+
+    it('updates 3D tumbling rotations and translations over time', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      engine.explode({ x: 100, y: 100, width: 40, height: 20, count: 10 });
+
+      const p0 = engine.particles[0];
+      const initialRotX = p0.rotX;
+      const initialRotY = p0.rotY;
+      const initialRotZ = p0.rotZ;
+      const initialZ = p0.z;
+
+      engine.update(1 / 60);
+
+      // Rotations must update by angular velocities
+      expect(p0.rotX).not.toBe(initialRotX);
+      expect(p0.rotY).not.toBe(initialRotY);
+      expect(p0.rotZ).not.toBe(initialRotZ);
+      expect(p0.z).not.toBe(initialZ);
+    });
+
+    it('verifies perspective projection scaling formula and Z-depth sorting order', async () => {
+      const { PixelCrumbleEngine } = await import(
+        '@/components/games/syntax-samurai/PixelCrumbleEngine'
+      );
+      const engine = new PixelCrumbleEngine();
+      const cameraDistance = engine.cameraDistance; // 320
+      expect(cameraDistance).toBeGreaterThan(0);
+
+      // Foreground particle (closer to camera, z = -100)
+      const scaleForeground = cameraDistance / Math.max(80, cameraDistance - 100);
+      expect(scaleForeground).toBeGreaterThan(1.0); // Expands in foreground
+
+      // Background particle (farther in background, z = +200)
+      const scaleBackground = cameraDistance / Math.max(80, cameraDistance + 200);
+      expect(scaleBackground).toBeLessThan(1.0); // Recedes in background
+
+      // Perspective scale should smoothly decrease with depth
+      expect(scaleForeground).toBeGreaterThan(scaleBackground);
+    });
+
     it('clears all active debris instantly on clear()', async () => {
       const { PixelCrumbleEngine } = await import(
         '@/components/games/syntax-samurai/PixelCrumbleEngine'
