@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LobbyScreen } from '@/components/games/syntax-samurai/LobbyScreen';
 import { CodeArena } from '@/components/games/syntax-samurai/CodeArena';
@@ -30,6 +30,60 @@ export default function SyntaxSamuraiPage() {
   const [score, setScore] = useState<number>(0);
   const [correctCount, setCorrectCount] = useState<number>(0);
 
+  // Background Music (BGM) state and audio ref
+  const bgmRef = useRef<HTMLAudioElement | null>(null);
+  const [isBgmMuted, setIsBgmMuted] = useState<boolean>(false);
+
+  // Load mute preference from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedMute = localStorage.getItem('syntax_samurai_bgm_muted');
+      if (savedMute !== null) {
+        setIsBgmMuted(savedMute === 'true');
+      }
+    } catch {}
+  }, []);
+
+  // Synchronize audio element playback with game state and mute preference
+  useEffect(() => {
+    const audio = bgmRef.current;
+    if (!audio) return;
+
+    audio.muted = isBgmMuted;
+    audio.volume = 0.45;
+
+    if (gameState === 'battle') {
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          // Autoplay policy fallback (resumes on user interaction)
+          console.warn('Syntax Samurai BGM autoplay deferred:', err);
+        });
+      }
+    } else {
+      audio.pause();
+      if (gameState === 'lobby') {
+        audio.currentTime = 0;
+      }
+    }
+  }, [gameState, isBgmMuted]);
+
+  const toggleBgm = () => {
+    setIsBgmMuted((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('syntax_samurai_bgm_muted', String(next));
+      } catch {}
+      if (bgmRef.current) {
+        bgmRef.current.muted = next;
+        if (!next && gameState === 'battle') {
+          bgmRef.current.play().catch(() => {});
+        }
+      }
+      return next;
+    });
+  };
+
   // Phase 5: Tracking Session Metrics & Review Items
   const [reviewItems, setReviewItems] = useState<QuestionReviewItem[]>([]);
   const [maxCombo, setMaxCombo] = useState<number>(0);
@@ -54,11 +108,23 @@ export default function SyntaxSamuraiPage() {
     setComboBonusTotal(0);
     setBaseXpTotal(0);
     setGameState('battle');
+
+    // Trigger BGM in user-gesture callstack to guarantee playback
+    if (bgmRef.current) {
+      bgmRef.current.currentTime = 0;
+      bgmRef.current.volume = 0.45;
+      bgmRef.current.muted = isBgmMuted;
+      bgmRef.current.play().catch(() => {});
+    }
   };
 
   const handleBackToLobby = () => {
     recordedQuestionIdsRef.current.clear();
     setGameState('lobby');
+    if (bgmRef.current) {
+      bgmRef.current.pause();
+      bgmRef.current.currentTime = 0;
+    }
   };
 
   const handleQuestionCompleted = (
@@ -111,15 +177,29 @@ export default function SyntaxSamuraiPage() {
       setQuestionIndex((prev) => prev + 1);
     } else {
       setGameState('victory');
+      if (bgmRef.current) {
+        bgmRef.current.pause();
+      }
     }
   };
 
+  const bgmAudioElement = (
+    <audio ref={bgmRef} loop preload="auto" className="hidden">
+      <source src="/assets/audio/syntax-samurai-bgm.m4a" type="audio/mp4" />
+      <source src="/assets/audio/syntax-samurai-bgm.wav" type="audio/wav" />
+      <source src="/assets/audio/Enter%20the%20sysntax%20samurai.wav" type="audio/wav" />
+    </audio>
+  );
+
   if (gameState === 'lobby' || !battleConfig) {
     return (
-      <LobbyScreen
-        onStartGame={handleStartGame}
-        onBack={() => router.push('/student/play')}
-      />
+      <>
+        {bgmAudioElement}
+        <LobbyScreen
+          onStartGame={handleStartGame}
+          onBack={() => router.push('/student/play')}
+        />
+      </>
     );
   }
 
@@ -153,12 +233,15 @@ export default function SyntaxSamuraiPage() {
     };
 
     return (
-      <VictoryScreen
-        stats={victoryStats}
-        onPlayAgain={() => handleStartGame(battleConfig)}
-        onChangeEnemy={handleBackToLobby}
-        onReturnToDojo={() => router.push('/student/play')}
-      />
+      <>
+        {bgmAudioElement}
+        <VictoryScreen
+          stats={victoryStats}
+          onPlayAgain={() => handleStartGame(battleConfig)}
+          onChangeEnemy={handleBackToLobby}
+          onReturnToDojo={() => router.push('/student/play')}
+        />
+      </>
     );
   }
 
@@ -167,6 +250,7 @@ export default function SyntaxSamuraiPage() {
 
   return (
     <div className="min-h-screen bg-[#07070b] text-white flex flex-col justify-between p-2 sm:p-3 font-mono select-none overflow-x-hidden">
+      {bgmAudioElement}
       <header className="flex items-center justify-between border-b border-zinc-800/80 px-4 py-2 mb-2 flex-shrink-0">
         <div className="flex items-center gap-3">
           <button
@@ -179,8 +263,28 @@ export default function SyntaxSamuraiPage() {
             SYNTAX SAMURAI // ACTIVE BATTLE DOJO
           </span>
         </div>
-        <div className="text-xs text-zinc-400 hidden sm:block">
-          KATANA BLADE ACTIVE • DRAG TO SLICE
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={toggleBgm}
+            aria-label={isBgmMuted ? 'Unmute BGM' : 'Mute BGM'}
+            className="px-2.5 py-1 rounded bg-zinc-900/90 border border-zinc-700/80 hover:border-zinc-500 text-xs font-mono flex items-center gap-1.5 text-zinc-300 hover:text-white transition-all shadow-sm"
+          >
+            {isBgmMuted ? (
+              <>
+                <span className="text-red-400">🔇</span>
+                <span className="text-zinc-400">BGM: OFF</span>
+              </>
+            ) : (
+              <>
+                <span className="text-emerald-400 animate-pulse">🔊</span>
+                <span className="text-emerald-300">BGM: ON</span>
+              </>
+            )}
+          </button>
+          <div className="text-xs text-zinc-400 hidden sm:block">
+            KATANA BLADE ACTIVE • DRAG TO SLICE
+          </div>
         </div>
       </header>
 
