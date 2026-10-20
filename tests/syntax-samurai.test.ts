@@ -239,12 +239,49 @@ describe('Syntax Samurai - Phase 1 Data Model & Question Bank Audit', () => {
 
     it('anchors the Kissaki blade tip precisely at local (0, 0)', () => {
       const bladeLength = 75;
-      // In KatanaCanvas: translate(-bladeLength, 0) then lineTo(bladeLength, 0)
       const tipLocalX = -bladeLength + bladeLength;
       const tipLocalY = 0;
 
       expect(tipLocalX).toBe(0);
       expect(tipLocalY).toBe(0);
+    });
+
+    it('verifies floating canvas katana is removed from KatanaCanvas.tsx', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const canvasFile = path.resolve(process.cwd(), 'src/components/games/syntax-samurai/KatanaCanvas.tsx');
+      const content = fs.readFileSync(canvasFile, 'utf8');
+
+      // Floating canvas blade renderer drawKatana should be completely removed
+      expect(content).not.toContain('const drawKatana =');
+      expect(content).not.toContain('drawKatana(');
+      // But slash trail and crumble debris remain intact
+      expect(content).toContain('drawTrail');
+      expect(content).toContain('drawSparks');
+      expect(content).toContain('crumbleEngineRef');
+    });
+
+    it('verifies TargetCursor excludes battle arena from cursor: none !important', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const targetCursorFile = path.resolve(process.cwd(), 'src/components/ui/TargetCursor.tsx');
+      const content = fs.readFileSync(targetCursorFile, 'utf8');
+
+      // TargetCursor must not apply cursor: none to .battle-arena or [data-katana-active]
+      expect(content).toContain(':not(.battle-arena)');
+      expect(content).toContain(':not([data-katana-active])');
+      expect(content).toContain('isKatanaZone');
+    });
+
+    it('verifies direct Katana cursor CSS with hotspot at blade tip (0 0) on .battle-arena and descendants', async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+      const globalsCssFile = path.resolve(process.cwd(), 'src/app/globals.css');
+      const content = fs.readFileSync(globalsCssFile, 'utf8');
+
+      expect(content).toContain('.battle-arena');
+      expect(content).toContain(".battle-arena *");
+      expect(content).toContain("cursor: url('/assets/katana-cursor.svg') 0 0, auto !important;");
     });
 
     it('verifies error token is unhighlighted before slice (Refinement 2 invariant)', () => {

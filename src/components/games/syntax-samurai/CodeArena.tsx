@@ -437,6 +437,14 @@ const codeFontStyle: React.CSSProperties = {
         boxShadow: `0 0 35px ${enemy.themeColor}15, inset 0 0 45px rgba(0,0,0,0.85)`,
       }}
     >
+      <style>{`
+        .battle-arena,
+        .battle-arena *,
+        [data-katana-active="true"],
+        [data-katana-active="true"] * {
+          cursor: url('/assets/katana-cursor.svg') 0 0, auto !important;
+        }
+      `}</style>
       {/* 60fps Katana Canvas Overlay with Pixel Crumble debris */}
       <KatanaCanvas
         containerRef={containerRef}
