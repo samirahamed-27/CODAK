@@ -137,7 +137,6 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
           ? '/faculty/leaderboard'
           : '/student#leaderboard',
     },
-    { label: 'System Workflow', link: '/workflow' },
     { label: 'Log out', link: '/api/auth/signout' },
     { label: 'Home', link: '/' },
   ];
