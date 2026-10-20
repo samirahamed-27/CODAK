@@ -7,7 +7,7 @@ import { AcademySidebar } from '@/components/academy/AcademySidebar';
 import { AcademyHeader } from '@/components/academy/AcademyHeader';
 import { ProfileCard } from '@/components/academy/ProfileCard';
 import { WorkReportCard } from '@/components/academy/WorkReportCard';
-import { CodemonCard } from '@/components/academy/CodemonCard';
+import { SyntaxSamuraiCard } from '@/components/academy/SyntaxSamuraiCard';
 import { PracticeCard } from '@/components/academy/PracticeCard';
 import { ScoreCard } from '@/components/academy/ScoreCard';
 import { initialStudentProfile, StudentProfile } from '@/data/studentDashboardData';
@@ -218,9 +218,9 @@ export default function StudentDashboardPage() {
               <WorkReportCard activityData={activityCalendar} />
             </div>
 
-            {/* Card 3: Codemon Arena Game Card (Right, 4 cols) */}
+            {/* Card 3: Syntax Samurai Dojo Game Card (Right, 4 cols) */}
             <div className="md:col-span-2 lg:col-span-4 flex flex-col">
-              <CodemonCard />
+              <SyntaxSamuraiCard />
             </div>
           </section>
 
