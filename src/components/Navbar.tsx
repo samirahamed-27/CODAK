@@ -118,6 +118,7 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
           { label: 'XP Rules', ariaLabel: 'Manage XP Rules', link: '/admin/rules' },
           { label: 'Ledger Audit', ariaLabel: 'Inspect Ledger Audit', link: '/admin/audit' },
           { label: 'Security Flags', ariaLabel: 'Anti-Gaming and Integrity Flags', link: '/admin/flags' },
+          { label: 'Student View', ariaLabel: 'Switch to Student View', link: '/student' },
         ]
       : [
           { label: 'Dashboard', ariaLabel: 'Go to student dashboard', link: '/student' },

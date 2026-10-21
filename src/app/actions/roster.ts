@@ -4,6 +4,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { levelFromXp } from '@/lib/levels';
 import { getRankForLevel } from '@/lib/ranks';
+import { isDemoAccount } from '@/lib/auth/demo';
 
 function getAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -69,14 +70,15 @@ export async function getStudentDirectoryAction(params?: {
 
   const adminClient = getAdminClient();
 
-  // Verify caller is faculty or admin
+  // Verify caller is faculty or admin (or demo account)
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('role, campus_id')
+    .select('role, campus_id, email')
     .eq('id', user.id)
     .maybeSingle();
 
-  if (!profile || (profile.role !== 'faculty' && profile.role !== 'admin')) {
+  const userEmail = profile?.email || user.email;
+  if (!profile || (profile.role !== 'faculty' && profile.role !== 'admin' && !isDemoAccount(userEmail))) {
     return {
       success: false,
       students: [],

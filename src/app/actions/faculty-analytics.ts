@@ -2,6 +2,7 @@
 
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { getFacultyAnalytics, FacultyAnalyticsFilter, FacultyAnalyticsData } from '@/lib/faculty-analytics';
+import { isDemoAccount } from '@/lib/auth/demo';
 
 export interface FacultyAnalyticsResponse {
   success: boolean;
@@ -32,11 +33,12 @@ export async function getFacultyAnalyticsAction(
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, campus_id')
+    .select('role, campus_id, email')
     .eq('id', user.id)
     .single();
 
-  if (!profile || (profile.role !== 'faculty' && profile.role !== 'admin')) {
+  const userEmail = profile?.email || user.email;
+  if (!profile || (profile.role !== 'faculty' && profile.role !== 'admin' && !isDemoAccount(userEmail))) {
     return {
       success: false,
       statusCode: 403,

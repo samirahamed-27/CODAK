@@ -14,6 +14,7 @@ import {
 } from '@/lib/concept-match';
 import { checkRateLimit } from '@/lib/rate-limits';
 import { ensureStudentRecord } from '@/lib/auth/ensure-student';
+import { isDemoOrAdmin } from '@/lib/auth/demo';
 
 function getSigningSecret(): string {
   return (
@@ -46,11 +47,12 @@ export async function getConceptMatchRoundAction(): Promise<{
 
     const { data: profile } = await adminClient
       .from('profiles')
-      .select('role')
+      .select('role, email')
       .eq('id', studentId)
       .maybeSingle();
 
-    if (!profile || profile.role !== 'student') {
+    const userEmail = profile?.email;
+    if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
       return { success: false, error: 'Forbidden: Only students can play Concept Match.' };
     }
 

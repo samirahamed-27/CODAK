@@ -3,6 +3,7 @@
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { evaluateStudentBadges, Badge } from '@/lib/badges';
+import { isDemoOrAdmin } from '@/lib/auth/demo';
 
 export interface StudentBadgeDisplay extends Badge {
   isEarned: boolean;
@@ -76,11 +77,12 @@ export async function getStudentBadgesAction(targetStudentId?: string): Promise<
 
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('role')
+    .select('role, email')
     .eq('id', studentId)
     .maybeSingle();
 
-  if (!profile || profile.role !== 'student') {
+  const userEmail = profile?.email;
+  if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
     return { success: false, badges: [], error: 'Forbidden: Badges are only available for students.' };
   }
 

@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
+import { isDemoOrAdmin } from '@/lib/auth/demo';
 
 export interface QuestTask {
   id: string;
@@ -120,14 +121,15 @@ export async function evaluateStudentQuests(
 }> {
   const { weekStart, weekEnd, periodKey: weeklyPeriodKey } = getIstWeekDetails(customDate);
 
-  // 0. Verify student role
+  // 0. Verify student role (or demo/admin account)
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('role')
+    .select('role, email')
     .eq('id', studentId)
     .maybeSingle();
 
-  if (!profile || profile.role !== 'student') {
+  const userEmail = profile?.email;
+  if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
     return { quests: [], newlyCompleted: [], rewardsPaid: 0 };
   }
 

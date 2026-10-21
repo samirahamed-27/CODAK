@@ -5,6 +5,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { getKolkataDate, evaluateStreakCompletion, StudentStreakData, addDaysToDate, daysBetweenDates } from '@/lib/streaks';
 import { checkRateLimit } from '@/lib/rate-limits';
 import { ensureStudentRecord } from '@/lib/auth/ensure-student';
+import { isDemoOrAdmin } from '@/lib/auth/demo';
 
 export interface QuizOptionItem {
   id: 'A' | 'B' | 'C' | 'D';
@@ -340,11 +341,12 @@ export async function submitQuizAnswerAction(input: {
   const adminClient = getAdminClient();
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('role')
+    .select('role, email')
     .eq('id', user.id)
     .maybeSingle();
 
-  if (!profile || profile.role !== 'student') {
+  const userEmail = profile?.email || user.email;
+  if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
     return { success: false, error: 'Forbidden: Only students may participate in quizzes.', statusCode: 403 };
   }
 
@@ -763,11 +765,12 @@ export async function getPracticeQuizSessionAction() {
   const adminClient = getAdminClient();
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('role')
+    .select('role, email')
     .eq('id', user.id)
     .maybeSingle();
 
-  if (!profile || profile.role !== 'student') {
+  const userEmail = profile?.email || user.email;
+  if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
     return { success: false, error: 'Forbidden: Only students may participate in quizzes.', questions: [] };
   }
 
@@ -822,11 +825,12 @@ export async function submitPracticeAnswerAction(input: {
   const adminClient = getAdminClient();
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('role')
+    .select('role, email')
     .eq('id', user.id)
     .maybeSingle();
 
-  if (!profile || profile.role !== 'student') {
+  const userEmail = profile?.email || user.email;
+  if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
     return { success: false, error: 'Forbidden: Only students may participate in quizzes.', statusCode: 403 };
   }
 
@@ -886,11 +890,12 @@ export async function getStudentStreakAction() {
   const adminClient = getAdminClient();
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('role')
+    .select('role, email')
     .eq('id', user.id)
     .maybeSingle();
 
-  if (!profile || profile.role !== 'student') {
+  const userEmail = profile?.email || user.email;
+  if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
     return {
       currentStreak: 0,
       longestStreak: 0,

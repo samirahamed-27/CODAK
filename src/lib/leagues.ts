@@ -3,6 +3,7 @@ import { getIstWeekDetails } from '@/lib/quests';
 import { levelFromXp } from '@/lib/levels';
 import { getRankForLevel } from '@/lib/ranks';
 import { RankTier } from '@/types/database';
+import { isDemoOrAdmin } from '@/lib/auth/demo';
 
 export interface LeagueTier {
   id: string;
@@ -224,14 +225,15 @@ export async function assignStudentToWeeklyLeague(
 }> {
   const { periodKey: weekKey } = getIstWeekDetails(customDate);
 
-  // 0. Verify student role
+  // 0. Verify student role (or demo/admin account)
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('role')
+    .select('role, email')
     .eq('id', studentId)
     .maybeSingle();
 
-  if (!profile || profile.role !== 'student') {
+  const userEmail = profile?.email;
+  if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
     throw new Error('Forbidden: Only students can be assigned to weekly leagues.');
   }
 

@@ -4,6 +4,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { parseAndValidateQuestionsCsv } from '@/lib/csv-questions';
 import { writeAuditLog } from '@/lib/audit-logs';
+import { isDemoAccount } from '@/lib/auth/demo';
 
 export interface ManualQuestionInput {
   subjectId?: string;
@@ -63,11 +64,12 @@ export async function authenticateFaculty() {
 
   const { data: profile } = await supabaseServer
     .from('profiles')
-    .select('role')
+    .select('role, email')
     .eq('id', user.id)
     .single();
 
-  if (!profile || (profile.role !== 'faculty' && profile.role !== 'admin')) {
+  const userEmail = profile?.email || user.email;
+  if (!profile || (profile.role !== 'faculty' && profile.role !== 'admin' && !isDemoAccount(userEmail))) {
     return { error: 'Forbidden: Faculty or Administrator access required.', statusCode: 403, user: null };
   }
 

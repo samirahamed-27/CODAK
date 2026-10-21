@@ -1,10 +1,12 @@
 import { UserRole } from '@/types/database';
+import { isDemoAccount } from '@/lib/auth/demo';
 
 export interface RouteRedirectParams {
   pathname: string;
   isAuthenticated: boolean;
   role?: UserRole | null;
   hasCampus?: boolean;
+  email?: string | null;
 }
 
 /**
@@ -40,6 +42,7 @@ export function computeRouteRedirect({
   isAuthenticated,
   role,
   hasCampus,
+  email,
 }: RouteRedirectParams): string | null {
   const isProtectedRoute =
     pathname.startsWith('/student') ||
@@ -55,7 +58,7 @@ export function computeRouteRedirect({
   }
 
   // Rule 2: Campus onboarding enforcement for authenticated student accounts without a campus
-  if (role === 'student' && hasCampus === false) {
+  if (role === 'student' && hasCampus === false && !isDemoAccount(email)) {
     if (pathname.startsWith('/api') || pathname === '/redeem-invite') {
       return null;
     }
@@ -76,6 +79,11 @@ export function computeRouteRedirect({
       return '/select-campus';
     }
     return getDashboardForRole(role);
+  }
+
+  // Universal access for demo accounts across all portals (student, faculty, admin)
+  if (email && isDemoAccount(email)) {
+    return null;
   }
 
   // Rule 2 & 3: Role-based boundary enforcement

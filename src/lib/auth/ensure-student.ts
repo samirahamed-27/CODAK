@@ -1,8 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { isDemoOrAdmin } from '@/lib/auth/demo';
 
 /**
  * Defensive helper to guarantee that a valid public.students record exists for verified student accounts.
- * STRICT ISOLATION: Faculty and Administrator accounts are rejected and will NEVER have a student row created.
+ * STRICT ISOLATION: Faculty and Administrator accounts are rejected unless they are demo/admin accounts testing student features.
  */
 export async function ensureStudentRecord(
   adminClient: SupabaseClient,
@@ -12,14 +13,17 @@ export async function ensureStudentRecord(
     // 1. Resolve role from profiles or metadata
     const { data: profile } = await adminClient
       .from('profiles')
-      .select('id, role')
+      .select('id, role, email')
       .eq('id', user.id)
       .maybeSingle();
 
     const role = profile?.role || user.user_metadata?.role;
+    const email = profile?.email || user.email;
+    const isDemo = isDemoOrAdmin(email, role);
 
     // Reject non-students: Faculty and Admin accounts must NEVER be treated as students
-    if (role && role !== 'student') {
+    // UNLESS it is a demo account, platform admin, or evaluator testing student features
+    if (!isDemo && role && role !== 'student') {
       return false;
     }
 
@@ -35,7 +39,7 @@ export async function ensureStudentRecord(
     }
 
     // If role was explicitly specified as non-student, do not create
-    if (role !== undefined && role !== 'student') {
+    if (!isDemo && role !== undefined && role !== 'student') {
       return false;
     }
 

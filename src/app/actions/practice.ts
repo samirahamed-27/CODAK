@@ -12,6 +12,7 @@ import {
 import { checkRateLimit } from '@/lib/rate-limits';
 import { ensureStudentRecord } from '@/lib/auth/ensure-student';
 import { validateProofUrl } from '@/lib/practice-validation';
+import { isDemoOrAdmin } from '@/lib/auth/demo';
 
 export interface PracticeCompletionStatus {
   id: string;
@@ -156,7 +157,7 @@ export async function claimPracticeProblemAction(
   error?: string;
   statusCode?: number;
 }> {
-  let user: { id: string } | null = null;
+  let user: { id: string; email?: string | null } | null = null;
 
   if (userIdOverride) {
     user = { id: userIdOverride };
@@ -174,14 +175,15 @@ export async function claimPracticeProblemAction(
 
   const adminClient = createAdminClient();
 
-  // Step 3 Guard: Only student role can submit practice problem claims (faculty/admin get 403)
+  // Step 3 Guard: Only student role (or demo/admin) can submit practice problem claims
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('role')
+    .select('role, email')
     .eq('id', user.id)
     .maybeSingle();
 
-  if (!profile || profile.role !== 'student') {
+  const userEmail = profile?.email || user.email;
+  if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
     return {
       success: false,
       error: 'Forbidden: Only enrolled students can submit practice problem claims.',

@@ -2,6 +2,7 @@
 
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isDemoOrAdmin } from '@/lib/auth/demo';
 
 export interface LedgerAuditReport {
   success: boolean;
@@ -45,11 +46,12 @@ export async function getLedgerAuditReportAction(): Promise<LedgerAuditReport> {
 
   const { data: profile } = await supabaseServer
     .from('profiles')
-    .select('role')
+    .select('role, email')
     .eq('id', user.id)
     .single();
 
-  if (profile?.role !== 'admin') {
+  const userEmail = profile?.email || user.email;
+  if (!profile || (profile.role !== 'admin' && !isDemoOrAdmin(userEmail, profile.role))) {
     return {
       success: false,
       timestamp: new Date().toISOString(),

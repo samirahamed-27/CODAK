@@ -69,6 +69,7 @@ export async function middleware(request: NextRequest) {
       isAuthenticated: !!user,
       role,
       hasCampus,
+      email: user?.email,
     });
 
     if (redirectPath && redirectPath !== request.nextUrl.pathname) {

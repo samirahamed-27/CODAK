@@ -14,6 +14,7 @@ import {
 } from '@/lib/duels';
 import { levelFromXp } from '@/lib/levels';
 import { checkRateLimit } from '@/lib/rate-limits';
+import { isDemoOrAdmin } from '@/lib/auth/demo';
 
 import { RankTier } from '@/types/database';
 
@@ -79,11 +80,12 @@ export async function createOrJoinAutoMatchAction(): Promise<{
 
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('role')
+    .select('role, email')
     .eq('id', studentId)
     .maybeSingle();
 
-  if (!profile || profile.role !== 'student') {
+  const userEmail = profile?.email;
+  if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
     return { success: false, error: 'Forbidden: Only students can participate in duels.', statusCode: 403 };
   }
 
@@ -221,11 +223,12 @@ export async function challengeDirectStudentAction(targetStudentId: string): Pro
 
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('role')
+    .select('role, email')
     .eq('id', studentId)
     .maybeSingle();
 
-  if (!profile || profile.role !== 'student') {
+  const userEmail = profile?.email;
+  if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
     return { success: false, error: 'Forbidden: Only students can participate in duels.', statusCode: 403 };
   }
 
@@ -385,11 +388,12 @@ export async function submitDuelAnswersAction(input: DuelSubmissionInput): Promi
 
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('role')
+    .select('role, email')
     .eq('id', studentId)
     .maybeSingle();
 
-  if (!profile || profile.role !== 'student') {
+  const userEmail = profile?.email;
+  if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
     return { success: false, error: 'Forbidden: Only students can participate in duels.', statusCode: 403 };
   }
 
