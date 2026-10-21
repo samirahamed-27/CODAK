@@ -35,9 +35,11 @@ import { CelebrationManager, triggerCelebrationCheck } from '@/components/animat
 import {
   getMyDuelsAction,
   createOrJoinAutoMatchAction,
+  joinOpenDuelAction,
   getDuelSessionAction,
   submitDuelAnswersAction,
   DuelSummary,
+  OpenLobbyDuel,
 } from '@/app/actions/duels';
 import { SafeDuelQuestion } from '@/lib/duels';
 import { getMyBattlesAction } from '@/app/actions/battles';
@@ -67,6 +69,8 @@ export default function StudentCompetePage() {
 
   // Duels state
   const [duels, setDuels] = useState<DuelSummary[]>([]);
+  const [openLobby, setOpenLobby] = useState<OpenLobbyDuel[]>([]);
+  const [joiningDuelId, setJoiningDuelId] = useState<string | null>(null);
   const [duelsLoading, setDuelsLoading] = useState(false);
   const [quickMatching, setQuickMatching] = useState(false);
   const [quickMatchMsg, setQuickMatchMsg] = useState<string | null>(null);
@@ -131,6 +135,7 @@ export default function StudentCompetePage() {
       const res = await getMyDuelsAction();
       if (res.success) {
         setDuels(res.duels);
+        setOpenLobby(res.openLobby || []);
       }
     } catch (e) {
       console.error('Error fetching duels:', e);
@@ -228,6 +233,25 @@ export default function StudentCompetePage() {
       setQuickMatchMsg(e.message || 'Matchmaking error');
     } finally {
       setQuickMatching(false);
+    }
+  };
+
+  const handleJoinOpenDuel = async (duelId: string) => {
+    setJoiningDuelId(duelId);
+    setQuickMatchMsg(null);
+    try {
+      const res = await joinOpenDuelAction(duelId);
+      if (res.success && res.duelId) {
+        setQuickMatchMsg('Accepted duel challenge! Launching battle now...');
+        await fetchDuels();
+        handleStartDuel(res.duelId);
+      } else {
+        setQuickMatchMsg(res.error || 'Failed to join duel challenge');
+      }
+    } catch (e: any) {
+      setQuickMatchMsg(e.message || 'Error joining duel');
+    } finally {
+      setJoiningDuelId(null);
     }
   };
 
@@ -1017,6 +1041,62 @@ export default function StudentCompetePage() {
                   )}
                 </div>
               </div>
+
+              {/* Open Challenges in Lobby Section */}
+              {openLobby.length > 0 && (
+                <div className="space-y-3 p-4 sm:p-5 rounded-3xl bg-amber-500/10 border border-amber-500/30 shadow-xl backdrop-blur-md">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Swords className="w-3.5 h-3.5" />
+                      Open Challenges in Lobby ({openLobby.length})
+                    </h3>
+                    <span className="text-[10px] text-amber-300/80 font-mono">Waiting for a challenger</span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {openLobby.map((lobbyDuel) => (
+                      <div
+                        key={lobbyDuel.id}
+                        className="p-3.5 sm:p-4 rounded-2xl bg-black/50 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-white">
+                              vs. {lobbyDuel.challengerName}
+                            </span>
+                            {lobbyDuel.challengerRankTier && (
+                              <RankChip rank={lobbyDuel.challengerRankTier} level={lobbyDuel.challengerLevel} size="xs" />
+                            )}
+                            {lobbyDuel.challengerRollNo && (
+                              <span className="text-[10px] font-mono text-zinc-400">
+                                ({lobbyDuel.challengerRollNo})
+                              </span>
+                            )}
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300">
+                              Lobby Match
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-mono">
+                            <Clock className="w-3 h-3" />
+                            <span>
+                              Created {new Date(lobbyDuel.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • 24h timer
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handleJoinOpenDuel(lobbyDuel.id)}
+                          disabled={joiningDuelId === lobbyDuel.id}
+                          className="w-full sm:w-auto px-4 py-2 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-black flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 disabled:opacity-50 transition-all text-xs"
+                        >
+                          <Zap className="w-3.5 h-3.5 text-black" />
+                          {joiningDuelId === lobbyDuel.id ? 'Joining Battle...' : '⚔️ Accept Challenge'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Duels List Section */}
               <div className="space-y-4">

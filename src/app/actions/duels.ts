@@ -15,6 +15,7 @@ import {
 import { levelFromXp } from '@/lib/levels';
 import { checkRateLimit } from '@/lib/rate-limits';
 import { isDemoOrAdmin } from '@/lib/auth/demo';
+import { ensureStudentRecord } from '@/lib/auth/ensure-student';
 
 import { RankTier } from '@/types/database';
 
@@ -26,6 +27,17 @@ export interface DuelSubmissionInput {
     timeSpentSeconds: number;
   }[];
   totalTimeSeconds: number;
+}
+
+export interface OpenLobbyDuel {
+  id: string;
+  challengerId: string;
+  challengerName: string;
+  challengerRollNo?: string;
+  challengerLevel: number;
+  challengerRankTier?: RankTier;
+  createdAt: string;
+  expiresAt: string;
 }
 
 export interface DuelSummary {
@@ -88,6 +100,8 @@ export async function createOrJoinAutoMatchAction(): Promise<{
   if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
     return { success: false, error: 'Forbidden: Only students can participate in duels.', statusCode: 403 };
   }
+
+  await ensureStudentRecord(adminClient, user);
 
   const rl = await checkRateLimit(studentId, 'duel_action');
   if (!rl.allowed) {
@@ -200,6 +214,87 @@ export async function createOrJoinAutoMatchAction(): Promise<{
 }
 
 /**
+ * Server Action: Directly accepts an open duel challenge from the lobby.
+ */
+export async function joinOpenDuelAction(duelId: string): Promise<{
+  success: boolean;
+  duelId?: string;
+  error?: string;
+  statusCode?: number;
+}> {
+  const supabaseServer = await createServerClient();
+  const {
+    data: { user },
+  } = await supabaseServer.auth.getUser();
+
+  const studentId = user?.id;
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    return { success: false, error: 'Server configuration error' };
+  }
+
+  const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
+
+  if (!studentId || !user) {
+    return { success: false, error: 'Unauthorized: Student session required' };
+  }
+
+  const { data: profile } = await adminClient
+    .from('profiles')
+    .select('role, email')
+    .eq('id', studentId)
+    .maybeSingle();
+
+  const userEmail = profile?.email;
+  if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
+    return { success: false, error: 'Forbidden: Only students can participate in duels.', statusCode: 403 };
+  }
+
+  await ensureStudentRecord(adminClient, user);
+
+  // Fetch the duel
+  const { data: duel, error: fetchErr } = await adminClient
+    .from('duels')
+    .select('id, challenger_id, status, expires_at')
+    .eq('id', duelId)
+    .single();
+
+  if (fetchErr || !duel) {
+    return { success: false, error: 'Duel challenge not found' };
+  }
+
+  if (duel.status !== 'open') {
+    return { success: false, error: 'Duel is no longer open for matchmaking' };
+  }
+
+  if (duel.challenger_id === studentId) {
+    return { success: false, error: 'You cannot join your own duel' };
+  }
+
+  const now = new Date();
+  if (now > new Date(duel.expires_at)) {
+    return { success: false, error: 'This duel has expired' };
+  }
+
+  const { error: joinErr } = await adminClient
+    .from('duels')
+    .update({
+      challenged_id: studentId,
+      status: 'active',
+    })
+    .eq('id', duelId);
+
+  if (joinErr) {
+    return { success: false, error: `Failed to join duel: ${joinErr.message}` };
+  }
+
+  return { success: true, duelId };
+}
+
+/**
  * Server Action: Challenges a specific peer student directly.
  */
 export async function challengeDirectStudentAction(targetStudentId: string): Promise<{
@@ -219,7 +314,7 @@ export async function challengeDirectStudentAction(targetStudentId: string): Pro
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  if (!studentId) return { success: false, error: 'Unauthorized: Student session required' };
+  if (!studentId || !user) return { success: false, error: 'Unauthorized: Student session required' };
 
   const { data: profile } = await adminClient
     .from('profiles')
@@ -231,6 +326,8 @@ export async function challengeDirectStudentAction(targetStudentId: string): Pro
   if (!profile || (profile.role !== 'student' && !isDemoOrAdmin(userEmail, profile.role))) {
     return { success: false, error: 'Forbidden: Only students can participate in duels.', statusCode: 403 };
   }
+
+  await ensureStudentRecord(adminClient, user);
 
   const rl = await checkRateLimit(studentId, 'duel_action');
   if (!rl.allowed) {
@@ -565,11 +662,12 @@ export async function submitDuelAnswersAction(input: DuelSubmissionInput): Promi
 }
 
 /**
- * Server Action: Get all duels for the current student.
+ * Server Action: Get all duels for the current student and active open lobby challenges.
  */
 export async function getMyDuelsAction(): Promise<{
   success: boolean;
   duels: DuelSummary[];
+  openLobby?: OpenLobbyDuel[];
   error?: string;
 }> {
   const supabaseServer = await createServerClient();
@@ -583,7 +681,7 @@ export async function getMyDuelsAction(): Promise<{
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const adminClient = createAdminClient(supabaseUrl, serviceRoleKey);
 
-  if (!studentId) return { success: false, duels: [] };
+  if (!studentId) return { success: false, duels: [], openLobby: [] };
 
   const { data: duels, error } = await adminClient
     .from('duels')
@@ -609,8 +707,25 @@ export async function getMyDuelsAction(): Promise<{
     .order('created_at', { ascending: false });
 
   if (error || !duels) {
-    return { success: false, duels: [] };
+    return { success: false, duels: [], openLobby: [] };
   }
+
+  const now = new Date().toISOString();
+  const { data: openLobbyRows } = await adminClient
+    .from('duels')
+    .select(`
+      id,
+      challenger_id,
+      created_at,
+      expires_at,
+      challenger:students!duels_challenger_id_fkey(roll_no, profiles(full_name, is_anonymous))
+    `)
+    .eq('status', 'open')
+    .is('challenged_id', null)
+    .neq('challenger_id', studentId)
+    .gt('expires_at', now)
+    .order('created_at', { ascending: false })
+    .limit(10);
 
   let requesterRole: 'student' | 'faculty' | 'admin' = 'student';
   if (user) {
@@ -627,7 +742,7 @@ export async function getMyDuelsAction(): Promise<{
   const { getRankTiers, getRankForLevel } = await import('@/lib/ranks');
   const tiers = await getRankTiers(adminClient);
 
-  // Extract distinct opponent IDs
+  // Extract distinct opponent IDs and lobby challengers
   const opponentIds = Array.from(
     new Set(
       duels
@@ -635,13 +750,15 @@ export async function getMyDuelsAction(): Promise<{
         .filter(Boolean)
     )
   );
+  const lobbyChallengerIds = (openLobbyRows || []).map((r: any) => r.challenger_id).filter(Boolean);
+  const allXpUserIds = Array.from(new Set([...opponentIds, ...lobbyChallengerIds]));
 
   const xpMap = new Map<string, number>();
-  if (opponentIds.length > 0) {
+  if (allXpUserIds.length > 0) {
     const { data: xpRows } = await adminClient
       .from('xp_events')
       .select('student_id, xp_amount')
-      .in('student_id', opponentIds)
+      .in('student_id', allXpUserIds)
       .eq('status', 'valid');
 
     (xpRows || []).forEach((row: any) => {
@@ -665,5 +782,25 @@ export async function getMyDuelsAction(): Promise<{
     return summary;
   });
 
-  return { success: true, duels: summaries };
+  const openLobby: OpenLobbyDuel[] = (openLobbyRows || []).map((row: any) => {
+    const rawChallenger = Array.isArray(row.challenger) ? row.challenger[0] : row.challenger;
+    const prof = Array.isArray(rawChallenger?.profiles) ? rawChallenger?.profiles[0] : rawChallenger?.profiles;
+    const rollNo = rawChallenger?.roll_no;
+    const name = prof?.is_anonymous ? `Student #${rollNo || '0000'}` : (prof?.full_name || 'Anonymous Student');
+    const challengerTotalXp = xpMap.get(row.challenger_id) || 0;
+    const { level } = levelFromXp(challengerTotalXp);
+    const rankTier = getRankForLevel(level, tiers);
+    return {
+      id: row.id,
+      challengerId: row.challenger_id,
+      challengerName: name,
+      challengerRollNo: rollNo,
+      challengerLevel: level,
+      challengerRankTier: rankTier,
+      createdAt: row.created_at,
+      expiresAt: row.expires_at,
+    };
+  });
+
+  return { success: true, duels: summaries, openLobby };
 }
