@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState } from 'react';
+import { Star, Loader2 } from 'lucide-react';
 
 export type UserPortalRole = 'student' | 'faculty' | 'admin';
 
@@ -47,6 +48,15 @@ const PORTAL_META: Record<
   },
 };
 
+const DEMO_CREDENTIALS: Record<
+  UserPortalRole,
+  { email: string; pass: string; label: string; icon: string }
+> = {
+  student: { email: 'student@demo.edu', pass: 'Password123!', label: 'Student', icon: '🎓' },
+  faculty: { email: 'faculty@demo.edu', pass: 'Password123!', label: 'Faculty', icon: '👨‍🏫' },
+  admin: { email: 'admin@demo.edu', pass: 'Password123!', label: 'Admin', icon: '🛡️' },
+};
+
 const SignIn1 = ({
   onSignInSuccess,
   onGoogleSignIn,
@@ -59,6 +69,19 @@ const SignIn1 = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [quickLoadingRole, setQuickLoadingRole] = useState<UserPortalRole | null>(null);
+
+  const handleQuickLogin = (role: UserPortalRole) => {
+    setSelectedRole(role);
+    setQuickLoadingRole(role);
+    const creds = DEMO_CREDENTIALS[role];
+    setEmail(creds.email);
+    setPassword(creds.pass);
+    setError('');
+    if (onSignInSuccess) {
+      onSignInSuccess(creds.email, creds.pass, role);
+    }
+  };
 
   const currentMeta = PORTAL_META[selectedRole];
 
@@ -199,6 +222,49 @@ const SignIn1 = ({
               </svg>
               <span>{isGoogleLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
             </button>
+
+            {/* Quick Demo Access Buttons with Star and Disclaimer */}
+            <div className="w-full mt-4 pt-3.5 border-t border-white/10">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                  Quick Demo Access*
+                </span>
+                <span className="text-[10px] text-amber-400/90 font-mono">1-Click Login</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                {(['student', 'faculty', 'admin'] as UserPortalRole[]).map((r) => {
+                  const demo = DEMO_CREDENTIALS[r];
+                  const isThisLoading = isLoading && quickLoadingRole === r;
+                  return (
+                    <button
+                      key={r}
+                      type="button"
+                      disabled={isLoading || isGoogleLoading}
+                      onClick={() => handleQuickLogin(r)}
+                      className="py-2 px-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 hover:border-amber-400/40 text-xs font-medium text-zinc-200 hover:text-white transition-all flex items-center justify-center gap-1 active:scale-95 disabled:opacity-50 group cursor-pointer"
+                    >
+                      {isThisLoading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                      ) : (
+                        <>
+                          <span className="text-xs">{demo.icon}</span>
+                          <span className="font-semibold text-[11px]">{demo.label}</span>
+                          <span className="text-amber-400 font-bold">*</span>
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Disclaimer */}
+              <p className="text-[10.5px] text-zinc-400 mt-2 text-center leading-normal">
+                <span className="text-amber-400 font-bold mr-1">*</span>
+                <span className="text-zinc-300 font-semibold">Disclaimer:</span> Demo accounts are pre-configured for evaluation and testing purposes only.
+              </p>
+            </div>
 
             {/* Role-specific footnote / signup prompt */}
             <div className="w-full text-center mt-3">

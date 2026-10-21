@@ -28,7 +28,17 @@ async function handleSignOut(request: NextRequest) {
     }
   }
 
-  const response = NextResponse.redirect(new URL('/login', request.url), {
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+  const isLocalEnv = process.env.NODE_ENV === 'development';
+
+  const origin = isLocalEnv
+    ? request.nextUrl.origin
+    : forwardedHost
+    ? `${forwardedProto}://${forwardedHost}`
+    : request.nextUrl.origin;
+
+  const response = NextResponse.redirect(new URL('/login', origin), {
     status: 302,
   });
 

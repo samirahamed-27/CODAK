@@ -38,19 +38,28 @@ export async function GET(request: NextRequest) {
       }
 
       const forwardedHost = request.headers.get('x-forwarded-host');
+      const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
       const isLocalEnv = process.env.NODE_ENV === 'development';
+      const origin = isLocalEnv
+        ? requestUrl.origin
+        : forwardedHost
+        ? `${forwardedProto}://${forwardedHost}`
+        : requestUrl.origin;
 
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${requestUrl.origin}${destination}`);
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${destination}`);
-      } else {
-        return NextResponse.redirect(`${requestUrl.origin}${destination}`);
-      }
+      return NextResponse.redirect(`${origin}${destination}`);
     }
     console.error('OAuth code exchange error:', error);
   }
 
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+  const isLocalEnv = process.env.NODE_ENV === 'development';
+  const origin = isLocalEnv
+    ? requestUrl.origin
+    : forwardedHost
+    ? `${forwardedProto}://${forwardedHost}`
+    : requestUrl.origin;
+
   // Redirect to login with error parameter if code exchange fails or is missing
-  return NextResponse.redirect(`${requestUrl.origin}/login?error=oauth_failed`);
+  return NextResponse.redirect(`${origin}/login?error=oauth_failed`);
 }
