@@ -18,6 +18,10 @@ import {
   RefreshCw,
   Trophy,
   BookOpen,
+  MinusCircle,
+  X,
+  AlertCircle,
+  ShieldAlert,
 } from 'lucide-react';
 import {
   getStudentDirectoryAction,
@@ -26,6 +30,7 @@ import {
   FacultyRosterItem,
 } from '@/app/actions/roster';
 import { AdminAllocationsView } from '@/components/admin/AdminAllocationsView';
+import { deductXpAction } from '@/app/actions/xp-deductions';
 import { RankChip } from '@/components/ranks/RankChip';
 import clsx from 'clsx';
 
@@ -42,6 +47,15 @@ export default function AdminDashboardPage() {
   const [faculty, setFaculty] = useState<FacultyRosterItem[]>([]);
   const [facultySearch, setFacultySearch] = useState('');
   const [facultyLoading, setFacultyLoading] = useState(true);
+
+  // Admin XP Deduction State
+  const [penalizingStudent, setPenalizingStudent] = useState<StudentRosterItem | null>(null);
+  const [deductAmount, setDeductAmount] = useState<number>(50);
+  const [deductReason, setDeductReason] = useState<string>('Administrative misconduct penalty');
+  const [customReason, setCustomReason] = useState<string>('');
+  const [deducting, setDeducting] = useState<boolean>(false);
+  const [deductError, setDeductError] = useState<string | null>(null);
+  const [deductSuccessMsg, setDeductSuccessMsg] = useState<string | null>(null);
 
   async function loadStudents() {
     setStudentsLoading(true);
@@ -74,6 +88,40 @@ export default function AdminDashboardPage() {
   const handleSearchFaculty = (e: React.FormEvent) => {
     e.preventDefault();
     loadFaculty();
+  };
+
+  const handleExecuteDeduction = async () => {
+    if (!penalizingStudent) return;
+    const finalReason = deductReason === 'Other' ? customReason.trim() : deductReason.trim();
+    if (finalReason.length < 3) {
+      setDeductError('Please provide a specific deduction reason (at least 3 characters).');
+      return;
+    }
+
+    setDeducting(true);
+    setDeductError(null);
+    try {
+      const res = await deductXpAction({
+        studentId: penalizingStudent.id,
+        amount: deductAmount,
+        reason: finalReason,
+      });
+
+      if (res.success) {
+        setDeductSuccessMsg(
+          `Successfully deducted -${res.deductedAmount} XP from ${penalizingStudent.fullName}. New total: ${res.newTotal} XP.`
+        );
+        setPenalizingStudent(null);
+        loadStudents();
+        setTimeout(() => setDeductSuccessMsg(null), 5000);
+      } else {
+        setDeductError(res.error || 'Deduction failed.');
+      }
+    } catch (err: any) {
+      setDeductError(err.message || 'Unexpected server error.');
+    } finally {
+      setDeducting(false);
+    }
   };
 
   return (
@@ -232,6 +280,7 @@ export default function AdminDashboardPage() {
                       <th className="py-3 px-4">Rank Tier</th>
                       <th className="py-3 px-4">Streak</th>
                       <th className="py-3 px-4 text-right">Lifetime XP</th>
+                      <th className="py-3 px-4 text-center">Admin Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -279,6 +328,19 @@ export default function AdminDashboardPage() {
                           </td>
                           <td className="py-3.5 px-4 text-right font-mono font-extrabold text-white text-sm">
                             {st.totalXp.toLocaleString()} XP
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDeductError(null);
+                                setPenalizingStudent(st);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 text-[11px] font-bold transition-all flex items-center gap-1 mx-auto cursor-pointer"
+                            >
+                              <MinusCircle className="w-3 h-3 text-rose-400" />
+                              <span>Deduct XP</span>
+                            </button>
                           </td>
                         </tr>
                       ))
@@ -656,6 +718,152 @@ export default function AdminDashboardPage() {
                 </table>
               </div>
             </section>
+          </div>
+        )}
+
+        {/* Success Toast */}
+        {deductSuccessMsg && (
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 p-3 px-5 rounded-2xl bg-emerald-500 text-black font-semibold text-xs shadow-2xl flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{deductSuccessMsg}</span>
+          </div>
+        )}
+
+        {/* Admin XP Deduction Modal */}
+        {penalizingStudent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+            <div className="w-full max-w-md rounded-3xl border border-rose-500/30 bg-zinc-950 p-6 sm:p-8 shadow-2xl relative">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-wider">
+                  <ShieldAlert className="w-4 h-4" />
+                  <span>Admin XP Penalty</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPenalizingStudent(null)}
+                  className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <h3 className="text-xl font-bold text-white mb-1">
+                Deduct XP from Student
+              </h3>
+              <p className="text-xs text-zinc-400 mb-4">
+                Executing a disciplinary or administrative XP penalty directly to the immutable ledger.
+              </p>
+
+              {/* Student Target Box */}
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 mb-4 flex items-center justify-between text-xs">
+                <div>
+                  <div className="font-bold text-white">{penalizingStudent.fullName}</div>
+                  <div className="text-[11px] text-zinc-500 font-mono">{penalizingStudent.rollNo}</div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-zinc-400 uppercase font-semibold block">Balance</span>
+                  <span className="font-mono font-bold text-amber-300">
+                    {penalizingStudent.totalXp.toLocaleString()} XP
+                  </span>
+                </div>
+              </div>
+
+              {/* Penalty Amount Selection */}
+              <div className="mb-4">
+                <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-2">
+                  Penalty Amount (XP)
+                </label>
+                <div className="flex gap-2 mb-2">
+                  {[25, 50, 100, 250].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setDeductAmount(amt)}
+                      className={clsx(
+                        'px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all',
+                        deductAmount === amt
+                          ? 'bg-rose-600 text-white'
+                          : 'bg-white/5 text-zinc-400 hover:text-white border border-white/10'
+                      )}
+                    >
+                      -{amt} XP
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  max="5000"
+                  value={deductAmount}
+                  onChange={(e) => setDeductAmount(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/15 text-white text-xs font-mono focus:outline-none focus:border-rose-400"
+                />
+              </div>
+
+              {/* Deduction Reason */}
+              <div className="mb-4">
+                <label className="block text-xs font-bold text-zinc-300 uppercase tracking-wider mb-2">
+                  Mandatory Reason
+                </label>
+                <select
+                  value={deductReason}
+                  onChange={(e) => setDeductReason(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/15 text-white text-xs focus:outline-none focus:border-rose-400 mb-2"
+                >
+                  <option value="Administrative misconduct penalty">Administrative misconduct penalty</option>
+                  <option value="Academic dishonesty / plagiarism citation">Academic dishonesty / plagiarism citation</option>
+                  <option value="Win-trading or collusion infraction">Win-trading or collusion infraction</option>
+                  <option value="Attendance manipulation infraction">Attendance manipulation infraction</option>
+                  <option value="Manual ledger correction">Manual ledger correction</option>
+                  <option value="Other">Other (Custom explanation)</option>
+                </select>
+
+                {deductReason === 'Other' && (
+                  <input
+                    type="text"
+                    required
+                    value={customReason}
+                    onChange={(e) => setCustomReason(e.target.value)}
+                    placeholder="Provide specific reason (at least 3 characters)..."
+                    className="w-full px-4 py-2.5 rounded-xl bg-black border border-rose-400/40 text-white text-xs focus:outline-none focus:border-rose-400"
+                  />
+                )}
+              </div>
+
+              {/* Ledger Projection */}
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10 mb-4 text-xs flex justify-between items-center">
+                <span className="text-zinc-400">Projected Balance:</span>
+                <span className="font-mono font-bold text-white">
+                  {Math.max(0, penalizingStudent.totalXp - deductAmount).toLocaleString()} XP
+                </span>
+              </div>
+
+              {deductError && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-400/30 text-rose-300 text-xs mb-4 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{deductError}</span>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  disabled={deducting}
+                  onClick={() => setPenalizingStudent(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-zinc-300 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={deducting}
+                  onClick={handleExecuteDeduction}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-lg shadow-rose-600/20 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  {deducting ? <span>Executing...</span> : <span>Confirm Deduction</span>}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </main>

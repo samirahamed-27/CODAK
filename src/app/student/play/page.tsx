@@ -110,9 +110,49 @@ const SYNTAX_SAMURAI_BANNER = `data:image/svg+xml,${encodeURIComponent(
   </svg>`
 )}`;
 
+const BOSS_BATTLE_BANNER = `data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+    <defs>
+      <linearGradient id="bgBoss" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#18040a"/>
+        <stop offset="50%" stop-color="#280812"/>
+        <stop offset="100%" stop-color="#0a0205"/>
+      </linearGradient>
+      <pattern id="gridBoss" width="30" height="30" patternUnits="userSpaceOnUse">
+        <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(244,63,94,0.15)" stroke-width="1"/>
+      </pattern>
+      <radialGradient id="glowBoss" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="rgba(239,68,68,0.25)"/>
+        <stop offset="100%" stop-color="transparent"/>
+      </radialGradient>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#bgBoss)"/>
+    <rect width="100%" height="100%" fill="url(#gridBoss)"/>
+    <circle cx="400" cy="225" r="180" fill="url(#glowBoss)"/>
+    <rect x="350" y="165" width="100" height="100" rx="24" fill="rgba(239,68,68,0.12)" stroke="rgba(239,68,68,0.4)" stroke-width="2"/>
+    <text x="400" y="230" text-anchor="middle" font-size="48" font-family="system-ui">🐉</text>
+    <text x="400" y="300" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="bold" font-family="monospace" letter-spacing="4">THE SEMESTER GORGON</text>
+    <text x="400" y="325" text-anchor="middle" fill="#f87171" font-size="12" font-family="monospace">20-MIN EXAM RAID BOSS</text>
+  </svg>`
+)}`;
+
 const playElements: ComponentItem[] = [
   {
     id: 1,
+    url: {
+      src: BOSS_BATTLE_BANNER,
+    },
+    title: 'Timed Exam Boss Battle: The Semester Gorgon',
+    subtitle: 'PRE-EXAM RAID • 20-MIN REVISION SPRINT',
+    description:
+      'Challenge the 15-stage semester Gorgon covering your core engineering modules—Data Structures, Algorithms, DBMS, OS, and Networks. Answer 15 comprehensive questions under a 20-minute countdown clock to deal critical damage. Slay the Gorgon to earn +100 XP and unlock the legendary Boss Slayer badge!',
+    playAction: {
+      label: 'Enter Boss Arena',
+      href: '/student/play/boss-battle',
+    },
+  },
+  {
+    id: 2,
     url: {
       src: CODEMONS_BANNER,
     },
@@ -126,7 +166,7 @@ const playElements: ComponentItem[] = [
     },
   },
   {
-    id: 2,
+    id: 3,
     url: {
       src: SYNTAX_SAMURAI_BANNER,
     },
@@ -140,7 +180,7 @@ const playElements: ComponentItem[] = [
     },
   },
   {
-    id: 3,
+    id: 4,
     url: {
       src: QUESTS_BANNER,
     },
@@ -154,7 +194,7 @@ const playElements: ComponentItem[] = [
     },
   },
   {
-    id: 4,
+    id: 5,
     url: {
       src: PRACTICE_BANNER,
     },

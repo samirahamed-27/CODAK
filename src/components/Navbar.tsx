@@ -129,6 +129,7 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
           { label: 'Learn', ariaLabel: 'Daily quiz, practice mode & concepts', link: '/student/learn' },
           { label: 'Play', ariaLabel: 'Codemons retro cyber arcade arena', link: '/student/play' },
           { label: 'Compete', ariaLabel: 'League tables and duels', link: '/student/compete' },
+          { label: 'Rewards', ariaLabel: 'Campus rewards and perks store', link: '/student/rewards' },
           { label: 'Profile', ariaLabel: 'View student profile and settings', link: '/student/profile' },
         ];
 
