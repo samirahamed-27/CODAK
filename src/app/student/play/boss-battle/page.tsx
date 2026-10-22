@@ -11,6 +11,7 @@ import {
   ClientBossQuestion,
   BossBattleSessionState,
 } from '@/app/actions/boss-battle';
+import { CLIENT_BOSS_QUESTIONS } from '@/data/bossBattleQuestions';
 import {
   Swords,
   Shield,
@@ -29,10 +30,24 @@ import {
 } from 'lucide-react';
 
 export default function BossBattlePage() {
-  const [session, setSession] = useState<BossBattleSessionState | null>(null);
-  const [questions, setQuestions] = useState<ClientBossQuestion[]>([]);
+  const [session, setSession] = useState<BossBattleSessionState | null>({
+    id: 'active-session',
+    bossName: 'The Semester Gorgon (Final Boss)',
+    bossMaxHp: 100,
+    bossCurrentHp: 100,
+    totalQuestions: CLIENT_BOSS_QUESTIONS.length,
+    correctAnswers: 0,
+    wrongAnswers: 0,
+    timeLimitSeconds: 1200,
+    timeSpentSeconds: 0,
+    status: 'in_progress',
+    scorePercentage: 0,
+    xpAwarded: 0,
+    startedAt: '',
+  });
+  const [questions, setQuestions] = useState<ClientBossQuestion[]>(CLIENT_BOSS_QUESTIONS);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [submittingAnswer, setSubmittingAnswer] = useState(false);
   const [feedback, setFeedback] = useState<{
     isCorrect: boolean;
@@ -60,23 +75,29 @@ export default function BossBattlePage() {
   } | null>(null);
   const [finalizing, setFinalizing] = useState(false);
 
-  // 1. Initialize Battle Session
+  // 1. Background sync with database
   useEffect(() => {
-    async function initBattle() {
-      setLoading(true);
-      const res = await startBossBattleAction();
-      if (res.success && res.session) {
-        setSession(res.session);
-        setQuestions(res.questions);
-        setBossHp(res.session.bossCurrentHp);
-        const elapsed = Math.max(0, Math.floor((Date.now() - new Date(res.session.startedAt).getTime()) / 1000));
-        const rem = Math.max(0, 1200 - elapsed);
-        setSecondsRemaining(rem);
-        setTimeSpent(elapsed);
+    async function syncBattle() {
+      try {
+        const res = await startBossBattleAction();
+        if (res.success && res.session) {
+          setSession(res.session);
+          if (res.questions && res.questions.length > 0) {
+            setQuestions(res.questions);
+          }
+          if (res.session.bossCurrentHp !== undefined) {
+            setBossHp(res.session.bossCurrentHp);
+          }
+          const elapsed = Math.max(0, Math.floor((Date.now() - new Date(res.session.startedAt).getTime()) / 1000));
+          const rem = Math.max(0, 1200 - elapsed);
+          setSecondsRemaining(rem);
+          setTimeSpent(elapsed);
+        }
+      } catch (err) {
+        console.warn('Background boss battle sync warning:', err);
       }
-      setLoading(false);
     }
-    initBattle();
+    syncBattle();
   }, []);
 
   // 2. Countdown Timer

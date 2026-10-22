@@ -3,11 +3,11 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { deductXpAction, getStudentXpSummaryAction } from '@/app/actions/xp-deductions';
 import { REWARDS_CATALOG, redeemRewardAction } from '@/app/actions/rewards';
 import {
-  BOSS_BATTLE_QUESTIONS,
   startBossBattleAction,
   submitBossBattleAnswerAction,
   finalizeBossBattleAction,
 } from '@/app/actions/boss-battle';
+import { BOSS_BATTLE_QUESTIONS } from '@/data/bossBattleQuestions';
 
 describe('Phase 5: Rewards Store, Timed Boss Battle & XP Deductions', () => {
   const adminClient = createAdminClient();
