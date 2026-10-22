@@ -105,6 +105,7 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
       ? [
           { label: 'Dashboard', ariaLabel: 'Go to Faculty Dashboard', link: '/faculty' },
           { label: 'Attendance', ariaLabel: 'Manage Class Attendance & XP', link: '/faculty/attendance' },
+          { label: 'Clubs', ariaLabel: 'Manage Club Activities & XP', link: '/faculty/clubs' },
           { label: 'Leaderboard', ariaLabel: 'Campus & Student Leaderboard', link: '/faculty/leaderboard' },
           { label: 'Competitions', ariaLabel: 'Manage HackerRank Competitions', link: '/faculty/competitions' },
           { label: 'Questions', ariaLabel: 'Manage Question Bank', link: '/faculty/questions' },

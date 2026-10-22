@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   RefreshCw,
   Trophy,
+  BookOpen,
 } from 'lucide-react';
 import {
   getStudentDirectoryAction,
@@ -24,11 +25,13 @@ import {
   StudentRosterItem,
   FacultyRosterItem,
 } from '@/app/actions/roster';
+import { AdminAllocationsView } from '@/components/admin/AdminAllocationsView';
 import { RankChip } from '@/components/ranks/RankChip';
 import clsx from 'clsx';
 
 export default function AdminDashboardPage() {
-  const [activeTab, setActiveTab] = useState<'students' | 'faculty' | 'modules'>('students');
+  const [activeTab, setActiveTab] = useState<'students' | 'faculty' | 'allocations' | 'modules'>('students');
+
 
   // Student Directory State
   const [students, setStudents] = useState<StudentRosterItem[]>([]);
@@ -151,6 +154,19 @@ export default function AdminDashboardPage() {
           >
             <Users className="w-4 h-4" />
             <span>Faculty & Staff ({faculty.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('allocations')}
+            className={clsx(
+              'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all',
+              activeTab === 'allocations'
+                ? 'bg-white text-black shadow-md'
+                : 'text-zinc-400 hover:text-white'
+            )}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Course & Club Allocations</span>
           </button>
           <button
             type="button"
@@ -394,7 +410,12 @@ export default function AdminDashboardPage() {
         )}
 
         {/* ==================================================================== */}
-        {/* TAB 3: SYSTEM MODULES & XP RULES SEED                                */}
+        {/* TAB 3: COURSE & CLUB ALLOCATIONS                                     */}
+        {/* ==================================================================== */}
+        {activeTab === 'allocations' && <AdminAllocationsView />}
+
+        {/* ==================================================================== */}
+        {/* TAB 4: SYSTEM MODULES & XP RULES SEED                                */}
         {/* ==================================================================== */}
         {activeTab === 'modules' && (
           <div className="space-y-8">

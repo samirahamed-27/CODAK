@@ -143,3 +143,48 @@ export interface AttendanceRecord {
   updated_at: string;
 }
 
+export interface Club {
+  id: string;
+  name: string;
+  code: string;
+  category: string;
+  description?: string | null;
+  lead_faculty_id?: string | null;
+  is_active: boolean;
+  created_at: string;
+  profiles?: Profile;
+}
+
+export type ClubActivityStatus = 'upcoming' | 'completed' | 'cancelled';
+export type ClubParticipationStatus = 'pending' | 'verified' | 'rejected';
+
+export interface ClubActivity {
+  id: string;
+  club_id: string;
+  title: string;
+  description?: string | null;
+  activity_date: string;
+  status: ClubActivityStatus;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  clubs?: Club;
+}
+
+export interface ClubParticipation {
+  id: string;
+  activity_id: string;
+  student_id: string;
+  status: ClubParticipationStatus;
+  verified_by: string;
+  rejection_reason?: string | null;
+  override_reason?: string | null;
+  xp_awarded: number;
+  xp_event_id?: string | null;
+  verified_at: string;
+  updated_at: string;
+  club_activities?: ClubActivity;
+  students?: Student;
+}
+
+
