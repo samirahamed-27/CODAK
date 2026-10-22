@@ -53,21 +53,41 @@ export interface ClubParticipationAdminItem {
   verifiedAt: string;
 }
 
+export interface AvailableFacultyItem {
+  id: string;
+  fullName: string;
+  email: string;
+  department: string;
+  role: string;
+}
+
+export interface AvailableClubItem {
+  id: string;
+  name: string;
+  code: string;
+  category: string;
+  description?: string | null;
+  leadFacultyId?: string | null;
+  leadFacultyName: string;
+  leadFacultyEmail: string;
+}
+
 /**
- * 1. Fetch Faculty Subject Allocations (Admin Only).
+ * 1. Fetch Faculty Subject Allocations, Available Faculty, Subjects, and Clubs (Admin Only).
  */
 export async function getFacultySubjectAllocationsAction(): Promise<{
   success: boolean;
   allocations: FacultyAllocationItem[];
-  availableFaculty: Array<{ id: string; fullName: string; department: string }>;
+  availableFaculty: AvailableFacultyItem[];
   availableSubjects: Array<{ id: string; code: string; name: string }>;
+  availableClubs: AvailableClubItem[];
   error?: string;
 }> {
   try {
     const supabase = await createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) return { success: false, allocations: [], availableFaculty: [], availableSubjects: [], error: 'Unauthorized.' };
+    if (!user) return { success: false, allocations: [], availableFaculty: [], availableSubjects: [], availableClubs: [], error: 'Unauthorized.' };
 
     const admin = createAdminClient();
     const { data: profile } = await admin
@@ -77,22 +97,34 @@ export async function getFacultySubjectAllocationsAction(): Promise<{
       .single();
 
     if (profile?.role !== 'admin') {
-      return { success: false, allocations: [], availableFaculty: [], availableSubjects: [], error: 'Forbidden: Admin access required.' };
+      return { success: false, allocations: [], availableFaculty: [], availableSubjects: [], availableClubs: [], error: 'Forbidden: Admin access required.' };
     }
 
-    // 1. Fetch allocations
+    // 1. Fetch department mapping from faculty table
+    const { data: facultyRows } = await admin
+      .from('faculty')
+      .select('id, department');
+
+    const deptMap = new Map<string, string>();
+    if (facultyRows) {
+      for (const f of facultyRows) {
+        deptMap.set(f.id, f.department);
+      }
+    }
+
+    // 2. Fetch allocations
     const { data: rawAllocations, error: allocErr } = await admin
       .from('faculty_subjects')
       .select(`
         id, faculty_id, subject_id, section, academic_year, created_at,
         profiles:faculty_id ( full_name, email ),
-        faculty:faculty_id ( department ),
         subjects:subject_id ( code, name )
       `)
       .order('created_at', { ascending: false });
 
     if (allocErr) {
-      return { success: false, allocations: [], availableFaculty: [], availableSubjects: [], error: 'Failed to fetch allocations.' };
+      console.error('Error fetching allocations:', allocErr);
+      return { success: false, allocations: [], availableFaculty: [], availableSubjects: [], availableClubs: [], error: 'Failed to fetch allocations.' };
     }
 
     const allocations: FacultyAllocationItem[] = (rawAllocations || []).map((a: any) => ({
@@ -100,7 +132,7 @@ export async function getFacultySubjectAllocationsAction(): Promise<{
       facultyId: a.faculty_id,
       facultyName: a.profiles?.full_name || 'Faculty Member',
       facultyEmail: a.profiles?.email || '',
-      facultyDepartment: a.faculty?.department || 'Academics',
+      facultyDepartment: deptMap.get(a.faculty_id) || 'Computer Science',
       subjectId: a.subject_id,
       subjectCode: a.subjects?.code || 'SUBJ',
       subjectName: a.subjects?.name || 'Subject',
@@ -109,18 +141,28 @@ export async function getFacultySubjectAllocationsAction(): Promise<{
       createdAt: a.created_at,
     }));
 
-    // 2. Fetch available faculty & subjects
-    const { data: facultyRows } = await admin
-      .from('faculty')
-      .select('id, department, profiles ( full_name )')
-      .order('department');
+    // 3. Fetch available faculty from profiles (both role='faculty' and role='admin')
+    const { data: facultyProfiles } = await admin
+      .from('profiles')
+      .select(`
+        id, full_name, email, role,
+        faculty ( department )
+      `)
+      .in('role', ['faculty', 'admin'])
+      .order('full_name');
 
-    const availableFaculty = (facultyRows || []).map((f: any) => ({
-      id: f.id,
-      fullName: f.profiles?.full_name || 'Faculty Staff',
-      department: f.department,
-    }));
+    const availableFaculty: AvailableFacultyItem[] = (facultyProfiles || []).map((p: any) => {
+      const fac = Array.isArray(p.faculty) ? p.faculty[0] : p.faculty;
+      return {
+        id: p.id,
+        fullName: p.full_name || (p.role === 'admin' ? 'Administrator' : 'Faculty Member'),
+        email: p.email || '',
+        department: fac?.department || (p.role === 'admin' ? 'Administration' : 'Computer Science'),
+        role: p.role,
+      };
+    });
 
+    // 4. Fetch available subjects
     const { data: subjectRows } = await admin
       .from('subjects')
       .select('id, code, name')
@@ -132,14 +174,93 @@ export async function getFacultySubjectAllocationsAction(): Promise<{
       name: s.name,
     }));
 
+    // 5. Fetch available clubs with their assigned lead faculty
+    const { data: clubRows } = await admin
+      .from('clubs')
+      .select(`
+        id, name, code, category, description, lead_faculty_id, is_active,
+        profiles:lead_faculty_id ( full_name, email )
+      `)
+      .eq('is_active', true)
+      .order('name');
+
+    const availableClubs: AvailableClubItem[] = (clubRows || []).map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      code: c.code,
+      category: c.category,
+      description: c.description,
+      leadFacultyId: c.lead_faculty_id,
+      leadFacultyName: c.profiles?.full_name || 'Unassigned',
+      leadFacultyEmail: c.profiles?.email || '',
+    }));
+
     return {
       success: true,
       allocations,
       availableFaculty,
       availableSubjects,
+      availableClubs,
     };
   } catch (err: any) {
-    return { success: false, allocations: [], availableFaculty: [], availableSubjects: [], error: err.message || 'Server error.' };
+    return { success: false, allocations: [], availableFaculty: [], availableSubjects: [], availableClubs: [], error: err.message || 'Server error.' };
+  }
+}
+
+/**
+ * 2. Assign / Reassign Faculty Advisor to Club (Admin Only).
+ */
+export async function assignFacultyClubAction(input: {
+  clubId: string;
+  facultyId: string;
+}): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { success: false, error: 'Unauthorized.' };
+
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profile?.role !== 'admin') {
+      return { success: false, error: 'Forbidden: Admin access required.' };
+    }
+
+    const { data: club } = await admin.from('clubs').select('name, code').eq('id', input.clubId).single();
+    const { data: fac } = await admin.from('profiles').select('full_name').eq('id', input.facultyId).single();
+
+    const { error: updateErr } = await admin
+      .from('clubs')
+      .update({ lead_faculty_id: input.facultyId })
+      .eq('id', input.clubId);
+
+    if (updateErr) {
+      return { success: false, error: `Failed to assign club advisor: ${updateErr.message}` };
+    }
+
+    await writeAuditLog({
+      actorId: user.id,
+      action: 'ASSIGN_FACULTY_CLUB',
+      targetType: 'club',
+      targetId: input.clubId,
+      reason: `Assigned ${fac?.full_name || 'Faculty'} as lead advisor for ${club?.name} (${club?.code})`,
+      details: {
+        club_id: input.clubId,
+        faculty_id: input.facultyId,
+      },
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Server error.' };
   }
 }
 

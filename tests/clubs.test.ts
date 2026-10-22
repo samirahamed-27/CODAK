@@ -78,4 +78,23 @@ describe('CODAK Phase 2: Club Activities & Admin Allocations Unit Tests', () => 
     expect(addAllocation('fac-2', 'sub-101').success).toBe(true);
     expect(addAllocation('fac-1', 'sub-101').success).toBe(false);
   });
+
+  it('validates club advisor assignment update', () => {
+    const clubs = new Map<string, { name: string; leadFacultyId: string | null }>();
+    clubs.set('club-acm', { name: 'ACM', leadFacultyId: 'fac-1' });
+    clubs.set('club-gdsc', { name: 'GDSC', leadFacultyId: null });
+
+    const assignClubAdvisor = (clubId: string, facultyId: string) => {
+      const club = clubs.get(clubId);
+      if (!club) return { success: false, error: 'Club not found' };
+      club.leadFacultyId = facultyId;
+      return { success: true, club };
+    };
+
+    expect(assignClubAdvisor('club-acm', 'fac-2').success).toBe(true);
+    expect(clubs.get('club-acm')?.leadFacultyId).toBe('fac-2');
+    expect(assignClubAdvisor('club-gdsc', 'fac-3').success).toBe(true);
+    expect(clubs.get('club-gdsc')?.leadFacultyId).toBe('fac-3');
+    expect(assignClubAdvisor('unknown-club', 'fac-1').success).toBe(false);
+  });
 });
