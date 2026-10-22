@@ -351,11 +351,11 @@ describe('4F: The 5 Cheating Attempts Checkpoint', () => {
         if ((pastEv as any)?.event_id) createdEventIds.push((pastEv as any).event_id);
       }
 
-      // Today student earns 250 XP (10 x 25 XP CLUB_ACTIVITY, exceeding 200 minXp and > 3x average)
-      for (let i = 1; i <= 10; i++) {
+      // Today student earns 260 XP (13 x 20 XP ASSIGNMENT_ON_TIME, exceeding 200 minXp and > 3x average)
+      for (let i = 1; i <= 13; i++) {
         const { data: todayEv } = await adminClient.rpc('award_xp', {
           p_student_id: sSpike.id,
-          p_action_type: 'CLUB_ACTIVITY',
+          p_action_type: 'ASSIGNMENT_ON_TIME',
           p_reference_id: `today_${sSpike.id}_${i}`,
         });
         if ((todayEv as any)?.event_id) createdEventIds.push((todayEv as any).event_id);

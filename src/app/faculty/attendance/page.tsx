@@ -246,7 +246,7 @@ export default function FacultyAttendancePage() {
               Class Attendance & XP Verification
             </h1>
             <p className="text-zinc-400 text-sm mt-1">
-              Record daily lecture attendance. Enrolled students who attend earn 5 XP automatically.
+              Record daily lecture attendance. Enrolled students who attend earn 10 XP automatically.
             </p>
           </div>
 
@@ -515,7 +515,7 @@ export default function FacultyAttendancePage() {
                           <td className="px-6 py-4">
                             {isPresent ? (
                               <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
-                                <Sparkles className="w-3 h-3" /> +5 XP
+                                <Sparkles className="w-3 h-3" /> +10 XP
                               </span>
                             ) : (
                               <span className="text-xs text-zinc-500">0 XP</span>

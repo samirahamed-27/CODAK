@@ -489,7 +489,7 @@ export function AdminAllocationsView() {
             <div>
               <h3 className="text-sm font-bold text-white">Student Clubs & Faculty Advisor Allocations</h3>
               <p className="text-xs text-zinc-400">
-                Authorizes faculty advisors to host technical club events and verify extracurricular XP (+15 XP).
+                Authorizes faculty advisors to host technical club events and verify extracurricular XP (+25 XP).
               </p>
             </div>
             <button
@@ -943,7 +943,7 @@ export function AdminAllocationsView() {
               <Calendar className="w-4 h-4 text-purple-400" /> Create Club Activity Event
             </h3>
             <p className="text-xs text-zinc-400 mb-5">
-              Publish a workshop, hackathon, or technical session for student XP verification (+15 XP).
+              Publish a workshop, hackathon, or technical session for student XP verification (+25 XP).
             </p>
 
             <form onSubmit={handleCreateActivity} className="space-y-4 text-xs">
@@ -1040,7 +1040,7 @@ export function AdminAllocationsView() {
                   style={{ colorScheme: 'dark' }}
                   className="w-full bg-[#18181b] border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-white font-medium"
                 >
-                  <option value="present">Present (+5 XP)</option>
+                  <option value="present">Present (+10 XP)</option>
                   <option value="absent">Absent (0 XP / Void)</option>
                   <option value="excused">Excused (0 XP / Void)</option>
                 </select>
@@ -1103,7 +1103,7 @@ export function AdminAllocationsView() {
                   style={{ colorScheme: 'dark' }}
                   className="w-full bg-[#18181b] border border-white/20 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-white font-medium"
                 >
-                  <option value="verified">Verified (+15 XP)</option>
+                  <option value="verified">Verified (+25 XP)</option>
                   <option value="rejected">Rejected (0 XP / Void)</option>
                 </select>
               </div>

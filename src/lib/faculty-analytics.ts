@@ -22,6 +22,7 @@ export interface TopicPerformance {
 export interface QuietStudent {
   id: string;
   fullName: string;
+  email?: string;
   rollNo: string;
   department: string;
   yearOfStudy: number;
@@ -137,7 +138,7 @@ export async function getFacultyAnalytics(
   // 2. Fetch Students and Cohorts (strictly excluding faculty and admin accounts)
   let studentQuery = db
     .from('students')
-    .select('id, roll_no, department, year_of_study, created_at, profiles!inner(role, full_name, is_anonymous, campus_id, campus_other_name, campuses(id, name, city, is_other))')
+    .select('id, roll_no, department, year_of_study, created_at, profiles!inner(role, full_name, email, is_anonymous, campus_id, campus_other_name, campuses(id, name, city, is_other))')
     .eq('profiles.role', 'student');
 
   // Apply campus filter if specified
@@ -179,6 +180,7 @@ export async function getFacultyAnalytics(
       department: s.department,
       yearOfStudy: s.year_of_study,
       fullName: prof?.full_name || 'Student',
+      email: prof?.email || undefined,
       campusName,
       createdAt: s.created_at,
     };
@@ -363,6 +365,7 @@ export async function getFacultyAnalytics(
       quietStudents.push({
         id: student.id,
         fullName: student.fullName,
+        email: student.email,
         rollNo: student.rollNo,
         department: student.department,
         yearOfStudy: student.yearOfStudy,

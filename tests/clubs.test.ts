@@ -23,8 +23,8 @@ describe('CODAK Phase 2: Club Activities & Admin Allocations Unit Tests', () => 
     expect(validStatuses.includes('unmarked')).toBe(false);
   });
 
-  it('computes club activity XP correctly based on base rule (15 XP, daily limit 2)', () => {
-    const CLUB_BASE_XP = 15;
+  it('computes club activity XP correctly based on base rule (25 XP, daily limit 2)', () => {
+    const CLUB_BASE_XP = 25;
     const DAILY_LIMIT = 2;
 
     const computeDailyClubXp = (activitiesVerified: number) => {
@@ -33,10 +33,10 @@ describe('CODAK Phase 2: Club Activities & Admin Allocations Unit Tests', () => 
     };
 
     expect(computeDailyClubXp(0)).toBe(0);
-    expect(computeDailyClubXp(1)).toBe(15);
-    expect(computeDailyClubXp(2)).toBe(30);
-    expect(computeDailyClubXp(3)).toBe(30); // Capped at daily limit 2
-    expect(computeDailyClubXp(5)).toBe(30); // Capped at daily limit 2
+    expect(computeDailyClubXp(1)).toBe(25);
+    expect(computeDailyClubXp(2)).toBe(50);
+    expect(computeDailyClubXp(3)).toBe(50); // Capped at daily limit 2
+    expect(computeDailyClubXp(5)).toBe(50); // Capped at daily limit 2
   });
 
   it('enforces override reasons for administrative adjustments', () => {

@@ -30,17 +30,22 @@ import {
   RefreshCw,
   GraduationCap,
   CalendarCheck2,
+  Mail,
 } from 'lucide-react';
 import { RankChip } from '@/components/ranks/RankChip';
 import clsx from 'clsx';
 
 export default function FacultyDashboardPage() {
-  const [activeTab, setActiveTab] = useState<'analytics' | 'students'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'students' | 'at-risk'>('analytics');
   const [selectedBatch, setSelectedBatch] = useState<string>('');
   const [selectedCampus, setSelectedCampus] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<FacultyAnalyticsData | null>(null);
+
+  // At-Risk Filter & Search State
+  const [atRiskSearch, setAtRiskSearch] = useState('');
+  const [atRiskFilter, setAtRiskFilter] = useState<'all' | '5-9d' | '10d+'>('all');
 
   // Student Directory State
   const [students, setStudents] = useState<StudentRosterItem[]>([]);
@@ -90,6 +95,20 @@ export default function FacultyDashboardPage() {
     e.preventDefault();
     loadStudents(selectedCampus, studentSearch);
   };
+
+  const filteredQuietStudents = (data?.quietStudents || []).filter((qs) => {
+    if (atRiskFilter === '5-9d' && (qs.daysInactive < 5 || qs.daysInactive >= 10)) return false;
+    if (atRiskFilter === '10d+' && qs.daysInactive < 10) return false;
+    if (atRiskSearch.trim()) {
+      const q = atRiskSearch.toLowerCase().trim();
+      const matchName = qs.fullName.toLowerCase().includes(q);
+      const matchRoll = qs.rollNo.toLowerCase().includes(q);
+      const matchDept = qs.department.toLowerCase().includes(q);
+      const matchEmail = (qs.email || '').toLowerCase().includes(q);
+      return matchName || matchRoll || matchDept || matchEmail;
+    }
+    return true;
+  });
 
   return (
     <div className="min-h-screen flex flex-col bg-black pb-16 text-zinc-100">
@@ -160,7 +179,7 @@ export default function FacultyDashboardPage() {
         {/* Tab Selector & Filter Controls */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Tab Selector */}
-          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[#0c0c0e] border border-white/15 w-fit">
+          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[#0c0c0e] border border-white/15 w-fit flex-wrap">
             <button
               type="button"
               onClick={() => setActiveTab('analytics')}
@@ -173,6 +192,31 @@ export default function FacultyDashboardPage() {
             >
               <TrendingUp className="w-4 h-4" />
               <span>Cohort Analytics</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('at-risk')}
+              className={clsx(
+                'flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all',
+                activeTab === 'at-risk'
+                  ? 'bg-amber-400 text-black shadow-md'
+                  : 'text-zinc-400 hover:text-white'
+              )}
+            >
+              <UserX className="w-4 h-4" />
+              <span>At-Risk (Quiet 5+ Days)</span>
+              {data && (
+                <span
+                  className={clsx(
+                    'px-1.5 py-0.5 rounded-full text-[10px] font-extrabold',
+                    activeTab === 'at-risk'
+                      ? 'bg-black text-amber-300'
+                      : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  )}
+                >
+                  {data.quietStudents.length}
+                </span>
+              )}
             </button>
             <button
               type="button"
@@ -328,20 +372,34 @@ export default function FacultyDashboardPage() {
                   </div>
 
                   {/* Card 4: Quiet Students Flagged */}
-                  <div className="p-5 rounded-2xl bg-[#0c0c0e] border border-white/15 hover:border-white/30 transition-all flex flex-col justify-between gap-3">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setActiveTab('at-risk')}
+                    onKeyDown={(e) => e.key === 'Enter' && setActiveTab('at-risk')}
+                    className="p-5 rounded-2xl bg-[#0c0c0e] border border-amber-500/20 hover:border-amber-400/50 transition-all flex flex-col justify-between gap-3 cursor-pointer group"
+                    title="Click to view At-Risk students roster"
+                  >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-zinc-400">Quiet Students (&gt;= 5d)</span>
-                      <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white">
+                      <span className="text-xs font-semibold text-zinc-400 group-hover:text-amber-300 transition-colors">
+                        Quiet Students (&gt;= 5d)
+                      </span>
+                      <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
                         <UserX className="w-4 h-4" />
                       </div>
                     </div>
                     <div>
-                      <div className="text-2xl font-black text-white">
+                      <div className="text-2xl font-black text-amber-400">
                         {data.quietStudents.length}
                       </div>
-                      <span className="text-[11px] text-zinc-400 mt-1 block">
-                        No XP activity in 5 or more days
-                      </span>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-[11px] text-zinc-400">
+                          No XP activity in 5+ days
+                        </span>
+                        <span className="text-[11px] text-amber-400 font-bold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                          Inspect <ArrowRight className="w-3 h-3" />
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -530,9 +588,14 @@ export default function FacultyDashboardPage() {
                     </div>
 
                     <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                      <span className="text-[11px] text-zinc-500">
-                        Intervention threshold: 5 days without XP
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('at-risk')}
+                        className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+                      >
+                        <span>Inspect Full At-Risk Roster ({data.quietStudents.length})</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
                       <Link
                         href="/faculty/award-xp"
                         className="text-xs font-bold text-white hover:underline flex items-center gap-1"
@@ -666,6 +729,227 @@ export default function FacultyDashboardPage() {
                           </td>
                         </tr>
                       ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ==================================================================== */}
+        {/* TAB 3: AT-RISK STUDENTS (QUIET FOR 5+ DAYS)                          */}
+        {/* ==================================================================== */}
+        {activeTab === 'at-risk' && (
+          <div className="space-y-4">
+            {/* Banner */}
+            <div className="p-5 rounded-2xl bg-amber-950/20 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider mb-1">
+                  <UserX className="w-4 h-4" />
+                  <span>Academic Early Intervention System</span>
+                </div>
+                <h2 className="text-lg font-extrabold text-white">
+                  Quiet Students &mdash; Inactive for 5+ Calendar Days
+                </h2>
+                <p className="text-xs text-zinc-400 mt-1 max-w-2xl">
+                  Per MSOT competition criteria, students with zero learning XP activity for 5 or more days are flagged as at-risk. Faculty can review identities, send re-engagement emails, or verify class attendance.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
+                <Link
+                  href="/faculty/attendance"
+                  className="px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-1.5 transition-all"
+                >
+                  <CalendarCheck2 className="w-3.5 h-3.5" />
+                  <span>Class Attendance</span>
+                </Link>
+                <Link
+                  href="/faculty/award-xp"
+                  className="px-3.5 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold flex items-center gap-1.5 transition-all shadow-md"
+                >
+                  <CheckSquare className="w-3.5 h-3.5" />
+                  <span>Award XP</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Filter Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#0c0c0e] border border-white/15">
+              <div className="flex-1 flex items-center gap-2 max-w-md">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={atRiskSearch}
+                    onChange={(e) => setAtRiskSearch(e.target.value)}
+                    placeholder="Search at-risk students by name, roll no, department..."
+                    className="w-full pl-9 pr-4 py-2 rounded-xl bg-black border border-white/15 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-400 font-medium">Inactivity:</span>
+                <div className="flex items-center gap-1 p-1 bg-black rounded-xl border border-white/10 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setAtRiskFilter('all')}
+                    className={clsx(
+                      'px-2.5 py-1 rounded-lg font-medium transition-all',
+                      atRiskFilter === 'all'
+                        ? 'bg-amber-400 text-black font-bold'
+                        : 'text-zinc-400 hover:text-white'
+                    )}
+                  >
+                    All (&gt;= 5d)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAtRiskFilter('5-9d')}
+                    className={clsx(
+                      'px-2.5 py-1 rounded-lg font-medium transition-all',
+                      atRiskFilter === '5-9d'
+                        ? 'bg-amber-400 text-black font-bold'
+                        : 'text-zinc-400 hover:text-white'
+                    )}
+                  >
+                    5-9 Days
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAtRiskFilter('10d+')}
+                    className={clsx(
+                      'px-2.5 py-1 rounded-lg font-medium transition-all',
+                      atRiskFilter === '10d+'
+                        ? 'bg-amber-400 text-black font-bold'
+                        : 'text-zinc-400 hover:text-white'
+                    )}
+                  >
+                    10+ Days / Never
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* At-Risk Table */}
+            <div className="rounded-2xl bg-[#0c0c0e] border border-white/15 overflow-hidden shadow-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-black/90 text-zinc-400 uppercase text-[10px] font-mono tracking-wider border-b border-white/10">
+                    <tr>
+                      <th className="py-3 px-4">Student</th>
+                      <th className="py-3 px-4">Roll Number</th>
+                      <th className="py-3 px-4">Cohort</th>
+                      <th className="py-3 px-4">Campus</th>
+                      <th className="py-3 px-4">Rank Tier</th>
+                      <th className="py-3 px-4">Inactivity Period</th>
+                      <th className="py-3 px-4">Last Active</th>
+                      <th className="py-3 px-4 text-center">Intervention Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={8} className="py-12 text-center text-zinc-500">
+                          <div className="w-6 h-6 rounded-full border-2 border-white border-t-transparent animate-spin mx-auto mb-2" />
+                          <span>Auditing student activity logs...</span>
+                        </td>
+                      </tr>
+                    ) : filteredQuietStudents.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="py-12 text-center text-zinc-500">
+                          <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+                          <div className="font-bold text-zinc-300 text-sm">No At-Risk Students Found</div>
+                          <div className="text-xs text-zinc-500 mt-0.5">
+                            {atRiskSearch ? 'No students match your search criteria.' : 'All enrolled students have logged XP activity within the last 5 days.'}
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredQuietStudents.map((qs) => {
+                        const isSevere = qs.daysInactive >= 10;
+                        const subject = encodeURIComponent('Academic Check-in - CODAK Learning Platform');
+                        const body = encodeURIComponent(
+                          `Hi ${qs.fullName},\n\nWe noticed you haven't been active on CODAK for the past ${qs.daysInactive >= 999 ? 'few weeks' : `${qs.daysInactive} days`}. Regular participation in daily quizzes, lecture attendance, and coding challenges is critical to keeping your streak and mastering your curriculum.\n\nPlease log in today to complete today's quiz and check your attendance.\n\nBest regards,\nYour Faculty Team`
+                        );
+                        return (
+                          <tr key={qs.id} className="hover:bg-white/[0.02] transition-colors">
+                            <td className="py-3.5 px-4">
+                              <div className="font-bold text-white text-sm">{qs.fullName}</div>
+                              {qs.email ? (
+                                <div className="text-[11px] text-zinc-500 font-mono">{qs.email}</div>
+                              ) : (
+                                <div className="text-[11px] text-zinc-600 font-mono">No email recorded</div>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 font-mono font-medium text-zinc-300">
+                              {qs.rollNo}
+                            </td>
+                            <td className="py-3.5 px-4 text-zinc-300">
+                              <div>{qs.department}</div>
+                              <div className="text-[10px] text-zinc-500">Year {qs.yearOfStudy}</div>
+                            </td>
+                            <td className="py-3.5 px-4 text-zinc-400 text-xs">
+                              {qs.campusName || 'Main Campus'}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              {qs.rankTier ? (
+                                <RankChip rank={qs.rankTier} level={qs.level} size="xs" />
+                              ) : (
+                                <span className="text-zinc-500 text-[11px] font-mono">Lvl 1</span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span
+                                className={clsx(
+                                  'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border',
+                                  isSevere
+                                    ? 'bg-rose-500/10 text-rose-300 border-rose-500/30'
+                                    : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                                )}
+                              >
+                                <Clock className="w-3 h-3" />
+                                <span>{qs.daysInactive >= 999 ? 'Never Active' : `${qs.daysInactive}d Inactive`}</span>
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 font-mono text-zinc-400 text-xs">
+                              {qs.lastActiveDate || 'No records'}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center justify-center gap-2">
+                                {qs.email ? (
+                                  <a
+                                    href={`mailto:${qs.email}?subject=${subject}&body=${body}`}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[11px] font-semibold transition-all"
+                                    title="Send nudge email"
+                                  >
+                                    <Mail className="w-3 h-3" />
+                                    <span>Nudge</span>
+                                  </a>
+                                ) : null}
+                                <Link
+                                  href="/faculty/attendance"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold transition-all"
+                                  title="Check/Mark Attendance"
+                                >
+                                  <CalendarCheck2 className="w-3 h-3" />
+                                  <span>Attendance</span>
+                                </Link>
+                                <Link
+                                  href="/faculty/award-xp"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[11px] font-semibold transition-all"
+                                  title="Award Manual XP"
+                                >
+                                  <CheckSquare className="w-3 h-3" />
+                                  <span>Award</span>
+                                </Link>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>

@@ -216,7 +216,7 @@ export default function FacultyClubsPage() {
               Club Activities & Extracurricular XP
             </h1>
             <p className="text-zinc-400 text-sm mt-1">
-              Verify student participation in workshops, hackathons, and technical club meetings (15 XP per verified event).
+              Verify student participation in workshops, hackathons, and technical club meetings (25 XP per verified event).
             </p>
           </div>
 
@@ -372,7 +372,7 @@ export default function FacultyClubsPage() {
 
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4" /> {verifiedCount} Verified (+15 XP each)
+                      <CheckCircle2 className="w-4 h-4" /> {verifiedCount} Verified (+25 XP each)
                     </span>
                   </div>
                 </div>
@@ -446,7 +446,7 @@ export default function FacultyClubsPage() {
                             <td className="px-6 py-3.5">
                               {isVerified ? (
                                 <span className="font-semibold text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">
-                                  +15 XP
+                                  +25 XP
                                 </span>
                               ) : (
                                 <span className="text-zinc-500">0 XP</span>

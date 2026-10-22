@@ -158,7 +158,7 @@ export default function StudentAttendancePage() {
                   <span className="text-xs font-semibold text-purple-300">XP</span>
                 </div>
                 <p className="text-xs text-zinc-400 mt-2">
-                  +5 XP per verified lecture session attended.
+                  +10 XP per verified lecture session attended.
                 </p>
               </div>
 
@@ -175,7 +175,7 @@ export default function StudentAttendancePage() {
                   <span className="text-xs font-semibold text-indigo-300">XP</span>
                 </div>
                 <p className="text-xs text-zinc-400 mt-2">
-                  +15 XP per verified club session, workshop, or hackathon.
+                  +25 XP per verified club session, workshop, or hackathon.
                 </p>
               </div>
 
@@ -354,7 +354,7 @@ export default function StudentAttendancePage() {
 
               {clubActivities.length === 0 ? (
                 <div className="bg-zinc-900/40 border border-white/10 rounded-2xl p-8 text-center text-zinc-400 text-sm">
-                  No verified club activities recorded yet. Participate in authorized technical workshops, coding bootcamps, and club hackathons to earn +15 XP each!
+                  No verified club activities recorded yet. Participate in authorized technical workshops, coding bootcamps, and club hackathons to earn +25 XP each!
                 </div>
               ) : (
                 <div className="bg-zinc-900/60 border border-white/10 rounded-2xl overflow-hidden shadow-xl">

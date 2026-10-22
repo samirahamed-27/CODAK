@@ -373,11 +373,11 @@ export async function submitClubParticipationAction(input: {
           });
 
           if (!xpErr && xpRes && xpRes.status === 'awarded') {
-            xpGranted = xpRes.xp_awarded || 15;
+            xpGranted = xpRes.xp_awarded || 25;
             eventId = xpRes.event_id || null;
             totalXpAwarded += xpGranted;
           } else if (xpRes && xpRes.status === 'duplicate') {
-            xpGranted = 15;
+            xpGranted = 25;
           }
         }
 

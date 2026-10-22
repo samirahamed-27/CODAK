@@ -35,8 +35,8 @@ describe('CODAK Phase 1: Attendance Engine Unit Tests', () => {
     expect(validStatuses.includes('unknown')).toBe(false);
   });
 
-  it('computes attendance XP correctly based on base rule (5 XP per lecture, daily limit 6)', () => {
-    const ATTENDANCE_BASE_XP = 5;
+  it('computes attendance XP correctly based on base rule (10 XP per lecture, daily limit 6)', () => {
+    const ATTENDANCE_BASE_XP = 10;
     const DAILY_LIMIT = 6;
 
     const computeDailyAttendanceXp = (lecturesAttended: number) => {
@@ -44,9 +44,9 @@ describe('CODAK Phase 1: Attendance Engine Unit Tests', () => {
       return eligibleLectures * ATTENDANCE_BASE_XP;
     };
 
-    expect(computeDailyAttendanceXp(1)).toBe(5);
-    expect(computeDailyAttendanceXp(4)).toBe(20);
-    expect(computeDailyAttendanceXp(6)).toBe(30);
-    expect(computeDailyAttendanceXp(8)).toBe(30); // Capped by daily limit
+    expect(computeDailyAttendanceXp(1)).toBe(10);
+    expect(computeDailyAttendanceXp(4)).toBe(40);
+    expect(computeDailyAttendanceXp(6)).toBe(60);
+    expect(computeDailyAttendanceXp(8)).toBe(60); // Capped by daily limit
   });
 });

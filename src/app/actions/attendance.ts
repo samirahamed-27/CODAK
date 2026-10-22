@@ -456,12 +456,12 @@ export async function submitAttendanceRosterAction(input: {
           });
 
           if (!xpErr && xpRes && xpRes.status === 'awarded') {
-            xpGranted = xpRes.xp_awarded || 5;
+            xpGranted = xpRes.xp_awarded || 10;
             eventId = xpRes.event_id || null;
             totalXpAwarded += xpGranted;
           } else if (xpRes && xpRes.status === 'duplicate') {
             // Already awarded previously in ledger
-            xpGranted = 5;
+            xpGranted = 10;
           }
         }
 
