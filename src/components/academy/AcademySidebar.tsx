@@ -24,6 +24,7 @@ export function AcademySidebar({ totalXp = 1420 }: AcademySidebarProps) {
 
   const menuItems: StaggeredMenuItem[] = [
     { label: 'Home', ariaLabel: 'Go to student home', link: '/student' },
+    { label: 'Attendance', ariaLabel: 'View attendance stats and XP', link: '/student/attendance' },
     { label: 'Learn', ariaLabel: 'Go to daily quiz and learning hub', link: '/student/learn' },
     { label: 'Rank', ariaLabel: 'Go to compete and leaderboard', link: '/student/compete' },
     { label: 'Play', ariaLabel: 'Go to Codemons arcade lounge', link: '/student/play' },

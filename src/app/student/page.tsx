@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Flame, Snowflake, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Flame, Snowflake, ArrowRight, CheckCircle2, CalendarCheck2 } from 'lucide-react';
 import { AcademySidebar } from '@/components/academy/AcademySidebar';
 import { AcademyHeader } from '@/components/academy/AcademyHeader';
 import { ProfileCard } from '@/components/academy/ProfileCard';
@@ -182,21 +182,30 @@ export default function StudentDashboardPage() {
                 </div>
               </div>
 
-              <Link
-                href="/student/learn"
-                className={`flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
-                  streakInfo.isTodayCompleted
-                    ? 'bg-white/10 hover:bg-white/15 text-white border border-white/10'
-                    : 'bg-white hover:bg-zinc-200 text-black shadow-md shadow-white/20'
-                }`}
-              >
-                <span>
-                  {streakInfo.isTodayCompleted
-                    ? 'Practice Mode'
-                    : 'Start Quiz'}
-                </span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              <div className="flex items-center gap-2 w-full md:w-auto">
+                <Link
+                  href="/student/attendance"
+                  className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/15 text-white border border-white/10 transition-all active:scale-95"
+                >
+                  <CalendarCheck2 className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Attendance</span>
+                </Link>
+                <Link
+                  href="/student/learn"
+                  className={`flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
+                    streakInfo.isTodayCompleted
+                      ? 'bg-white/10 hover:bg-white/15 text-white border border-white/10'
+                      : 'bg-white hover:bg-zinc-200 text-black shadow-md shadow-white/20'
+                  }`}
+                >
+                  <span>
+                    {streakInfo.isTodayCompleted
+                      ? 'Practice Mode'
+                      : 'Start Quiz'}
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             </div>
           </div>
 

@@ -104,6 +104,7 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
     role === 'faculty'
       ? [
           { label: 'Dashboard', ariaLabel: 'Go to Faculty Dashboard', link: '/faculty' },
+          { label: 'Attendance', ariaLabel: 'Manage Class Attendance & XP', link: '/faculty/attendance' },
           { label: 'Leaderboard', ariaLabel: 'Campus & Student Leaderboard', link: '/faculty/leaderboard' },
           { label: 'Competitions', ariaLabel: 'Manage HackerRank Competitions', link: '/faculty/competitions' },
           { label: 'Questions', ariaLabel: 'Manage Question Bank', link: '/faculty/questions' },
@@ -113,6 +114,7 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
       : role === 'admin'
       ? [
           { label: 'Admin Hub', ariaLabel: 'Go to Admin Hub', link: '/admin' },
+          { label: 'Attendance', ariaLabel: 'Class Attendance & Sessions', link: '/faculty/attendance' },
           { label: 'Leaderboard', ariaLabel: 'Campus & Student Leaderboard', link: '/admin/leaderboard' },
           { label: 'Staff Invites', ariaLabel: 'Manage Staff Invites', link: '/admin/invites' },
           { label: 'XP Rules', ariaLabel: 'Manage XP Rules', link: '/admin/rules' },
@@ -122,11 +124,13 @@ export function Navbar({ role = 'student', userName }: NavbarProps) {
         ]
       : [
           { label: 'Dashboard', ariaLabel: 'Go to student dashboard', link: '/student' },
+          { label: 'Attendance', ariaLabel: 'View Attendance and XP', link: '/student/attendance' },
           { label: 'Learn', ariaLabel: 'Daily quiz, practice mode & concepts', link: '/student/learn' },
           { label: 'Play', ariaLabel: 'Codemons retro cyber arcade arena', link: '/student/play' },
           { label: 'Compete', ariaLabel: 'League tables and duels', link: '/student/compete' },
           { label: 'Profile', ariaLabel: 'View student profile and settings', link: '/student/profile' },
         ];
+
 
   const socialLinks = [
     {

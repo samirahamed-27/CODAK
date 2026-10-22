@@ -38,3 +38,4 @@ yarn-error.log*
 scratch/
 css-backup/
 public/css-backup/
+.vscode/

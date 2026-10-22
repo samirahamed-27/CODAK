@@ -29,6 +29,7 @@ import {
   Search,
   RefreshCw,
   GraduationCap,
+  CalendarCheck2,
 } from 'lucide-react';
 import { RankChip } from '@/components/ranks/RankChip';
 import clsx from 'clsx';
@@ -138,6 +139,13 @@ export default function FacultyDashboardPage() {
             >
               <Trophy className="w-4 h-4 text-purple-400" />
               <span>HackerRank Contests</span>
+            </Link>
+            <Link
+              href="/faculty/attendance"
+              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold transition-all"
+            >
+              <CalendarCheck2 className="w-4 h-4 text-emerald-400" />
+              <span>Take Attendance</span>
             </Link>
             <Link
               href="/faculty/award-xp"

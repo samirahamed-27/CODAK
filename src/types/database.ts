@@ -81,3 +81,65 @@ export interface XpEvent {
   void_reason?: string | null;
   created_at: string;
 }
+
+export interface Subject {
+  id: string;
+  name: string;
+  code: string;
+  description?: string | null;
+  created_at: string;
+}
+
+export interface FacultySubject {
+  id: string;
+  faculty_id: string;
+  subject_id: string;
+  section: string;
+  academic_year: string;
+  created_at: string;
+  subjects?: Subject;
+}
+
+export interface StudentSubject {
+  id: string;
+  student_id: string;
+  subject_id: string;
+  section: string;
+  academic_year: string;
+  created_at: string;
+  subjects?: Subject;
+}
+
+export type AttendanceSessionStatus = 'active' | 'completed' | 'cancelled';
+export type AttendanceRecordStatus = 'present' | 'absent' | 'excused';
+export type VerificationMethod = 'manual' | 'session_code' | 'ble' | 'gps';
+
+export interface AttendanceSession {
+  id: string;
+  subject_id: string;
+  section: string;
+  faculty_id: string;
+  session_date: string;
+  session_topic?: string | null;
+  status: AttendanceSessionStatus;
+  created_at: string;
+  updated_at: string;
+  subjects?: Subject;
+  profiles?: Profile;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  session_id: string;
+  student_id: string;
+  subject_id: string;
+  status: AttendanceRecordStatus;
+  marked_by: string;
+  override_reason?: string | null;
+  verification_method: VerificationMethod;
+  xp_awarded: number;
+  xp_event_id?: string | null;
+  marked_at: string;
+  updated_at: string;
+}
+
