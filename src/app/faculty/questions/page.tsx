@@ -14,6 +14,7 @@ import {
   QuestionRecord,
   EditQuestionInput,
 } from '@/app/actions/faculty-questions';
+import { generateQuestionsAiAction } from '@/app/actions/ai-questions';
 import {
   BookOpen,
   Plus,
@@ -31,6 +32,7 @@ import {
   ShieldAlert,
   MessageSquare,
   CheckCheck,
+  Sparkles,
 } from 'lucide-react';
 
 export default function FacultyQuestionsPage() {
@@ -42,10 +44,25 @@ export default function FacultyQuestionsPage() {
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showCsvModal, setShowCsvModal] = useState(false);
+  const [showAiModal, setShowAiModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<QuestionRecord | null>(null);
   const [rejectingQuestion, setRejectingQuestion] = useState<QuestionRecord | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // AI Question Generator Form
+  const [aiTopic, setAiTopic] = useState('Dynamic Programming: 0/1 Knapsack');
+  const [aiDifficulty, setAiDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium');
+  const [aiCount, setAiCount] = useState(3);
+  const [aiFocus, setAiFocus] = useState('Optimal substructure, boundary constraints, and recurrence relations');
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiResult, setAiResult] = useState<{
+    success?: boolean;
+    count?: number;
+    message?: string;
+    error?: string;
+    source?: string;
+  } | null>(null);
 
   // Manual Question Form
   const [manualForm, setManualForm] = useState({
@@ -259,6 +276,28 @@ export default function FacultyQuestionsPage() {
     }
   }
 
+  async function handleAiGenerate(e: React.FormEvent) {
+    e.preventDefault();
+    setAiGenerating(true);
+    setAiResult(null);
+
+    const res = await generateQuestionsAiAction({
+      topic: aiTopic,
+      difficulty: aiDifficulty,
+      count: aiCount,
+      focus: aiFocus,
+    });
+
+    setAiGenerating(false);
+    setAiResult(res);
+
+    if (res.success) {
+      setStatusFilter('pending');
+      setSuccessMessage(`✨ ${res.message || `Generated ${res.count} questions!`}`);
+      loadQuestions();
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 pb-16 text-slate-100">
       <Navbar role="faculty" />
@@ -301,6 +340,16 @@ export default function FacultyQuestionsPage() {
                   <span>Approve All {pendingInCurrentView.length > 0 ? `(${pendingInCurrentView.length})` : ''}</span>
                 </button>
               )}
+              <button
+                onClick={() => {
+                  setShowAiModal(true);
+                  setAiResult(null);
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-semibold transition-all shadow-sm group"
+              >
+                <Sparkles className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+                <span>Generate with AI</span>
+              </button>
               <button
                 onClick={() => setShowCsvModal(true)}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/15 text-white text-xs font-semibold transition-all shadow-sm"
@@ -1015,6 +1064,186 @@ export default function FacultyQuestionsPage() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Question Generator Modal */}
+      {showAiModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="max-w-xl w-full bg-[#0c0c0e] border border-purple-500/30 rounded-3xl p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-extrabold text-white flex items-center gap-2">
+                    Generate Questions with AI
+                  </h2>
+                  <p className="text-[11px] text-zinc-400">
+                    Drafted with Gemini 3.8 Flash &amp; routed into your Pending Review Queue
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAiModal(false)}
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {aiResult && !aiResult.success && (
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{aiResult.error || 'Failed to generate questions.'}</span>
+              </div>
+            )}
+
+            {aiResult && aiResult.success && (
+              <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-200 text-xs flex flex-col gap-2">
+                <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
+                  <CheckCircle className="w-4 h-4 text-purple-400" />
+                  <span>{aiResult.message}</span>
+                </div>
+                <p className="text-zinc-400 text-[11px] leading-relaxed">
+                  Notice: Questions are held in <strong className="text-white">Pending Status</strong> until approved by faculty, ensuring complete academic oversight before students can attempt them.
+                </p>
+                <div className="flex items-center justify-end gap-2 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowAiModal(false)}
+                    className="px-3.5 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-400 text-black text-xs font-bold transition-all"
+                  >
+                    View in Review Queue
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!aiResult?.success && (
+              <form onSubmit={handleAiGenerate} className="flex flex-col gap-4 text-xs">
+                {/* Topic Selector */}
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5 uppercase tracking-wide">
+                    Curriculum Topic
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Dynamic Programming: Knapsack, Binary Search, Graph Dijkstra..."
+                    value={aiTopic}
+                    onChange={(e) => setAiTopic(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/15 text-white text-xs placeholder-zinc-500 focus:outline-none focus:border-purple-400"
+                  />
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {[
+                      'Dynamic Programming: Knapsack',
+                      'Binary Search Trees',
+                      'Graph Dijkstra Algorithm',
+                      'OS: Paging & Virtual Memory',
+                      'DBMS: Normalization',
+                    ].map((sample) => (
+                      <button
+                        key={sample}
+                        type="button"
+                        onClick={() => setAiTopic(sample)}
+                        className="px-2 py-0.5 rounded-lg text-[10px] bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white border border-white/10 transition-colors"
+                      >
+                        {sample}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Difficulty */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5 uppercase tracking-wide">
+                      Target Difficulty
+                    </label>
+                    <select
+                      value={aiDifficulty}
+                      onChange={(e) => setAiDifficulty(e.target.value as 'Easy' | 'Medium' | 'Hard')}
+                      style={{ colorScheme: 'dark' }}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 font-medium"
+                    >
+                      <option value="Easy">Easy (Fundamentals &amp; Definitions)</option>
+                      <option value="Medium">Medium (Application &amp; Tracing)</option>
+                      <option value="Hard">Hard (Edge Cases &amp; Complex Analysis)</option>
+                    </select>
+                  </div>
+
+                  {/* Question Count */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-300 mb-1.5 uppercase tracking-wide">
+                      Question Count (1–5)
+                    </label>
+                    <select
+                      value={aiCount}
+                      onChange={(e) => setAiCount(Number(e.target.value))}
+                      style={{ colorScheme: 'dark' }}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/15 text-white text-xs focus:outline-none focus:border-purple-400 font-medium"
+                    >
+                      <option value={1}>1 Question (Quick test)</option>
+                      <option value={2}>2 Questions</option>
+                      <option value={3}>3 Questions (Recommended)</option>
+                      <option value={4}>4 Questions</option>
+                      <option value={5}>5 Questions (Full Daily Set)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Specific Pedagogical Focus */}
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5 uppercase tracking-wide">
+                    Pedagogical Focus &amp; Learning Objectives (Optional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="e.g. Focus on edge cases, off-by-one errors, time/space complexity trade-offs..."
+                    value={aiFocus}
+                    onChange={(e) => setAiFocus(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black border border-white/15 text-white text-xs placeholder-zinc-500 focus:outline-none focus:border-purple-400"
+                  />
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-[11px] text-zinc-400 flex items-start gap-2">
+                  <ShieldAlert className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                  <span>
+                    <strong className="text-white">Strict Faculty Governance:</strong> AI-generated questions will never appear in student quizzes until you review and approve them in the Pending Queue.
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setShowAiModal(false)}
+                    className="px-4 py-2 rounded-xl text-zinc-400 hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={aiGenerating}
+                    className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-purple-600/20 disabled:opacity-50 transition-all active:scale-95"
+                  >
+                    {aiGenerating ? (
+                      <>
+                        <div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                        <span>Generating Conceptual Questions...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Generate &amp; Queue for Review</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

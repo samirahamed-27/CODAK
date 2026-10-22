@@ -32,7 +32,11 @@ import {
   Snowflake,
   Puzzle,
   Zap,
+  Bot,
+  Globe,
+  X,
 } from 'lucide-react';
+import { askStudyBuddyAction, StudyBuddyRequest } from '@/app/actions/ai-study-buddy';
 import Shuffle from '@/components/Shuffle';
 import clsx from 'clsx';
 import { CelebrationManager, triggerCelebrationCheck } from '@/components/animations/CelebrationManager';
@@ -57,6 +61,49 @@ export default function StudentLearnPage() {
     bonusAwarded?: boolean;
     notes?: string;
   } | null>(null);
+
+  // AI Study Buddy State (Stretch Goals #4 & #5)
+  const [studyBuddyOpen, setStudyBuddyOpen] = useState(false);
+  const [studyBuddyData, setStudyBuddyData] = useState<StudyBuddyRequest | null>(null);
+  const [studyBuddyLanguage, setStudyBuddyLanguage] = useState<'en' | 'hinglish'>('en');
+  const [studyBuddyLoading, setStudyBuddyLoading] = useState(false);
+  const [studyBuddyHint, setStudyBuddyHint] = useState<string | null>(null);
+  const [studyBuddySource, setStudyBuddySource] = useState<string | null>(null);
+
+  const fetchStudyBuddyHint = async (data: StudyBuddyRequest, lang: 'en' | 'hinglish') => {
+    setStudyBuddyLoading(true);
+    setStudyBuddyHint(null);
+    try {
+      const res = await askStudyBuddyAction({
+        ...data,
+        language: lang,
+      });
+      if (res.success) {
+        setStudyBuddyHint(res.hint);
+        setStudyBuddySource(res.source);
+      } else {
+        setStudyBuddyHint('Could not load hint at this time. Please try again!');
+      }
+    } catch {
+      setStudyBuddyHint('Failed to connect to Study Buddy. Please try again!');
+    } finally {
+      setStudyBuddyLoading(false);
+    }
+  };
+
+  const handleOpenStudyBuddy = (data: StudyBuddyRequest) => {
+    setStudyBuddyData(data);
+    setStudyBuddyOpen(true);
+    fetchStudyBuddyHint(data, studyBuddyLanguage);
+  };
+
+  const handleToggleStudyBuddyLang = (lang: 'en' | 'hinglish') => {
+    if (lang === studyBuddyLanguage) return;
+    setStudyBuddyLanguage(lang);
+    if (studyBuddyData) {
+      fetchStudyBuddyHint(studyBuddyData, lang);
+    }
+  };
 
   // Practice Mode State (Zero answer keys in state before server response)
   const [practiceQuestions, setPracticeQuestions] = useState<
@@ -600,6 +647,29 @@ export default function StudentLearnPage() {
                       <p className="text-slate-300 mt-1 leading-relaxed">
                         {currentDailyQuestion.explanation}
                       </p>
+
+                      {!currentDailyQuestion.isCorrect && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleOpenStudyBuddy({
+                              questionText: currentDailyQuestion.questionText,
+                              topic: currentDailyQuestion.topic,
+                              options: currentDailyQuestion.options,
+                              selectedOption: currentDailyQuestion.selectedOption || '',
+                              correctOption: currentDailyQuestion.correctOption || '',
+                              explanation: currentDailyQuestion.explanation || '',
+                            })
+                          }
+                          className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-200 text-xs font-bold transition-all shadow-sm w-fit group"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-purple-400 group-hover:scale-110 transition-transform" />
+                          <span>Ask AI Study Buddy</span>
+                          <span className="text-[10px] text-purple-300/80 font-normal ml-0.5">
+                            (English / Hinglish)
+                          </span>
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -751,6 +821,29 @@ export default function StudentLearnPage() {
                         )}
                       </div>
                       <p className="text-slate-300">{practiceFeedback[practiceIndex].explanation}</p>
+
+                      {!practiceFeedback[practiceIndex].isCorrect && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleOpenStudyBuddy({
+                              questionText: practiceQuestions[practiceIndex]?.questionText || '',
+                              topic: practiceQuestions[practiceIndex]?.topic || '',
+                              options: practiceQuestions[practiceIndex]?.options || [],
+                              selectedOption: practiceAnswers[practiceIndex] || '',
+                              correctOption: practiceFeedback[practiceIndex].correctOption || '',
+                              explanation: practiceFeedback[practiceIndex].explanation || '',
+                            })
+                          }
+                          className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-200 text-xs font-bold transition-all shadow-sm w-fit group"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-purple-400 group-hover:scale-110 transition-transform" />
+                          <span>Ask AI Study Buddy</span>
+                          <span className="text-[10px] text-purple-300/80 font-normal ml-0.5">
+                            (English / Hinglish)
+                          </span>
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -1052,6 +1145,135 @@ export default function StudentLearnPage() {
           </div>
         )}
       </main>
+
+      {/* AI Study Buddy Drawer / Modal */}
+      {studyBuddyOpen && studyBuddyData && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="max-w-lg w-full bg-[#0c0c0e] border border-purple-500/30 rounded-3xl p-6 shadow-2xl flex flex-col gap-4 text-xs">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-extrabold text-white">AI Study Buddy</h2>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                      Gemini 3.8
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-zinc-400">
+                    Pedagogical misconception analysis &amp; intuitive reasoning
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setStudyBuddyOpen(false)}
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Language Switcher Bar */}
+            <div className="flex items-center justify-between p-2 rounded-2xl bg-black border border-white/10">
+              <div className="flex items-center gap-1.5 text-zinc-400 text-xs px-2">
+                <Globe className="w-3.5 h-3.5 text-purple-400" />
+                <span className="font-semibold text-zinc-300">Explanation Language:</span>
+              </div>
+              <div className="flex items-center gap-1 bg-zinc-900/80 p-1 rounded-xl border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => handleToggleStudyBuddyLang('en')}
+                  className={clsx(
+                    'px-3 py-1 rounded-lg text-xs font-bold transition-all',
+                    studyBuddyLanguage === 'en'
+                      ? 'bg-purple-600 text-white shadow-md'
+                      : 'text-zinc-400 hover:text-white'
+                  )}
+                >
+                  English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleStudyBuddyLang('hinglish')}
+                  className={clsx(
+                    'px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1',
+                    studyBuddyLanguage === 'hinglish'
+                      ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-black shadow-md'
+                      : 'text-zinc-400 hover:text-white'
+                  )}
+                >
+                  <span>🇮🇳 Hinglish</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Question Summary */}
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+              <div className="text-[10px] font-mono uppercase text-zinc-400">
+                Topic: <span className="text-white font-bold">{studyBuddyData.topic}</span>
+              </div>
+              <p className="text-zinc-200 font-medium text-xs leading-relaxed line-clamp-2">
+                &ldquo;{studyBuddyData.questionText}&rdquo;
+              </p>
+              <div className="flex items-center gap-3 text-[11px] pt-1">
+                <span className="text-rose-400 font-semibold">
+                  Your Choice: Option {studyBuddyData.selectedOption}
+                </span>
+                <span className="text-emerald-400 font-semibold">
+                  Correct Answer: Option {studyBuddyData.correctOption}
+                </span>
+              </div>
+            </div>
+
+            {/* AI Response Card */}
+            <div className="p-4 rounded-2xl bg-purple-950/20 border border-purple-500/30 flex flex-col gap-2 min-h-[110px] justify-center">
+              {studyBuddyLoading ? (
+                <div className="py-6 flex flex-col items-center justify-center gap-2 text-purple-300">
+                  <div className="w-6 h-6 rounded-full border-2 border-purple-400 border-t-transparent animate-spin" />
+                  <span className="text-xs font-medium">
+                    {studyBuddyLanguage === 'hinglish'
+                      ? 'Study Buddy Hinglish mein soch raha hai...'
+                      : 'Consulting Study Buddy for conceptual guidance...'}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-mono tracking-wider font-bold text-purple-400 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      {studyBuddyLanguage === 'hinglish' ? 'Study Buddy Advice (Hinglish)' : 'Study Buddy Insight'}
+                    </span>
+                    {studyBuddySource && (
+                      <span className="text-[9px] font-mono text-zinc-500">
+                        {studyBuddySource === 'gemini' ? 'Gemini 3.8 Flash' : 'Pedagogical Engine'}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-zinc-200 text-xs sm:text-sm leading-relaxed whitespace-pre-line font-normal">
+                    {studyBuddyHint}
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Dismiss Button */}
+            <div className="flex items-center justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setStudyBuddyOpen(false)}
+                className="px-4 py-2 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-bold transition-all shadow-md active:scale-95"
+              >
+                Got it, continue quiz!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </div>
