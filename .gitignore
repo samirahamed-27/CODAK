@@ -39,3 +39,4 @@ scratch/
 css-backup/
 public/css-backup/
 .vscode/
+.worktrees/
