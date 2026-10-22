@@ -19,6 +19,5 @@ export function isDemoAccount(email?: string | null): boolean {
 }
 
 export function isDemoOrAdmin(email?: string | null, role?: string | null): boolean {
-  if (role === 'admin') return true;
   return isDemoAccount(email);
 }

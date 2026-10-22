@@ -141,3 +141,40 @@ export async function judgeLoginAction(
     redirectPath: `/${role}`,
   };
 }
+
+export async function quickDemoLoginAction(role: JudgeRole): Promise<{
+  success: boolean;
+  redirectPath?: string;
+  error?: string;
+}> {
+  if (!role || !['student', 'faculty', 'admin'].includes(role)) {
+    return { success: false, error: 'Invalid role specified' };
+  }
+
+  const passwordMap: Record<JudgeRole, string> = {
+    student: process.env.DEMO_STUDENT_PASSWORD || 'Password123!',
+    faculty: process.env.DEMO_FACULTY_PASSWORD || 'Password123!',
+    admin: process.env.DEMO_ADMIN_PASSWORD || 'Password123!',
+  };
+
+  const password = passwordMap[role];
+  const demoEmail = DEMO_EMAILS[role];
+  const supabaseServer = await createServerClient();
+
+  const { data, error: authError } = await supabaseServer.auth.signInWithPassword({
+    email: demoEmail,
+    password,
+  });
+
+  if (authError || !data.user) {
+    return {
+      success: false,
+      error: authError?.message || 'Quick demo login failed.',
+    };
+  }
+
+  return {
+    success: true,
+    redirectPath: `/${role}`,
+  };
+}

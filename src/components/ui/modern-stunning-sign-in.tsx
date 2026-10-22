@@ -8,6 +8,7 @@ export type UserPortalRole = 'student' | 'faculty' | 'admin';
 
 export interface SignIn1Props {
   onSignInSuccess?: (email: string, password?: string, role?: UserPortalRole) => void;
+  onQuickDemoLogin?: (role: UserPortalRole) => void;
   onGoogleSignIn?: () => void;
   isLoading?: boolean;
   isGoogleLoading?: boolean;
@@ -48,17 +49,15 @@ const PORTAL_META: Record<
   },
 };
 
-const DEMO_CREDENTIALS: Record<
-  UserPortalRole,
-  { email: string; pass: string; label: string; icon: string }
-> = {
-  student: { email: 'student@demo.edu', pass: 'Password123!', label: 'Student', icon: '🎓' },
-  faculty: { email: 'faculty@demo.edu', pass: 'Password123!', label: 'Faculty', icon: '👨‍🏫' },
-  admin: { email: 'admin@demo.edu', pass: 'Password123!', label: 'Admin', icon: '🛡️' },
-};
+const DEMO_BUTTONS: { role: UserPortalRole; label: string; icon: string }[] = [
+  { role: 'student', label: 'Student', icon: '🎓' },
+  { role: 'faculty', label: 'Faculty', icon: '👨‍🏫' },
+  { role: 'admin', label: 'Admin', icon: '🛡️' },
+];
 
 const SignIn1 = ({
   onSignInSuccess,
+  onQuickDemoLogin,
   onGoogleSignIn,
   isLoading = false,
   isGoogleLoading = false,
@@ -74,12 +73,9 @@ const SignIn1 = ({
   const handleQuickLogin = (role: UserPortalRole) => {
     setSelectedRole(role);
     setQuickLoadingRole(role);
-    const creds = DEMO_CREDENTIALS[role];
-    setEmail(creds.email);
-    setPassword(creds.pass);
     setError('');
-    if (onSignInSuccess) {
-      onSignInSuccess(creds.email, creds.pass, role);
+    if (onQuickDemoLogin) {
+      onQuickDemoLogin(role);
     }
   };
 
@@ -234,15 +230,14 @@ const SignIn1 = ({
               </div>
 
               <div className="grid grid-cols-3 gap-2">
-                {(['student', 'faculty', 'admin'] as UserPortalRole[]).map((r) => {
-                  const demo = DEMO_CREDENTIALS[r];
-                  const isThisLoading = isLoading && quickLoadingRole === r;
+                {DEMO_BUTTONS.map((demo) => {
+                  const isThisLoading = isLoading && quickLoadingRole === demo.role;
                   return (
                     <button
-                      key={r}
+                      key={demo.role}
                       type="button"
                       disabled={isLoading || isGoogleLoading}
-                      onClick={() => handleQuickLogin(r)}
+                      onClick={() => handleQuickLogin(demo.role)}
                       className="py-2 px-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 hover:border-amber-400/40 text-xs font-medium text-zinc-200 hover:text-white transition-all flex items-center justify-center gap-1 active:scale-95 disabled:opacity-50 group cursor-pointer"
                     >
                       {isThisLoading ? (

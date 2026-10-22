@@ -8,6 +8,7 @@ import { usePreloader } from '@/components/ui/PreloaderContext';
 import { GraduationCap, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { getCampusesAction } from '@/app/actions/campus';
+import { quickDemoLoginAction } from '@/app/actions/judge';
 import { formatCampusDisplayName } from '@/lib/campus';
 import { IS_DEMO_MODE } from '@/lib/config';
 
@@ -191,6 +192,30 @@ function LoginPageContent() {
     }
   };
 
+  const handleQuickDemoLogin = async (demoRole: 'student' | 'faculty' | 'admin') => {
+    setLoading(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    try {
+      const res = await quickDemoLoginAction(demoRole);
+      if (!res.success) {
+        setErrorMessage(res.error || 'Quick demo login failed.');
+        setLoading(false);
+        return;
+      }
+      startPreload({
+        role: demoRole,
+        destination: `/${demoRole}`,
+        text: `Welcome to CODAK • Entering ${demoRole.toUpperCase()} Hub`,
+        subtext: 'Initializing demo session & security policies...',
+      });
+      router.push(`/${demoRole}`);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Demo login failed');
+      setLoading(false);
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -302,6 +327,7 @@ function LoginPageContent() {
           {/* Modern Stunning Sign-In Component */}
           <SignIn1
             onSignInSuccess={handleAuthSubmit}
+            onQuickDemoLogin={handleQuickDemoLogin}
             onGoogleSignIn={handleGoogleSignIn}
             isLoading={loading}
             isGoogleLoading={googleLoading}
